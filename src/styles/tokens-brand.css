@@ -1,0 +1,167 @@
+/**
+ * tokens-brand.css
+ * ─────────────────────────────────────────────────────────────────────────
+ * Identité visuelle AWI : couleurs, fonts, ombres, logos médias.
+ * À overrider entièrement pour un nouveau projet client.
+ *
+ * Pour les échelles agnostiques (motion, typo, statuts) → tokens-core.css
+ */
+
+/* ──────────────── Surfaces & couleurs (dark = défaut) ──────────────── */
+:root,
+[data-theme="dark"] {
+  /* Surfaces */
+  --bg-primary: #0e041b;
+  --bg-overlay: #13042f;
+  --tooltip-bg: #1b0a3c;
+  --step-future: rgba(148, 163, 184, 0.5);
+  --bg-card: rgba(32, 13, 66, 0.6);
+  --bg-card-hover: rgba(40, 18, 80, 0.7);
+  --bg-footer: #0c051a;
+  --bg-sidebar: rgba(22, 10, 42, 0.8);
+
+  /* Cards & modales */
+  --card-inner-bg: rgba(255, 255, 255, 0.03);
+  --card-inner-border: rgba(255, 255, 255, 0.06);
+  --modal-bg: rgba(18, 6, 38, 0.95);
+  --input-bg: rgba(255, 255, 255, 0.03);
+
+  /* Bordures */
+  --border-subtle: rgba(79, 64, 109, 0.1);
+  --border-badge: rgba(79, 64, 109, 0.15);
+
+  /* Accents marque */
+  --accent-purple: #5f14fb;
+  --accent-pink: #ec4dcb;
+  --accent-pink-light: #f987e0;
+
+  /* Texte */
+  --text-primary: #ffffff;
+  --text-heading: #ede0ff;
+  --text-secondary: #a3a3b8;
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --text-input: rgba(255, 255, 255, 0.5);
+
+  /* Composants spécifiques */
+  --arc-bg: #2E1856; /* fond des ScoreArc */
+  --label-col-bg: rgba(255, 255, 255, 0.06);
+
+  /* Ombres */
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --shadow-floating: 0 12px 32px -4px rgba(0, 0, 0, 0.25);
+  --shadow-cta: 0 12px 32px -4px rgba(236, 77, 203, 0.25);
+
+  --color-scheme: dark;
+}
+
+/* ──────────────── Light mode ──────────────── */
+[data-theme="light"] {
+  /* Surfaces */
+  --bg-primary: #f6f3fa;
+  --bg-overlay: #ece6f5;
+  --tooltip-bg: #ffffff;
+  --step-future: #c4c9d2;
+  --bg-card: rgba(255, 255, 255, 0.5);
+  --bg-card-hover: rgba(255, 255, 255, 0.65);
+  --bg-footer: #eae4f2;
+  --bg-sidebar: rgba(255, 255, 255, 0.85);
+
+  /* Cards & modales */
+  --card-inner-bg: rgba(0, 0, 0, 0.02);
+  --card-inner-border: rgba(0, 0, 0, 0.06);
+  --modal-bg: rgba(252, 250, 255, 0.97);
+  --input-bg: #f6f3fa;
+
+  /* Bordures */
+  --border-subtle: rgba(79, 64, 109, 0.12);
+  --border-badge: rgba(79, 64, 109, 0.15);
+
+  /* Accents marque (mêmes valeurs cross-thème) */
+  --accent-purple: #5f14fb;
+  --accent-pink: #ec4dcb;
+  --accent-pink-light: #f987e0;
+
+  /* Texte */
+  --text-primary: #1a1025;
+  --text-heading: #2d1f47;
+  --text-secondary: #5d5d75;
+  --text-muted: rgba(26, 16, 37, 0.4);
+  --text-input: rgba(26, 16, 37, 0.45);
+
+  /* Composants spécifiques */
+  --arc-bg: #e8e0f0;
+  --label-col-bg: #ffffff;
+
+  /* Ombres (atténuées en light) */
+  --shadow-card: inset 0 1px 0 rgba(0, 0, 0, 0.04);
+  --shadow-floating: 0 12px 32px -4px rgba(0, 0, 0, 0.12);
+  --shadow-cta: 0 12px 32px -4px rgba(236, 77, 203, 0.18);
+
+  --color-scheme: light;
+}
+
+/* ──────────────── Fonts (chargées via next/font dans layout.tsx) ──────────────── */
+:root {
+  --font-sans: var(--font-outfit);
+  --font-serif: var(--font-instrument-serif);
+  --font-manrope: var(--font-manrope);
+  --font-space: var(--font-space-grotesk);
+}
+
+/* ──────────────── Brand quirks ──────────────── */
+/* AWI logo color in light mode */
+[data-theme="light"] .awi-logo {
+  color: #C5064F;
+}
+
+/* Light mode : tint des SVG illustrations en violet de marque */
+[data-theme="light"] svg.text-white {
+  color: var(--accent-purple);
+}
+
+/* Light mode : labels formulaires (override fallback browser) */
+[data-theme="light"] label {
+  color: var(--text-primary);
+}
+
+/* ──────────────── Logos médias (PROJET-SPÉCIFIQUE GSI) ──────────────── */
+/* Couleur uniforme adaptée au thème par défaut */
+.media-logo {
+  background-color: var(--text-primary);
+}
+
+/* Couleurs natives par marque en light mode */
+[data-theme="light"] .media-logo-lefigaro { background-color: #0d6fef; }
+[data-theme="light"] .media-logo-bfm,
+[data-theme="light"] .media-logo-bfmdark { background-color: #0303f4; }
+[data-theme="light"] .media-logo-lepoint { background-color: #e41b2f; }
+[data-theme="light"] .media-logo-latribune { background-color: #0059b3; }
+
+/* Calendrier éditorial : logos forcés en text-secondary dans les pills */
+[data-theme="light"] .media-pill .media-logo,
+[data-theme="light"] .media-pill .media-logo-lefigaro,
+[data-theme="light"] .media-pill .media-logo-bfm,
+[data-theme="light"] .media-pill .media-logo-bfmdark,
+[data-theme="light"] .media-pill .media-logo-lepoint,
+[data-theme="light"] .media-pill .media-logo-latribune {
+  background-color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .media-pill .media-logo {
+  background-color: var(--text-secondary) !important;
+}
+
+/* Media pills : bg/border teintés couleur marque (dark) ou neutres (light) */
+.media-pill-lefigaro { background-color: rgba(13, 111, 239, 0.08); border-color: rgba(13, 111, 239, 0.2); }
+.media-pill-bfm,
+.media-pill-bfmdark { background-color: rgba(3, 3, 244, 0.08); border-color: rgba(3, 3, 244, 0.2); }
+.media-pill-lepoint { background-color: rgba(228, 27, 47, 0.08); border-color: rgba(228, 27, 47, 0.2); }
+.media-pill-latribune { background-color: rgba(0, 89, 179, 0.08); border-color: rgba(0, 89, 179, 0.2); }
+
+[data-theme="light"] .media-pill-lefigaro,
+[data-theme="light"] .media-pill-bfm,
+[data-theme="light"] .media-pill-bfmdark,
+[data-theme="light"] .media-pill-lepoint,
+[data-theme="light"] .media-pill-latribune {
+  background-color: var(--card-inner-bg);
+  border-color: var(--border-subtle);
+}

@@ -1,0 +1,70 @@
+@page {
+  size: A4;
+  margin: 0;
+}
+
+.report-root {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  padding: 32px 0;
+}
+
+.report-page {
+  width: 210mm;
+  min-height: 297mm;
+  background: #ffffff;
+  color: var(--text-primary);
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto 32px;
+  page-break-after: always;
+  break-after: page;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  border-radius: 4px;
+}
+
+.report-page:last-of-type {
+  page-break-after: auto;
+  break-after: auto;
+  margin-bottom: 0;
+}
+
+.report-page-inner {
+  position: absolute;
+  inset: 16mm;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-page-number {
+  position: absolute;
+  bottom: 10mm;
+  right: 16mm;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media print {
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  .report-root {
+    background: transparent;
+    padding: 0;
+  }
+  .report-page {
+    margin: 0;
+    box-shadow: none;
+    border-radius: 0;
+    width: 210mm;
+    height: 297mm;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
