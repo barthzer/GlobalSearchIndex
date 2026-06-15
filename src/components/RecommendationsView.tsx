@@ -6,6 +6,7 @@ import RecommendationCard from "./RecommendationCard";
 import { recommendations, type Pillar, type Priority } from "@/app/dashboard/rapport/recommendations";
 
 const PRIORITIES: Priority[] = ["P1", "P2", "P3"];
+const PRIORITY_LABELS: Record<Priority, string> = { P1: "Élevée", P2: "Moyenne", P3: "Faible" };
 const PILLARS: Pillar[] = ["SEO Technique", "SEO Sémantique", "GEO", "Autorité"];
 
 /**
@@ -32,7 +33,7 @@ export default function RecommendationsView({ onExpertClick }: { onExpertClick?:
           label="Priorité"
           value={priority}
           onChange={(v) => setPriority(v as Priority | "all")}
-          options={[{ value: "all", label: "Toutes" }, ...PRIORITIES.map((p) => ({ value: p, label: p }))]}
+          options={[{ value: "all", label: "Toutes" }, ...PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABELS[p] }))]}
         />
         <Dropdown
           label="Type"
