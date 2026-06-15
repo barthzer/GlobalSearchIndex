@@ -12,7 +12,7 @@ import ExpertModal from "@/components/ExpertModal";
 import ConsultantUpsellModal from "@/components/ConsultantUpsellModal";
 import { useCredits } from "@/components/CreditProvider";
 import { useAccount } from "@/components/AccountProvider";
-import { saveLead } from "@/lib/lead";
+import { saveLead, getLatestLead } from "@/lib/lead";
 import {
   SEOTechniqueVisual,
   SEOSemantiqueVisual,
@@ -110,7 +110,23 @@ export default function HomePage() {
       {showUpsell && (
         <ConsultantUpsellModal
           onClose={() => setShowUpsell(false)}
-          onAccessAnalysis={() => { if (!isLoggedIn) login("user"); setShowUpsell(false); router.push("/dashboard"); }}
+          onAccessAnalysis={() => {
+            // Email vérifié dans la modale → on reconnecte le client sur SON compte (issu du lead).
+            if (!isLoggedIn) {
+              const lead = getLatestLead();
+              if (lead) {
+                loginWith({
+                  type: "user",
+                  name: `${lead.firstName} ${lead.lastName}`.trim() || lead.company || "Mon compte",
+                  email: lead.email,
+                });
+              } else {
+                login("user");
+              }
+            }
+            setShowUpsell(false);
+            router.push("/dashboard");
+          }}
           onTalkToConsultant={() => { setShowUpsell(false); setShowExpert(true); }}
         />
       )}
@@ -211,7 +227,11 @@ export default function HomePage() {
                 </svg>
               </div>
               <input
-                type="url"
+                type="text"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 onFocus={() => setInputFocused(true)}

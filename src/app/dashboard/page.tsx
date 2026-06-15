@@ -275,6 +275,14 @@ export default function DashboardPage() {
                           ? "Plan d'action"
                           : "Présence Média & Réputation"}
               </h1>
+              {activeTabSafe === "analyse" && (
+                <p
+                  className="animate-fade-up mt-2 max-w-lg text-[length:var(--text-body)] font-light text-text-secondary"
+                  style={{ animationDelay: "120ms" }}
+                >
+                  Votre indice de visibilité global : SEO technique, sémantique, autorité et présence sur les moteurs d&apos;IA réunis en un seul score.
+                </p>
+              )}
               {activeTabSafe === "projection" && (
                 <p
                   className="animate-fade-up mt-2 max-w-lg text-[length:var(--text-body)] font-light text-text-secondary"

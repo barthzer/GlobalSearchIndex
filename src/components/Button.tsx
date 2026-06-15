@@ -12,6 +12,7 @@ interface ButtonProps {
   className?: string;
   fullWidth?: boolean;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 const base =
@@ -34,8 +35,11 @@ export default function Button({
   className = "",
   fullWidth = false,
   onClick,
+  disabled = false,
 }: ButtonProps) {
-  const classes = `${base} ${variants[variant]} ${fullWidth ? "w-full" : ""} ${className}`;
+  const classes = `${base} ${variants[variant]} ${fullWidth ? "w-full" : ""} ${
+    disabled ? "cursor-not-allowed opacity-50 active:scale-100" : ""
+  } ${className}`;
   const style = { transitionTimingFunction: "var(--ease-out)" };
 
   if (href) {
@@ -47,7 +51,7 @@ export default function Button({
   }
 
   return (
-    <button type={type} className={classes} style={style} onClick={onClick}>
+    <button type={type} className={classes} style={style} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );

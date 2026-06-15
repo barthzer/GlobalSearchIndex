@@ -1,14 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Button from "./Button";
 import CompanyLogo from "./CompanyLogo";
 import ModalPortal from "./ModalPortal";
+import DateField from "./DateField";
 import { useGeneration } from "./GenerationProvider";
 
 interface WebtvModalProps {
   onClose: () => void;
 }
+
+// Proposition IA (mock — à brancher sur le moteur de génération éditoriale). La date de
+// tournage reste à l'utilisateur, on ne la génère pas.
+const AI_WEBTV: { field: string; value: string }[] = [
+  { field: "sujet", value: "Mode éco-responsable & savoir-faire français" },
+  { field: "homepage", value: "https://maisonkleber.fr" },
+  { field: "titreArticle", value: "5 pièces en lin incontournables pour un dressing durable" },
+  { field: "ancre1", value: "robe en lin écoresponsable" },
+  { field: "lien1", value: "https://maisonkleber.fr/collections/robes-lin" },
+  { field: "ancre2", value: "mode made in France" },
+  { field: "lien2", value: "https://maisonkleber.fr/notre-engagement" },
+  { field: "ancreOption", value: "blouse en coton bio" },
+  { field: "recoSeo", value: "Optimiser les balises title des pages collection et renforcer le maillage interne vers les pages piliers « lin » et « coton bio »." },
+  { field: "commentaires", value: "Mettre en avant l'origine France des matières et l'engagement éco-responsable de la marque." },
+];
 
 function defaultForm() {
   return {
@@ -31,6 +47,15 @@ export default function WebtvModal({ onClose }: WebtvModalProps) {
   });
   const [saved, setSaved] = useState(false);
 
+  // Génération IA : champs en cours de "recherche" (pulsation d'opacité).
+  const [aiBusy, setAiBusy] = useState(false);
+  const [loadingFields, setLoadingFields] = useState<string[]>([]);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -42,6 +67,28 @@ export default function WebtvModal({ onClose }: WebtvModalProps) {
   function update(field: string, value: string) {
     setForm((prev: Record<string, string>) => ({ ...prev, [field]: value }));
     setSaved(false);
+  }
+
+  /** Pré-remplit le formulaire champ par champ, comme une génération IA en direct. */
+  function generateWithAi() {
+    if (aiBusy) return;
+    setAiBusy(true);
+    setSaved(false);
+    const keys = AI_WEBTV.map((f) => f.field);
+    setLoadingFields(keys);
+    setForm((prev: Record<string, string>) => {
+      const next = { ...prev };
+      keys.forEach((k) => { next[k] = ""; });
+      return next;
+    });
+    AI_WEBTV.forEach(({ field, value }, i) => {
+      setTimeout(() => {
+        if (!mounted.current) return;
+        setForm((prev: Record<string, string>) => ({ ...prev, [field]: value }));
+        setLoadingFields((prev) => prev.filter((k) => k !== field));
+        if (i === AI_WEBTV.length - 1) setAiBusy(false);
+      }, 450 + i * 320);
+    });
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -102,39 +149,52 @@ export default function WebtvModal({ onClose }: WebtvModalProps) {
                 </h2>
               </div>
 
+              <button
+                type="button"
+                onClick={generateWithAi}
+                disabled={aiBusy}
+                className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-accent-pink/30 bg-accent-pink/[0.08] py-2.5 text-[13px] font-medium text-accent-pink transition-all duration-200 hover:bg-accent-pink/[0.14] active:scale-[0.98] disabled:cursor-default disabled:opacity-70"
+                style={{ transitionTimingFunction: "var(--ease-out)" }}
+              >
+                <svg className={`h-4 w-4 ${aiBusy ? "animate-pulse" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                </svg>
+                {aiBusy ? "Rédaction par l'IA…" : "Générer avec l'IA"}
+              </button>
+
               <div className="flex flex-col gap-4">
                 {/* Date + Sujet */}
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Date de tournage" value={form.date} onChange={(v) => update("date", v)} type="date" required />
-                  <Field label="Sujet" value={form.sujet} onChange={(v) => update("sujet", v)} placeholder="Sujet du tournage" required />
+                  <DateField label="Date de tournage" value={form.date} onChange={(v) => update("date", v)} required />
+                  <Field label="Sujet" value={form.sujet} onChange={(v) => update("sujet", v)} placeholder="Sujet du tournage" required loading={loadingFields.includes("sujet")} />
                 </div>
 
                 {/* Homepage */}
-                <Field label="Lien de la homepage" value={form.homepage} onChange={(v) => update("homepage", v)} placeholder="https://..." required />
+                <Field label="Lien de la homepage" value={form.homepage} onChange={(v) => update("homepage", v)} placeholder="https://..." required loading={loadingFields.includes("homepage")} />
 
                 {/* Titre article */}
-                <Field label="Titre d'article" value={form.titreArticle} onChange={(v) => update("titreArticle", v)} placeholder="Titre de l'article" required />
+                <Field label="Titre d'article" value={form.titreArticle} onChange={(v) => update("titreArticle", v)} placeholder="Titre de l'article" required loading={loadingFields.includes("titreArticle")} />
 
                 {/* Ancre 1 + Lien 1 */}
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Ancre 1" value={form.ancre1} onChange={(v) => update("ancre1", v)} placeholder="Texte de l'ancre" required />
-                  <Field label="Lien 1" value={form.lien1} onChange={(v) => update("lien1", v)} placeholder="https://..." required />
+                  <Field label="Ancre 1" value={form.ancre1} onChange={(v) => update("ancre1", v)} placeholder="Texte de l'ancre" required loading={loadingFields.includes("ancre1")} />
+                  <Field label="Lien 1" value={form.lien1} onChange={(v) => update("lien1", v)} placeholder="https://..." required loading={loadingFields.includes("lien1")} />
                 </div>
 
                 {/* Ancre 2 + Lien 2 */}
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Ancre 2" value={form.ancre2} onChange={(v) => update("ancre2", v)} placeholder="Texte de l'ancre" required />
-                  <Field label="Lien 2" value={form.lien2} onChange={(v) => update("lien2", v)} placeholder="https://..." required />
+                  <Field label="Ancre 2" value={form.ancre2} onChange={(v) => update("ancre2", v)} placeholder="Texte de l'ancre" required loading={loadingFields.includes("ancre2")} />
+                  <Field label="Lien 2" value={form.lien2} onChange={(v) => update("lien2", v)} placeholder="https://..." required loading={loadingFields.includes("lien2")} />
                 </div>
 
                 {/* Option Ancre */}
-                <Field label="Option Ancre" value={form.ancreOption} onChange={(v) => update("ancreOption", v)} placeholder="Ancre supplémentaire" />
+                <Field label="Option Ancre" value={form.ancreOption} onChange={(v) => update("ancreOption", v)} placeholder="Ancre supplémentaire" loading={loadingFields.includes("ancreOption")} />
 
                 {/* Reco SEO */}
-                <Field label="Recommandations SEO" value={form.recoSeo} onChange={(v) => update("recoSeo", v)} placeholder="Recommandations..." textarea />
+                <Field label="Recommandations SEO" value={form.recoSeo} onChange={(v) => update("recoSeo", v)} placeholder="Recommandations..." textarea loading={loadingFields.includes("recoSeo")} />
 
                 {/* Commentaires */}
-                <Field label="Commentaires" value={form.commentaires} onChange={(v) => update("commentaires", v)} placeholder="Commentaires..." textarea />
+                <Field label="Commentaires" value={form.commentaires} onChange={(v) => update("commentaires", v)} placeholder="Commentaires..." textarea loading={loadingFields.includes("commentaires")} />
               </div>
 
               <div className="mt-6 flex items-center gap-3">
@@ -153,7 +213,7 @@ export default function WebtvModal({ onClose }: WebtvModalProps) {
   );
 }
 
-function Field({ label, value, onChange, placeholder, type = "text", required, textarea }: {
+function Field({ label, value, onChange, placeholder, type = "text", required, textarea, loading }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -161,8 +221,14 @@ function Field({ label, value, onChange, placeholder, type = "text", required, t
   type?: string;
   required?: boolean;
   textarea?: boolean;
+  loading?: boolean;
 }) {
-  const cls = "w-full rounded-xl border border-border-subtle bg-card-inner-bg px-4 py-2.5 text-[length:var(--text-body)] font-light text-text-primary outline-none transition-colors duration-200 placeholder:text-text-muted focus:border-accent-pink/50 focus:bg-accent-pink/5";
+  const cls = `w-full rounded-xl border bg-card-inner-bg px-4 py-2.5 text-[length:var(--text-body)] font-light text-text-primary outline-none transition-all duration-200 placeholder:text-text-muted ${
+    loading
+      ? "ai-field-loading"
+      : "border-border-subtle focus:border-accent-pink/50 focus:bg-accent-pink/5"
+  }`;
+  const ph = loading ? "Recherche en cours…" : placeholder;
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
@@ -173,7 +239,8 @@ function Field({ label, value, onChange, placeholder, type = "text", required, t
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={ph}
+          readOnly={loading}
           rows={3}
           className={`${cls} resize-none`}
           style={{ transitionTimingFunction: "var(--ease-out)" }}
@@ -183,7 +250,8 @@ function Field({ label, value, onChange, placeholder, type = "text", required, t
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={ph}
+          readOnly={loading}
           required={required}
           className={cls}
           style={{ transitionTimingFunction: "var(--ease-out)" }}

@@ -169,11 +169,6 @@ export default function OnboardingModal({ url, onComplete, onClose }: Onboarding
             {step === 1 ? (
               <div className="relative">
                 <div className="mb-6 flex flex-col items-center text-center">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.06] bg-gradient-to-br from-accent-purple/15 to-accent-pink/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
-                    <svg className="h-5 w-5 text-accent-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                    </svg>
-                  </div>
                   <h2 className="mb-1 text-[20px] font-medium tracking-[-0.4px] text-text-primary">
                     Avant de lancer votre analyse
                   </h2>

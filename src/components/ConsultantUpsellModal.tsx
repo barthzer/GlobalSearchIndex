@@ -1,13 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import ModalPortal from "./ModalPortal";
 import Button from "./Button";
 import { useCredits } from "./CreditProvider";
+import { getLatestLead } from "@/lib/lead";
+import { validateProEmail } from "@/lib/proEmail";
 
 /**
  * Modale affichée quand le client a déjà consommé son analyse gratuite et tente d'en
  * relancer une depuis la landing. On le redirige vers SON analyse déjà effectuée
- * (connexion → dashboard), avec le consultant en option secondaire.
+ * (connexion → dashboard), mais seulement après confirmation de l'email professionnel
+ * utilisé pour la lancer — pour ne pas laisser n'importe qui y accéder via un lien.
  */
 interface Props {
   onAccessAnalysis: () => void;
@@ -17,6 +21,24 @@ interface Props {
 
 export default function ConsultantUpsellModal({ onAccessAnalysis, onTalkToConsultant, onClose }: Props) {
   const { resetDate } = useCredits();
+  const [step, setStep] = useState<"choice" | "verify">("choice");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+
+  function handleVerify(e: React.FormEvent) {
+    e.preventDefault();
+    const fmtError = validateProEmail(email);
+    if (fmtError) {
+      setError(fmtError);
+      return;
+    }
+    const ownerEmail = getLatestLead()?.email?.trim().toLowerCase();
+    if (!ownerEmail || email.trim().toLowerCase() !== ownerEmail) {
+      setError("Cet email ne correspond pas à l'analyse enregistrée.");
+      return;
+    }
+    onAccessAnalysis();
+  }
 
   return (
     <ModalPortal>
@@ -56,36 +78,89 @@ export default function ConsultantUpsellModal({ onAccessAnalysis, onTalkToConsul
               </svg>
             </button>
 
-            {/* Icône */}
-            <div className="mb-5 flex flex-col items-center text-center">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.06] bg-gradient-to-br from-[#6817F8]/15 to-[#EE56CE]/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
-                <svg className="h-5 w-5 text-accent-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
-                </svg>
-              </div>
-              <h2 className="mb-1.5 text-[20px] font-medium tracking-[-0.4px] text-text-primary">
-                Vous avez déjà utilisé votre analyse gratuite
-              </h2>
-              <p className="text-[14px] font-extralight leading-relaxed text-text-secondary">
-                Connectez-vous pour retrouver votre analyse. Votre prochaine analyse gratuite sera
-                disponible le <span className="font-normal text-text-primary">{resetDate}</span>.
-              </p>
-            </div>
+            {step === "choice" ? (
+              <>
+                {/* Icône */}
+                <div className="mb-5 flex flex-col items-center text-center">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.06] bg-gradient-to-br from-[#6817F8]/15 to-[#EE56CE]/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+                    <svg className="h-5 w-5 text-accent-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+                    </svg>
+                  </div>
+                  <h2 className="mb-1.5 text-[20px] font-medium tracking-[-0.4px] text-text-primary">
+                    Vous avez déjà utilisé votre analyse gratuite
+                  </h2>
+                  <p className="text-[14px] font-extralight leading-relaxed text-text-secondary">
+                    Connectez-vous pour retrouver votre analyse. Votre prochaine analyse gratuite sera
+                    disponible le <span className="font-normal text-text-primary">{resetDate}</span>.
+                  </p>
+                </div>
 
-            <div className="flex flex-col gap-2.5">
-              <Button variant="primary" fullWidth onClick={onAccessAnalysis}>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
-                </svg>
-                Accéder à mon analyse
-              </Button>
-              <Button variant="tertiary" fullWidth onClick={onTalkToConsultant}>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
-                </svg>
-                Parler à un consultant
-              </Button>
-            </div>
+                <div className="flex flex-col gap-2.5">
+                  <Button variant="primary" fullWidth onClick={() => { setError(""); setStep("verify"); }}>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                    </svg>
+                    Accéder à mon analyse
+                  </Button>
+                  <Button variant="tertiary" fullWidth onClick={onTalkToConsultant}>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
+                    </svg>
+                    Parler à un consultant
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Vérification d'email */}
+                <div className="mb-5 flex flex-col items-center text-center">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.06] bg-gradient-to-br from-[#6817F8]/15 to-[#EE56CE]/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+                    <svg className="h-5 w-5 text-accent-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                  </div>
+                  <h2 className="mb-1.5 text-[20px] font-medium tracking-[-0.4px] text-text-primary">
+                    Confirmez votre email
+                  </h2>
+                  <p className="text-[14px] font-extralight leading-relaxed text-text-secondary">
+                    Saisissez l&apos;email professionnel utilisé pour lancer cette analyse.
+                  </p>
+                </div>
+
+                <form onSubmit={handleVerify} className="flex flex-col gap-2.5">
+                  <div>
+                    <input
+                      type="email"
+                      autoFocus
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); if (error) setError(""); }}
+                      placeholder="vous@entreprise.com"
+                      className={`h-12 w-full rounded-xl border bg-input-bg px-4 text-[14px] font-light text-text-primary placeholder:text-text-input outline-none transition-colors duration-200 ${
+                        error ? "border-red-400/60" : "border-border-subtle focus:border-accent-pink/40"
+                      }`}
+                    />
+                    {error && <p className="mt-1.5 text-[12px] font-light text-red-400">{error}</p>}
+                  </div>
+                  <Button variant="primary" fullWidth type="submit">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                    </svg>
+                    Accéder à mon analyse
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => { setStep("choice"); setError(""); }}
+                    className="mt-0.5 text-[13px] font-light text-text-muted transition-colors duration-200 hover:text-text-primary"
+                  >
+                    Retour
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -75,6 +75,18 @@
   animation: glow-pulse 3s ease-in-out infinite;
 }
 
+/* Champ en cours de génération IA : léger halo rose (~8%) qui pulse depuis le bas
+   jusqu'à disparaître (0%), comme une respiration. */
+@keyframes ai-field-glow {
+  0%, 100% { box-shadow: inset 0 -16px 22px -12px rgba(236, 77, 203, 0.10); }
+  50% { box-shadow: inset 0 -16px 22px -12px rgba(236, 77, 203, 0); }
+}
+
+.ai-field-loading {
+  border-color: rgba(236, 77, 203, 0.18) !important;
+  animation: ai-field-glow 1.6s ease-in-out infinite;
+}
+
 /* ──────────────── Scrollbar custom ──────────────── */
 ::-webkit-scrollbar {
   width: 4px;

@@ -40,6 +40,27 @@ export function saveLead(lead: OnboardingLead) {
   // await fetch(process.env.NEXT_PUBLIC_LEAD_WEBHOOK!, { method: "POST", body: JSON.stringify(lead) });
 }
 
+/**
+ * Retrouve le lead (analyse) associé à un email — connexion particulier.
+ * Insensible à la casse, renvoie le plus récent en cas de doublons.
+ */
+export function getLeadByEmail(email: string): OnboardingLead | null {
+  if (typeof window === "undefined") return null;
+  const target = email.trim().toLowerCase();
+  if (!target) return null;
+  try {
+    const raw = window.localStorage.getItem(LEADS_KEY);
+    if (!raw) return null;
+    const list: OnboardingLead[] = JSON.parse(raw);
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (list[i].email?.trim().toLowerCase() === target) return list[i];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /** Dernier lead capturé (pour préremplir les formulaires consultant). */
 export function getLatestLead(): OnboardingLead | null {
   if (typeof window === "undefined") return null;
