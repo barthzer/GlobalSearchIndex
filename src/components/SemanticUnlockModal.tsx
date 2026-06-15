@@ -173,7 +173,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
             loading
               ? "ai-field-loading"
               : item.checked
-                ? "border-[#2962FF]/35 bg-[#2962FF]/[0.04] focus:border-[#2962FF]/60"
+                ? "border-[#2962FF]/60 bg-[#2962FF]/[0.06] shadow-[0_0_0_1px_rgba(41,107,255,0.25)] focus:border-[#2962FF]"
                 : "border-white/[0.06] focus:border-accent-pink/40 focus:shadow-[0_0_12px_-4px_rgba(236,77,203,0.15)]"
           }`}
           style={{ transitionTimingFunction: "var(--ease-out)" }}
@@ -186,7 +186,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
           className={`absolute right-2.5 top-1/2 flex h-[22px] w-[22px] -translate-y-1/2 items-center justify-center rounded-md border transition-all duration-150 ${
             item.checked
               ? "border-[#2962FF] bg-[#2962FF]"
-              : `border-border-subtle bg-input-bg ${atCap || !item.value.trim() ? "opacity-40" : "hover:border-[#2962FF]/60"}`
+              : `border-border-badge bg-text-primary/[0.08] ${atCap || !item.value.trim() ? "opacity-40" : "hover:border-[#2962FF]/60 hover:bg-text-primary/[0.12]"}`
           }`}
           style={{ transitionTimingFunction: "var(--ease-out)" }}
         >

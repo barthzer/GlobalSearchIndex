@@ -85,7 +85,7 @@ export default function Header({ onExpertClick, hideLogo = false, sidebarWidth =
                   key={t.key}
                   data-tour-tab={t.key}
                   onClick={() => onTabChange(t.key)}
-                  className={`rounded-full px-5 py-1.5 text-[16px] font-medium transition-all duration-200 ${
+                  className={`inline-flex items-center gap-1.5 rounded-full px-5 py-1.5 text-[16px] font-medium transition-all duration-200 ${
                     activeTab === t.key
                       ? "bg-bg-card text-text-primary shadow-sm"
                       : "text-text-secondary hover:text-text-primary"
@@ -93,6 +93,11 @@ export default function Header({ onExpertClick, hideLogo = false, sidebarWidth =
                   style={{ transitionTimingFunction: "var(--ease-out)" }}
                 >
                   {t.label}
+                  {!isAdmin && t.key === "recommandations" && (
+                    <span className="-mt-2.5 rounded-full bg-accent-pink px-1.5 py-[1px] text-[10px] font-bold leading-none text-white shadow-[0_2px_6px_-1px_rgba(236,77,203,0.5)]">
+                      +10
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
