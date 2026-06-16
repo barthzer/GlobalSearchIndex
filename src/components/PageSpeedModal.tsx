@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import ModalPortal from "./ModalPortal";
 import ScoreInfoModal from "./ScoreInfoModal";
 
@@ -24,7 +24,7 @@ interface PageSpeedModalProps {
   onClose: () => void;
 }
 
-function ScoreArc({ score, size = 120 }: { score: number; size?: number }) {
+export function ScoreArc({ score, size = 120, valueClassName = "text-2xl" }: { score: number; size?: number; valueClassName?: string }) {
   const r = (size - 12) / 2;
   const c = Math.PI * r;
   const offset = c - (score / 100) * c;
@@ -34,7 +34,8 @@ function ScoreArc({ score, size = 120 }: { score: number; size?: number }) {
       : score >= 50
         ? { start: "#f97316", end: "#eab308" }
         : { start: "#ef4444", end: "#f97316" };
-  const gradId = `psa-${score}-${Math.random().toString(36).slice(2, 6)}`;
+  // useId → identifiant stable SSR/CSR (évite un hydration mismatch quand le composant est rendu côté serveur).
+  const gradId = `psa-${useId().replace(/:/g, "")}`;
 
   return (
     <div className="relative" style={{ width: size, height: size / 2 + 12 }}>
@@ -66,7 +67,7 @@ function ScoreArc({ score, size = 120 }: { score: number; size?: number }) {
         </defs>
       </svg>
       <div className="absolute inset-0 flex items-end justify-center pb-0">
-        <span className="text-2xl font-bold tabular-nums text-text-primary">{score}</span>
+        <span className={`${valueClassName} font-bold tabular-nums text-text-primary`}>{score}</span>
         <span className="mb-0.5 text-xs text-text-muted">/100</span>
       </div>
     </div>

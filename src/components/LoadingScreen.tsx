@@ -19,7 +19,7 @@ export default function LoadingScreen({ url, onComplete }: LoadingScreenProps) {
   const [activeStep, setActiveStep] = useState(0);
 
   useEffect(() => {
-    const duration = 2800;
+    const duration = 7000;
     const interval = 20;
     const increment = 100 / (duration / interval);
     let current = 0;

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, Fragment } from "react";
-import Button from "./Button";
-import PageSpeedModal from "./PageSpeedModal";
+import { ScoreArc } from "./PageSpeedModal";
+import ScoreInfoModal from "./ScoreInfoModal";
+import InsightNote from "./InsightNote";
 
 function CriterionIcon({ d }: { d: string }) {
   return (
@@ -154,6 +155,96 @@ export function expandMonthly(monthly: number[], pts: number): number[] {
 
 export const trafficData = expandMonthly(MONTHLY, 4);
 
+// Indice de visibilité (source Ahrefs, 0-100) — tendance haussière sur l'année.
+const VISIBILITY_MONTHLY = [31, 35, 34, 40, 44, 42, 48, 52, 50, 57, 55, 64];
+export const visibilityData = expandMonthly(VISIBILITY_MONTHLY, 4);
+
+// ─── Données sur 2 ans (24 mois) — année précédente + année courante ───
+export const MONTHS_2Y = [...MONTHS, ...MONTHS];
+
+const MONTHLY_2Y = [
+  4800, 5200, 5000, 5600, 6100, 5900, 6500, 6900, 6700, 7400, 7100, 7800,
+  ...MONTHLY,
+];
+export const trafficData2y = expandMonthly(MONTHLY_2Y, 4);
+
+const VISIBILITY_MONTHLY_2Y = [
+  16, 18, 17, 20, 22, 21, 24, 26, 25, 28, 27, 29,
+  ...VISIBILITY_MONTHLY,
+];
+export const visibilityData2y = expandMonthly(VISIBILITY_MONTHLY_2Y, 4);
+
+const TRAFFIC_TABS = [
+  { key: "traffic" as const, label: "Trafic mensuel" },
+  { key: "visibility" as const, label: "Indice de visibilité" },
+];
+
+const PERIODS = [
+  { key: "1y" as const, label: "1 an" },
+  { key: "2y" as const, label: "2 ans" },
+];
+
+/** En-tête à onglets (Trafic mensuel / Indice de visibilité Ahrefs) + courbe associée. */
+export function TrafficCard() {
+  const [tab, setTab] = useState<"traffic" | "visibility">("traffic");
+  const [period, setPeriod] = useState<"1y" | "2y">("1y");
+
+  const is2y = period === "2y";
+  const months = is2y ? MONTHS_2Y : MONTHS;
+  const rows = is2y ? positionRows2y : positionRows;
+  const traffic = is2y ? trafficData2y : trafficData;
+  const visibility = is2y ? visibilityData2y : visibilityData;
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 md:px-4 md:py-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {TRAFFIC_TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200 ${
+                tab === t.key
+                  ? "bg-accent-pink/[0.12] text-accent-pink"
+                  : "text-text-muted hover:text-text-primary"
+              }`}
+              style={{ transitionTimingFunction: "var(--ease-out)" }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Sélecteur de période */}
+        <div className="flex items-center gap-1 rounded-full border border-border-subtle bg-card-inner-bg p-1">
+          {PERIODS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPeriod(p.key)}
+              className={`rounded-full px-3 py-1 text-[12px] font-medium transition-all duration-200 ${
+                period === p.key ? "bg-bg-card text-text-primary shadow-sm" : "text-text-muted hover:text-text-primary"
+              }`}
+              style={{ transitionTimingFunction: "var(--ease-out)" }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="border-t border-border-subtle px-4 pb-4 pt-3 md:px-5">
+        <TrafficChart values={tab === "traffic" ? traffic : visibility} months={months} rows={rows} />
+        <InsightNote className="mt-3">
+          {tab === "traffic" ? (
+            <>Le <span className="font-medium text-text-primary">trafic mensuel</span> correspond aux visites organiques estimées depuis Google sur les {is2y ? "24" : "12"} derniers mois. Le tableau « Positions » détaille l&apos;évolution de vos mots-clés dans le top 3 à 100.</>
+          ) : (
+            <>L&apos;<span className="font-medium text-text-primary">indice de visibilité</span> (source Ahrefs, 0-100) reflète la part de clics potentiels que vous captez sur l&apos;ensemble de vos mots-clés suivis. Plus il monte, plus vous gagnez en présence organique.</>
+          )}
+        </InsightNote>
+      </div>
+    </>
+  );
+}
+
 function fmt(v: number) {
   return v >= 1000 ? `${(v / 1000).toFixed(1).replace(".", ",")} k` : String(v);
 }
@@ -163,6 +254,13 @@ export const positionRows = [
   { label: "Top 10",  data: [38,  41,  39,  43,  47,  45,  51,  54,  52,  58,  55,  62]  },
   { label: "Top 50",  data: [124, 131, 128, 138, 149, 145, 158, 167, 162, 176, 170, 189] },
   { label: "Top 100", data: [241, 256, 249, 268, 287, 281, 304, 318, 311, 337, 329, 358] },
+];
+
+export const positionRows2y = [
+  { label: "Top 3",   data: [6,   7,   7,   8,   9,   9,   10,  11,  10,  12,  11,  13,  12,  14,  13,  15,  17,  16,  18,  19,  18,  21,  20,  23]  },
+  { label: "Top 10",  data: [22,  24,  23,  26,  28,  27,  30,  32,  31,  34,  33,  36,  38,  41,  39,  43,  47,  45,  51,  54,  52,  58,  55,  62]  },
+  { label: "Top 50",  data: [78,  84,  81,  90,  97,  95,  104, 110, 107, 116, 113, 120, 124, 131, 128, 138, 149, 145, 158, 167, 162, 176, 170, 189] },
+  { label: "Top 100", data: [150, 162, 156, 170, 182, 178, 195, 206, 200, 215, 210, 228, 241, 256, 249, 268, 287, 281, 304, 318, 311, 337, 329, 358] },
 ];
 
 export function PositionsTable() {
@@ -208,7 +306,7 @@ export function PositionsTable() {
   );
 }
 
-export function TrafficChart({ values }: { values: number[] }) {
+export function TrafficChart({ values, months = MONTHS, rows = positionRows }: { values: number[]; months?: string[]; rows?: { label: string; data: number[] }[] }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [posOpen, setPosOpen] = useState(false);
   const W = 616;
@@ -217,6 +315,8 @@ export function TrafficChart({ values }: { values: number[] }) {
   const gW = W - pad.l - pad.r; // 552 — same chart width as before
   const gH = H - pad.t - pad.b;
   const n = values.length;
+  const pts = Math.max(1, Math.round((n - 1) / months.length)); // points par mois (4)
+  const monthFont = months.length > 12 ? 6 : 7.5;
 
   const minV = Math.min(...values) * 0.85;
   const maxV = Math.max(...values) * 1.05;
@@ -259,12 +359,12 @@ export function TrafficChart({ values }: { values: number[] }) {
     Math.round(maxV * 0.98),
   ];
 
-  const hoverMonth = hoverIdx !== null ? Math.floor(hoverIdx / 4) : null;
+  const hoverMonth = hoverIdx !== null ? Math.floor(hoverIdx / pts) : null;
 
-  // CSS grid proportional to SVG: label_col(80) + 12×month_col(46) + right_pad(8) = 640
+  // CSS grid proportionnelle au SVG : colonne label + N mois + padding droit.
   const labelPct = `${(pad.l / W * 100).toFixed(4)}%`;
   const rightPct = `${(pad.r / W * 100).toFixed(4)}%`;
-  const gridCols = `${labelPct} repeat(12, 1fr) ${rightPct}`;
+  const gridCols = `${labelPct} repeat(${months.length}, 1fr) ${rightPct}`;
 
   return (
     <div className="relative w-full" onMouseLeave={() => setHoverIdx(null)}>
@@ -284,9 +384,9 @@ export function TrafficChart({ values }: { values: number[] }) {
           </g>
         ))}
 
-        {/* month labels centered on each column: x(i*4 + 2) = midpoint of each monthly interval */}
-        {MONTHS.map((m, i) => (
-          <text key={m} x={x(i * 4 + 2)} y={H - 5} textAnchor="middle" fill="var(--text-muted)" fontSize={7.5}>{m}</text>
+        {/* month labels centered on each column: x(i*pts + pts/2) = midpoint of each monthly interval */}
+        {months.map((m, i) => (
+          <text key={i} x={x(i * pts + Math.floor(pts / 2))} y={H - 5} textAnchor="middle" fill="var(--text-muted)" fontSize={monthFont}>{m}</text>
         ))}
 
         {/* area fill */}
@@ -334,7 +434,7 @@ export function TrafficChart({ values }: { values: number[] }) {
         >
           <div className="overflow-hidden">
             <div className="border-t border-border-subtle/50 p-3" style={{ display: "grid", gridTemplateColumns: gridCols }}>
-              {positionRows.map((row, rowIdx) => (
+              {rows.map((row, rowIdx) => (
                 <Fragment key={row.label}>
                   <div className={`py-4 px-4 text-right text-[12px] font-medium text-text-muted ${
                     rowIdx > 0 ? "border-t border-border-subtle/25" : ""
@@ -350,7 +450,7 @@ export function TrafficChart({ values }: { values: number[] }) {
                           rowIdx > 0 && hoverMonth !== colIdx ? "border-t border-border-subtle/25" : rowIdx > 0 ? "border-t border-transparent" : ""
                         } ${
                           hoverMonth === colIdx
-                            ? `font-semibold text-text-primary ${rowIdx === 0 ? "rounded-t-lg" : ""} ${rowIdx === positionRows.length - 1 ? "rounded-b-lg" : ""}`
+                            ? `font-semibold text-text-primary ${rowIdx === 0 ? "rounded-t-lg" : ""} ${rowIdx === rows.length - 1 ? "rounded-b-lg" : ""}`
                             : "text-text-secondary"
                         }`}
                         style={hoverMonth === colIdx ? { backgroundColor: "var(--label-col-bg)" } : undefined}
@@ -383,7 +483,7 @@ export function TrafficChart({ values }: { values: number[] }) {
             transform: hoverIdx > n / 2 ? "translateX(-110%)" : "translateX(8px)",
           }}
         >
-          <p className="text-[11px] font-medium text-text-muted">{MONTHS[Math.floor(hoverIdx / 4)]}</p>
+          <p className="text-[11px] font-medium text-text-muted">{months[Math.floor(hoverIdx / pts)]}</p>
           <p className="mt-0.5 text-[13px] font-semibold tabular-nums text-text-primary">
             {values[hoverIdx].toLocaleString("fr-FR")} visites
           </p>
@@ -393,7 +493,8 @@ export function TrafficChart({ values }: { values: number[] }) {
   );
 }
 
-function getSegments(scores: typeof mobileScores) {
+/** Conservé dans le design system (ancien rendu en roue interactive au survol). */
+export function getSegments(scores: typeof mobileScores) {
   return scores.map((s) => ({
     label: s.label,
     score: s.score,
@@ -406,7 +507,7 @@ function getSegments(scores: typeof mobileScores) {
   }));
 }
 
-function ScoreWheel({ score, segments }: { score: number; segments: ReturnType<typeof getSegments> }) {
+export function ScoreWheel({ score, segments }: { score: number; segments: ReturnType<typeof getSegments> }) {
   const [hovered, setHovered] = useState(false);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [visible, setVisible] = useState(false);
@@ -564,20 +665,17 @@ function ScoreWheel({ score, segments }: { score: number; segments: ReturnType<t
 }
 
 export default function PageSpeedCard() {
-  const [showModal, setShowModal] = useState(false);
   const [device, setDevice] = useState<DeviceType>("mobile");
+  const [activeInfo, setActiveInfo] = useState<(typeof mobileScores)[number] | null>(null);
   const data = deviceData[device];
-  const perfScore = data.scores[0].score;
-  const currentSegments = getSegments(data.scores);
 
   return (
     <>
-      {showModal && (
-        <PageSpeedModal
-          scores={data.scores}
-          device={device}
-          onDeviceChange={setDevice}
-          onClose={() => setShowModal(false)}
+      {activeInfo && (
+        <ScoreInfoModal
+          info={activeInfo.info}
+          icon={activeInfo.icon}
+          onClose={() => setActiveInfo(null)}
         />
       )}
 
@@ -585,8 +683,8 @@ export default function PageSpeedCard() {
         className="relative z-10"
         style={{ animationDelay: "0ms" }}
       >
-        {/* Tabs row — device switch left, CTA right */}
-        <div className="flex items-center justify-between px-5 pt-4 md:px-6">
+        {/* Tabs row — device switch */}
+        <div className="flex items-center px-5 pt-4 md:px-6">
           {/* Device tabs */}
           <div className="flex gap-0">
             <button
@@ -618,27 +716,40 @@ export default function PageSpeedCard() {
               Bureau
             </button>
           </div>
-
-          {/* CTA */}
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-1.5 rounded-full border border-border-subtle bg-card-inner-bg px-4 py-2 text-[13px] font-medium text-text-muted transition-all duration-200 hover:border-white/10 hover:bg-white/[0.06] hover:text-text-primary active:scale-[0.95]"
-            style={{ transitionTimingFunction: "var(--ease-out)" }}
-          >
-            Voir plus
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-          </button>
         </div>
 
         {/* Content */}
-        <div className="flex flex-col items-center gap-4 px-5 pb-4 pt-2 sm:flex-row sm:items-center md:px-6 md:pb-5">
-          {/* Interactive score wheel */}
-          <ScoreWheel key={device} score={perfScore} segments={currentSegments} />
+        <div className="flex flex-col gap-5 px-5 pb-4 pt-3 md:px-6 md:pb-5">
+          {/* 4 scores Lighthouse — affichés directement (cf. "Voir plus") */}
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            {data.scores.map((s) => (
+              <div
+                key={s.label}
+                className="relative flex flex-col items-center gap-1.5 rounded-xl border border-card-inner-border bg-card-inner-bg px-3 py-4"
+              >
+                {/* Info "i" du score */}
+                <button
+                  onClick={() => setActiveInfo(s)}
+                  aria-label={`Détails du score ${s.label}`}
+                  className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-border-subtle bg-bg-card text-text-muted transition-all duration-200 hover:border-white/10 hover:bg-white/[0.06] hover:text-text-primary active:scale-[0.95]"
+                  style={{ transitionTimingFunction: "var(--ease-out)" }}
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path d="M11.25 11.25h1.5v5.25M12 7.5h.008v.008H12V7.5Zm9.75 4.5a9.75 9.75 0 1 1-19.5 0 9.75 9.75 0 0 1 19.5 0Z" />
+                  </svg>
+                </button>
 
-          {/* Stats as badges */}
-          <div className="flex flex-1 flex-col gap-3">
+                <ScoreArc score={s.score} size={108} valueClassName="text-[20px]" />
+                <div className="flex items-center gap-1.5 text-text-secondary">
+                  <span className="text-text-primary/70">{s.icon}</span>
+                  <span className="text-center text-[11px] font-medium">{s.label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Performance du site — Core Web Vitals */}
+          <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <span className="text-text-primary/80">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -672,6 +783,9 @@ export default function PageSpeedCard() {
                 );
               })}
             </div>
+            <InsightNote className="mt-1">
+              Ces métriques (Core Web Vitals) mesurent la vitesse et la stabilité de chargement réelles de votre page sur {device === "mobile" ? "mobile" : "ordinateur"}. Elles pèsent directement sur l&apos;expérience utilisateur et sur votre classement Google.
+            </InsightNote>
           </div>
         </div>
 

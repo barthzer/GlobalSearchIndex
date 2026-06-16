@@ -25,7 +25,7 @@ export const ADMIN_TABS: TabDef[] = [
   { key: "analyse", label: "Analyse" },
   { key: "projection", label: "Projection" },
   { key: "concurrence", label: "Concurrence" },
-  { key: "notoriete", label: "Notoriété" },
+  { key: "recommandations", label: "Recommandations" },
 ];
 
 export const CLIENT_TABS: TabDef[] = [

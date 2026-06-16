@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "./Button";
 import { useGeneration } from "./GenerationProvider";
 import NewAnalysisModal from "./NewAnalysisModal";
+import ClientInfoModal from "./ClientInfoModal";
 import AWILogoCompact from "./AWILogoCompact";
 
 export default function GenerationsSidebar() {
@@ -11,6 +12,7 @@ export default function GenerationsSidebar() {
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [showNewAnalysis, setShowNewAnalysis] = useState(false);
+  const [userModal, setUserModal] = useState<{ id: string; name: string } | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const prevIdsRef = useRef<string>("");
 
@@ -179,34 +181,43 @@ export default function GenerationsSidebar() {
               {/* Dropdown menu */}
               {menuOpen === gen.id && (
                 <div
-                  className="absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-border-subtle bg-modal-bg shadow-[0px_12px_32px_-6px_rgba(0,0,0,0.3)]"
+                  className="absolute right-0 top-full z-30 mt-1 w-48 rounded-xl border border-border-subtle bg-modal-bg p-1.5 shadow-[0px_16px_40px_-8px_rgba(0,0,0,0.3)]"
                   style={{ animation: "fade-up 150ms var(--ease-expo) both" }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
                     onClick={() => setMenuOpen(null)}
-                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-[13px] text-text-secondary transition-colors duration-150 hover:bg-card-inner-bg hover:text-text-primary"
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-text-secondary transition-colors duration-150 hover:bg-card-inner-bg hover:text-text-primary"
                   >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
                     </svg>
                     Partager
                   </button>
                   <button
                     onClick={() => setMenuOpen(null)}
-                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-[13px] text-text-secondary transition-colors duration-150 hover:bg-card-inner-bg hover:text-text-primary"
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-text-secondary transition-colors duration-150 hover:bg-card-inner-bg hover:text-text-primary"
                   >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182M2.985 19.644l3.181-3.182" />
                     </svg>
                     Relancer l&apos;analyse
                   </button>
-                  <div className="mx-2 h-px bg-border-subtle" />
+                  <button
+                    onClick={() => { setUserModal({ id: gen.id, name: gen.name }); setMenuOpen(null); }}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-text-secondary transition-colors duration-150 hover:bg-card-inner-bg hover:text-text-primary"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                    Utilisateur
+                  </button>
+                  <div className="my-1 h-px bg-border-subtle" />
                   <button
                     onClick={() => setMenuOpen(null)}
-                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-[13px] text-red-400 transition-colors duration-150 hover:bg-red-500/10"
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-red-400 transition-colors duration-150 hover:bg-red-500/10"
                   >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                     </svg>
                     Supprimer
@@ -228,6 +239,9 @@ export default function GenerationsSidebar() {
 
 
       {showNewAnalysis && <NewAnalysisModal onClose={() => setShowNewAnalysis(false)} />}
+      {userModal && (
+        <ClientInfoModal genId={userModal.id} genName={userModal.name} onClose={() => setUserModal(null)} />
+      )}
     </aside>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ScoreInfoModal from "./ScoreInfoModal";
+import InsightNote from "./InsightNote";
 import { geoScore, geoByModel } from "@/app/dashboard/rapport/scores";
 
 type ScoreInfo = React.ComponentProps<typeof ScoreInfoModal>["info"];
@@ -159,6 +160,15 @@ export default function GeoScoreCard({ info, delay = 0 }: { info?: ScoreInfo; de
               </button>
             )}
           </div>
+        </div>
+
+        {/* Insight */}
+        <div className="px-5 pb-5 md:px-6 md:pb-6">
+          <InsightNote>
+            Le score GEO mesure votre visibilité dans les réponses des IA génératives (ChatGPT, Gemini, Perplexity…).{" "}
+            <span className="font-medium text-text-primary">Citations</span> = nombre de fois où votre site est cité comme source,{" "}
+            <span className="font-medium text-text-primary">Pages</span> = nombre de vos pages distinctes reprises par ces moteurs.
+          </InsightNote>
         </div>
       </div>
     </>

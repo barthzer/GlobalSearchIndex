@@ -75,16 +75,20 @@ interface Pos {
   left: number;
   caret: number;
   tab: { top: number; left: number; width: number; height: number } | null;
+  /** Pas d'onglet ancré (mobile) → popover centré sur l'écran. */
+  centered: boolean;
 }
 
 function computePos(tab: TabKey): Pos {
-  if (typeof document === "undefined") return { top: 100, left: 0, caret: POPOVER_WIDTH / 2, tab: null };
+  if (typeof document === "undefined") return { top: 100, left: 0, caret: POPOVER_WIDTH / 2, tab: null, centered: true };
   const el = document.querySelector(`[data-tour-tab="${tab}"]`);
   const vw = window.innerWidth;
-  if (!el) {
-    return { top: 96, left: Math.max(16, (vw - POPOVER_WIDTH) / 2), caret: POPOVER_WIDTH / 2, tab: null };
+  const r0 = el?.getBoundingClientRect();
+  // Onglets absents ou masqués (mobile, display:none → rect nul) → popover centré.
+  if (!el || !r0 || r0.width === 0 || r0.height === 0) {
+    return { top: 96, left: Math.max(16, (vw - POPOVER_WIDTH) / 2), caret: POPOVER_WIDTH / 2, tab: null, centered: true };
   }
-  const r = el.getBoundingClientRect();
+  const r = r0;
   const center = r.left + r.width / 2;
   const left = Math.max(16, Math.min(center - POPOVER_WIDTH / 2, vw - POPOVER_WIDTH - 16));
   return {
@@ -92,6 +96,7 @@ function computePos(tab: TabKey): Pos {
     left,
     caret: center - left,
     tab: { top: r.top, left: r.left, width: r.width, height: r.height },
+    centered: false,
   };
 }
 
@@ -166,24 +171,35 @@ export default function TutorialModal({
         </div>
       )}
 
-      {/* Popover sous l'onglet */}
+      {/* Popover — sous l'onglet, ou centré sur l'écran en mobile */}
       <div
         className="absolute"
-        style={{
-          top: pos.top,
-          left: pos.left,
-          width: POPOVER_WIDTH,
-          transition: "top 420ms var(--ease-in-out), left 420ms var(--ease-in-out)",
-        }}
+        style={
+          pos.centered
+            ? {
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: `min(${POPOVER_WIDTH}px, calc(100vw - 32px))`,
+              }
+            : {
+                top: pos.top,
+                left: pos.left,
+                width: POPOVER_WIDTH,
+                transition: "top 420ms var(--ease-in-out), left 420ms var(--ease-in-out)",
+              }
+        }
       >
-        {/* Caret */}
-        <div
-          className="absolute -top-1.5 h-3 w-3 rotate-45 border-l border-t border-white/10 bg-modal-bg"
-          style={{
-            left: Math.max(14, Math.min(pos.caret - 6, POPOVER_WIDTH - 26)),
-            transition: "left 420ms var(--ease-in-out)",
-          }}
-        />
+        {/* Caret — uniquement quand ancré sur un onglet */}
+        {!pos.centered && (
+          <div
+            className="absolute -top-1.5 h-3 w-3 rotate-45 border-l border-t border-white/10 bg-modal-bg"
+            style={{
+              left: Math.max(14, Math.min(pos.caret - 6, POPOVER_WIDTH - 26)),
+              transition: "left 420ms var(--ease-in-out)",
+            }}
+          />
+        )}
 
         <div
           className="relative overflow-hidden rounded-2xl border border-white/10 bg-modal-bg shadow-[0_8px_24px_-14px_rgba(0,0,0,0.4)]"

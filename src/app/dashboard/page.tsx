@@ -14,7 +14,7 @@ import AWILogo from "@/components/AWILogo";
 import GenerationsSidebar from "@/components/GenerationsSidebar";
 import ProcessingBanner from "@/components/ProcessingBanner";
 import TutorialModal, { tourSeen } from "@/components/TutorialModal";
-import PageSpeedCard, { TrafficChart, trafficData } from "@/components/PageSpeedCard";
+import PageSpeedCard, { TrafficCard } from "@/components/PageSpeedCard";
 import ProjectionView from "@/components/ProjectionView";
 import ConcurrenceView, { CoverageSection } from "@/components/ConcurrenceView";
 import NotorieteView from "@/components/NotorieteView";
@@ -24,6 +24,7 @@ import { recommendations } from "./rapport/recommendations";
 import { tabsForRole, defaultTabForRole, type TabKey } from "@/lib/tabs";
 import RecommendationsView from "@/components/RecommendationsView";
 import RecommendationCard from "@/components/RecommendationCard";
+import ExpertCtaBanner from "@/components/ExpertCtaBanner";
 import { NotorieteInsights } from "@/components/NotorieteView";
 
 const priorityConfig = {
@@ -139,8 +140,8 @@ const scores = [
   },
   {
     label: "SEO Sémantique",
-    score: 0,
-    recommendations: 0,
+    score: 67,
+    recommendations: 8,
     locked: true,
     info: scoreInfos.semantique,
     icon: (
@@ -277,15 +278,15 @@ export default function DashboardPage() {
               </h1>
               {activeTabSafe === "analyse" && (
                 <p
-                  className="animate-fade-up mt-2 max-w-lg text-[length:var(--text-body)] font-light text-text-secondary"
+                  className="animate-fade-up mt-2 text-[length:var(--text-body)] font-light text-text-secondary"
                   style={{ animationDelay: "120ms" }}
                 >
-                  Votre indice de visibilité global : SEO technique, sémantique, autorité et présence sur les moteurs d&apos;IA réunis en un seul score.
+                  Votre indice de visibilité global : présence sur les moteurs d&apos;IA, SEO technique, sémantique et autorité réunis en un seul score.
                 </p>
               )}
               {activeTabSafe === "projection" && (
                 <p
-                  className="animate-fade-up mt-2 max-w-lg text-[length:var(--text-body)] font-light text-text-secondary"
+                  className="animate-fade-up mt-2 text-[length:var(--text-body)] font-light text-text-secondary"
                   style={{ animationDelay: "120ms" }}
                 >
                   Estimez le CA généré par un gain de visibilité SEO selon votre secteur d&apos;activité.
@@ -293,7 +294,7 @@ export default function DashboardPage() {
               )}
               {activeTabSafe === "concurrence" && (
                 <p
-                  className="animate-fade-up mt-2 max-w-lg text-[length:var(--text-body)] font-light text-text-secondary"
+                  className="animate-fade-up mt-2 text-[length:var(--text-body)] font-light text-text-secondary"
                   style={{ animationDelay: "120ms" }}
                 >
                   Comparez votre présence SEO à celle de vos concurrents sur vos mots-clés stratégiques.
@@ -301,7 +302,7 @@ export default function DashboardPage() {
               )}
               {activeTabSafe === "notoriete" && (
                 <p
-                  className="animate-fade-up mt-2 max-w-lg text-[length:var(--text-body)] font-light text-text-secondary"
+                  className="animate-fade-up mt-2 text-[length:var(--text-body)] font-light text-text-secondary"
                   style={{ animationDelay: "120ms" }}
                 >
                   Diagnostic de l&apos;autorité média de la marque et calendrier éditorial construit autour des temps forts de votre secteur.
@@ -414,14 +415,9 @@ export default function DashboardPage() {
 
             {activeTabSafe === "home" ? (
             <>
-              {/* Trafic mensuel */}
+              {/* Trafic mensuel / Indice de visibilité */}
               <div className="animate-fade-up mb-4 rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]" style={{ animationDelay: "300ms" }}>
-                <div className="px-5 py-4 md:px-6">
-                  <span className="text-[14px] font-medium text-text-primary">Trafic mensuel</span>
-                </div>
-                <div className="border-t border-border-subtle px-4 pb-4 pt-3 md:px-5">
-                  <TrafficChart values={trafficData} />
-                </div>
+                <TrafficCard />
               </div>
 
               {/* Couverture top 10 */}
@@ -440,7 +436,7 @@ export default function DashboardPage() {
                   </h2>
                   <div className="relative">
                     <div className="flex flex-col gap-3">
-                      {recommendations.slice(0, 5).map((rec, i) => (
+                      {recommendations.slice(0, 3).map((rec, i) => (
                         <RecommendationCard key={rec.title} rec={rec} index={i} delay={480 + i * 60} />
                       ))}
                     </div>
@@ -459,31 +455,6 @@ export default function DashboardPage() {
                         </svg>
                       </Button>
                     </div>
-                  </div>
-
-                  <div
-                    className="animate-fade-up relative mt-8 overflow-hidden rounded-2xl border border-[#ec4dcb]/20 p-6 md:p-8"
-                    style={{
-                      animationDelay: "860ms",
-                      background: "linear-gradient(135deg, rgba(95,20,251,0.15) 0%, rgba(236,77,203,0.2) 100%)",
-                    }}
-                  >
-                    <div className="mb-4 flex -space-x-2">
-                      {["/consultant1.png", "/consultant2.png", "/consultant3.png"].map((src, i) => (
-                        <img key={i} src={src} alt="Consultant" className="h-9 w-9 rounded-full border-2 border-bg-primary object-cover" />
-                      ))}
-                    </div>
-                    <h3 className="mb-2 text-lg font-semibold text-text-primary">Contactez un expert</h3>
-                    <p className="mb-4 text-[length:var(--text-body)] font-extralight leading-relaxed text-text-secondary">
-                      Discutez de vos résultats et obtenez des recommandations personnalisées pour accélérer votre visibilité.
-                    </p>
-                    <p className="mb-5 text-[12px] text-text-muted">+500 clients accompagnés</p>
-                    <Button variant="primary" fullWidth onClick={() => setShowExpert(true)}>
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
-                      </svg>
-                      Parler à un expert
-                    </Button>
                   </div>
                 </div>
 
@@ -566,25 +537,18 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Trafic mensuel */}
+            {/* Trafic mensuel / Indice de visibilité */}
             <div className="animate-fade-up mb-4 rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]" style={{ animationDelay: "540ms" }}>
-              <div className="px-5 py-4 md:px-6">
-                <span className="text-[14px] font-medium text-text-primary">Trafic mensuel</span>
-              </div>
-              <div className="border-t border-border-subtle px-4 pb-4 pt-3 md:px-5">
-                <TrafficChart values={trafficData} />
-              </div>
+              <TrafficCard />
             </div>
 
-            {/* Notoriété & autorité — fusionnée dans Analyse pour le client */}
-            {!isAdmin && (
-              <section className="animate-fade-up mb-2 mt-8" style={{ animationDelay: "600ms" }}>
-                <h2 className="mb-5 text-xl font-medium tracking-tight text-text-primary">
-                  Notoriété &amp; autorité média
-                </h2>
-                <NotorieteInsights />
-              </section>
-            )}
+            {/* Notoriété & autorité — fusionnée dans Analyse (client + admin) */}
+            <section className="animate-fade-up mb-2 mt-8" style={{ animationDelay: "600ms" }}>
+              <h2 className="mb-5 text-xl font-medium tracking-tight text-text-primary">
+                Notoriété &amp; autorité média
+              </h2>
+              <NotorieteInsights />
+            </section>
 
             {/* Recommandations (pleine largeur) */}
             <section className="mt-6 pb-16">
@@ -598,7 +562,7 @@ export default function DashboardPage() {
                 </h2>
                 <div className="relative">
                   <div className="flex flex-col gap-3">
-                    {recommendations.slice(0, 5).map((rec, i) => (
+                    {recommendations.slice(0, 3).map((rec, i) => (
                       <RecommendationCard key={rec.title} rec={rec} index={i} delay={480 + i * 60} />
                     ))}
                   </div>
@@ -620,51 +584,15 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Expert CTA card */}
-                <div
-                  className="animate-fade-up relative mt-8 overflow-hidden rounded-2xl border border-[#ec4dcb]/20 p-6 md:p-8"
-                  style={{
-                    animationDelay: "860ms",
-                    background: "linear-gradient(135deg, rgba(95,20,251,0.15) 0%, rgba(236,77,203,0.2) 100%)",
-                  }}
-                >
-                  <div className="mb-4 flex -space-x-2">
-                    {["/consultant1.png", "/consultant2.png", "/consultant3.png"].map((src, i) => (
-                      <img
-                        key={i}
-                        src={src}
-                        alt="Consultant"
-                        className="h-9 w-9 rounded-full border-2 border-bg-primary object-cover"
-                      />
-                    ))}
-                  </div>
-
-                  <h3 className="mb-2 text-lg font-semibold text-text-primary">
-                    Contactez un expert
-                  </h3>
-                  <p className="mb-4 text-[length:var(--text-body)] font-extralight leading-relaxed text-text-secondary">
-                    Discutez de vos résultats et obtenez des recommandations personnalisées pour accélérer votre visibilité.
-                  </p>
-
-                  {/* Social proof */}
-                  <p className="mb-5 text-[12px] text-text-muted">
-                    +500 clients accompagnés
-                  </p>
-
-                  <Button variant="primary" fullWidth onClick={() => setShowExpert(true)}>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
-                    </svg>
-                    Parler à un expert
-                  </Button>
-                </div>
+                {/* Expert CTA — bannière full width */}
+                <ExpertCtaBanner onExpertClick={() => setShowExpert(true)} className="mt-8" />
               </div>
             </section>
             </>
             ) : activeTabSafe === "projection" ? (
               <ProjectionView />
             ) : activeTabSafe === "concurrence" ? (
-              <ConcurrenceView />
+              <ConcurrenceView onExpertClick={() => setShowExpert(true)} />
             ) : activeTabSafe === "recommandations" ? (
               <RecommendationsView onExpertClick={() => setShowExpert(true)} />
             ) : (
@@ -675,32 +603,56 @@ export default function DashboardPage() {
 
             {/* CTA expert sticky (client) — à droite du contenu, sur toutes les vues */}
             {!isAdmin && (
-              <aside className="hidden shrink-0 xl:block xl:w-[264px]">
+              <aside className="hidden shrink-0 xl:block xl:w-[348px] xl:min-w-[348px]">
                 <div
                   className="sticky top-3"
                   style={{ animation: "fade-up 600ms var(--ease-expo) both", animationDelay: "220ms" }}
                 >
                   <div
-                    className="overflow-hidden rounded-2xl border border-[#ec4dcb]/25 p-5"
-                    style={{ background: "linear-gradient(160deg, rgba(95,20,251,0.12) 0%, rgba(236,77,203,0.16) 100%)" }}
+                    className="flex flex-col gap-3 overflow-hidden rounded-2xl border border-white/10 p-8"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, rgba(20,4,18,0.10) 0%, rgba(20,4,18,0.45) 100%), url('/expert-card-bg.jpg') center/cover no-repeat, radial-gradient(120% 80% at 50% 0%, rgba(236,77,203,0.3) 0%, transparent 55%), linear-gradient(160deg, #2b0826 0%, #46103c 100%)",
+                    }}
                   >
-                    <div className="mb-3 flex -space-x-2">
-                      {["/consultant1.png", "/consultant2.png", "/consultant3.png"].map((src) => (
-                        <img key={src} src={src} alt="Consultant" className="h-9 w-9 rounded-full border-2 border-white object-cover" />
-                      ))}
+                    {/* Avatars + preuve sociale */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex shrink-0 -space-x-2">
+                        {["/consultant1.png", "/consultant2.png", "/consultant3.png"].map((src) => (
+                          <img key={src} src={src} alt="Consultant" className="h-8 w-8 rounded-full border-2 border-white object-cover" />
+                        ))}
+                      </div>
+                      <span className="min-w-0 flex-1 text-[12px] font-medium leading-snug text-white/85">
+                        +500 clients PME, ETI et<br />marques B2B accompagnés
+                      </span>
                     </div>
-                    <h3 className="mb-1.5 text-[15px] font-semibold leading-snug text-text-primary">
-                      Un expert à vos côtés
+
+                    <h3 className="text-[24px] font-semibold leading-tight tracking-[-0.4px] text-white">
+                      Un expert AWI décrypte vos résultats
                     </h3>
-                    <p className="mb-4 text-[13px] font-light leading-relaxed text-text-secondary">
-                      Un consultant AWI décrypte vos résultats et bâtit votre plan d&apos;action sur-mesure.
+                    <p className="text-[15px] font-light leading-relaxed text-white/75">
+                      Transformez votre diagnostic en plan d&apos;action priorisé pour gagner rapidement en visibilité.
                     </p>
+
                     <Button variant="primary" fullWidth onClick={() => setShowExpert(true)}>
-                      Contactez un expert
+                      Obtenez mon plan d&apos;action
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                       </svg>
                     </Button>
+
+                    {/* Note Google */}
+                    <div className="flex items-center justify-center gap-1.5 text-[12px] text-white/85">
+                      <img src="/google.svg" alt="Google" className="h-3.5 w-3.5" />
+                      <span>Noté 5.0 sur 50+ avis</span>
+                      <span className="flex -space-x-1">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                          <svg key={i} className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="#FBBF24">
+                            <path d="M11.48 3.5a.562.562 0 0 1 1.04 0l2.125 5.11a.563.563 0 0 0 .475.346l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.884a.563.563 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.563.563 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                          </svg>
+                        ))}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </aside>

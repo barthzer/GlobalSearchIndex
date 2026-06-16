@@ -1,6 +1,7 @@
 import type { Generation } from "@/components/GenerationProvider";
 import { authorityScore, backlinksData, majorMediaData, editorialPlan, rankBenchmark, competitorsTable } from "@/components/notoriete/data";
 import MediaLogo from "@/components/notoriete/MediaLogo";
+import AWILogo from "@/components/AWILogo";
 import ReportPage from "./ReportPage";
 import { PageHeader } from "./AnalysePage";
 
@@ -89,19 +90,15 @@ export default function NotorietePage({ client, consultant }: Props) {
         <div className="mt-auto pt-5">
           <div className="rounded-2xl border border-border-subtle bg-card-inner-bg p-4">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <img
-                  src="/consultant1.png"
-                  alt={consultant}
-                  className="h-12 w-12 shrink-0 rounded-full border-2 border-bg-card object-cover shadow-sm"
-                />
+              <div className="flex items-center gap-4">
+                <AWILogo className="h-9 w-auto shrink-0 text-accent-pink" />
                 <div>
                   <div className="text-[11px] font-medium text-text-muted">
                     Pour discuter de ce rapport
                   </div>
-                  <div className="mt-0.5 text-[14px] font-medium text-text-primary">{consultant}</div>
+                  <div className="mt-0.5 text-[14px] font-medium text-text-primary">contact@awi.fr</div>
                   <div className="text-[12px] font-light text-text-secondary">
-                    contact@awi.fr · +33 1 87 21 02 11
+                    01 73 03 20 47
                   </div>
                 </div>
               </div>

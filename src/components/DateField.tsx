@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 const MONTHS = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -33,20 +34,39 @@ export default function DateField({
   value,
   onChange,
   required,
+  align = "left",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   required?: boolean;
+  /** Côté d'ancrage du popover (évite le débordement quand le champ est à droite). */
+  align?: "left" | "right";
 }) {
   const selected = parseValue(value);
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [view, setView] = useState<Date>(() => selected ?? new Date());
-  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+
+  const POP_W = 280;
+
+  function openPopover() {
+    const r = triggerRef.current?.getBoundingClientRect();
+    if (r) {
+      const rawLeft = align === "right" ? r.right - POP_W : r.left;
+      const left = Math.max(8, Math.min(rawLeft, window.innerWidth - POP_W - 8));
+      setPos({ top: r.bottom + 8, left });
+    }
+    setOpen(true);
+  }
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t) || popRef.current?.contains(t)) return;
+      setOpen(false);
     }
     if (open) document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -71,7 +91,7 @@ export default function DateField({
   }
 
   return (
-    <div className="flex flex-col gap-1.5" ref={ref}>
+    <div className="flex flex-col gap-1.5">
       <label className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
         {label}
         {required && <span className="ml-0.5 text-accent-pink">*</span>}
@@ -79,8 +99,9 @@ export default function DateField({
 
       <div className="relative">
         <button
+          ref={triggerRef}
           type="button"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => (open ? setOpen(false) : openPopover())}
           className={`flex w-full items-center justify-between rounded-xl border bg-card-inner-bg px-4 py-2.5 text-left text-[length:var(--text-body)] font-light outline-none transition-all duration-200 ${
             open ? "border-accent-pink/50 bg-accent-pink/5" : "border-border-subtle hover:border-border-badge"
           }`}
@@ -94,14 +115,11 @@ export default function DateField({
           </svg>
         </button>
 
+        {open && pos && typeof document !== "undefined" && createPortal(
         <div
-          className="absolute left-0 top-full z-30 mt-2 w-[280px] origin-top rounded-2xl border border-border-subtle bg-modal-bg p-4 shadow-[0px_16px_40px_-8px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-200"
-          style={{
-            opacity: open ? 1 : 0,
-            transform: open ? "translateY(0) scale(1)" : "translateY(-4px) scale(0.97)",
-            pointerEvents: open ? "auto" : "none",
-            transitionTimingFunction: "var(--ease-out)",
-          }}
+          ref={popRef}
+          className="fixed z-[200] w-[280px] origin-top rounded-2xl border border-border-subtle bg-modal-bg p-4 shadow-[0px_16px_40px_-8px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+          style={{ top: pos.top, left: pos.left, animation: "fade-up 180ms var(--ease-out) both" }}
         >
           {/* Month nav */}
           <div className="mb-3 flex items-center justify-between">
@@ -162,7 +180,9 @@ export default function DateField({
               );
             })}
           </div>
-        </div>
+        </div>,
+        document.body
+        )}
       </div>
     </div>
   );

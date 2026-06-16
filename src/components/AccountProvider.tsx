@@ -25,6 +25,8 @@ const AccountContext = createContext<{
   login: (type: AccountType) => void;
   /** Connecte un compte construit dynamiquement (ex. créé depuis l'onboarding). */
   loginWith: (account: Account) => void;
+  /** Met à jour les champs du compte courant (paramètres du compte). */
+  updateAccount: (patch: Partial<Account>) => void;
   logout: () => void;
   isAdmin: boolean;
   isLoggedIn: boolean;
@@ -36,6 +38,7 @@ const AccountContext = createContext<{
   switchAccount: () => {},
   login: () => {},
   loginWith: () => {},
+  updateAccount: () => {},
   logout: () => {},
   isAdmin: false,
   isLoggedIn: false,
@@ -89,6 +92,15 @@ export default function AccountProvider({ children }: { children: React.ReactNod
     applyAccount(next);
   }
 
+  function updateAccount(patch: Partial<Account>) {
+    setAccount((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      persist(next);
+      return next;
+    });
+  }
+
   function logout() {
     applyAccount(null);
   }
@@ -101,6 +113,7 @@ export default function AccountProvider({ children }: { children: React.ReactNod
         switchAccount,
         login,
         loginWith,
+        updateAccount,
         logout,
         isAdmin: account?.type === "admin",
         isLoggedIn: account !== null,

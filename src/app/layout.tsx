@@ -31,6 +31,11 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "GlobalSearchIndex by AWI",
   description: "Analysez et améliorez votre référencement global avec le Global Search Index.",
+  icons: {
+    icon: { url: "/faviconGSI.svg", type: "image/svg+xml" },
+    shortcut: "/faviconGSI.svg",
+    apple: "/faviconGSI.svg",
+  },
 };
 
 export default function RootLayout({

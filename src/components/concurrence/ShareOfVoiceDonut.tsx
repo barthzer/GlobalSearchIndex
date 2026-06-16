@@ -3,7 +3,7 @@
 import { useState } from "react";
 import BrandAvatar from "./BrandAvatar";
 import RankTrophy from "../RankTrophy";
-import { ConcurrenceData, trafficByBrand, ctrFromPosition, coverageRate } from "./types";
+import { ConcurrenceData, trafficByBrand, ctrFromPosition } from "./types";
 
 interface Props {
   data: ConcurrenceData;
@@ -13,18 +13,14 @@ function fmt(n: number) {
   return Math.round(n).toLocaleString("fr-FR");
 }
 
+// Synthèse centrée uniquement sur la part de voix (ce bloc), sans parler de la couverture.
 function generateInsight(data: ConcurrenceData, shares: number[]): string | null {
   const { brands, keywords, positions } = data;
   if (brands.length < 2) return null;
 
-  const coverages = brands.map((_, bIdx) =>
-    coverageRate(positions.map((row) => row[bIdx]))
-  );
-
-  const bestCoverageIdx = coverages.indexOf(Math.max(...coverages));
   const bestSoVIdx = shares.indexOf(Math.max(...shares));
 
-  // Find the strongest position × volume combo for the SoV leader
+  // Mot-clé qui pèse le plus dans la part de voix du leader (position × volume).
   let topKwIdx = -1;
   let topScore = 0;
   keywords.forEach((kw, kIdx) => {
@@ -37,21 +33,17 @@ function generateInsight(data: ConcurrenceData, shares: number[]): string | null
     }
   });
 
-  if (bestCoverageIdx === bestSoVIdx) {
-    // Same brand dominates both
-    const brand = brands[bestSoVIdx];
-    return `${brand.name} domine cette analyse avec ${coverages[bestSoVIdx]}% de couverture top 10 et ${shares[bestSoVIdx].toFixed(1)}% de la part de voix.`;
-  }
-
-  const winner = brands[bestCoverageIdx];
   const sovLeader = brands[bestSoVIdx];
+  const leaderShare = shares[bestSoVIdx].toFixed(1);
   const topPos = topKwIdx >= 0 ? positions[topKwIdx][bestSoVIdx] : null;
   const topKwLabel = topKwIdx >= 0 ? keywords[topKwIdx].label : "";
+  const isYou = brands[bestSoVIdx].id === "main";
+  const subject = isYou ? "Vous captez" : `${sovLeader.name} capte`;
 
   if (topPos !== null && topKwIdx >= 0) {
-    return `${winner.name} a la meilleure couverture (${coverages[bestCoverageIdx]}%) mais ${sovLeader.name} capte ${shares[bestSoVIdx].toFixed(1)}% de la part de voix grâce à sa position #${topPos} sur "${topKwLabel}", un mot-clé à fort volume.`;
+    return `${subject} ${leaderShare}% de la part de voix, portée par la position #${topPos} sur "${topKwLabel}", un mot-clé à fort volume.`;
   }
-  return `${winner.name} a la meilleure couverture (${coverages[bestCoverageIdx]}%) mais ${sovLeader.name} capte ${shares[bestSoVIdx].toFixed(1)}% de la part de voix.`;
+  return `${subject} ${leaderShare}% de la part de voix sur ce périmètre de mots-clés.`;
 }
 
 export default function ShareOfVoiceDonut({ data }: Props) {

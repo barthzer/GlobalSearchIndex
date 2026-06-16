@@ -37,6 +37,7 @@ export default function ScoreArc({
   const [visible, setVisible] = useState(false);
   const [showUnlock, setShowUnlock] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
+  const [computing, setComputing] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
@@ -44,9 +45,17 @@ export default function ScoreArc({
     return () => clearTimeout(timer);
   }, [delay]);
 
+  // Le score ne se débloque pas instantanément : loader pendant le "calcul".
+  useEffect(() => {
+    if (!computing) return;
+    const t = setTimeout(() => setComputing(false), 3500);
+    return () => clearTimeout(t);
+  }, [computing]);
+
   const radius = 86.33;
   const circumference = Math.PI * radius;
-  const progress = locked ? 0 : (score / 100) * circumference;
+  // Une fois déverrouillé, l'arc se remplit avec le vrai score (la prop `locked` reste vraie).
+  const progress = locked && !unlocked ? 0 : (score / 100) * circumference;
   const offset = circumference - progress;
   const gradientId = `arc-grad-${label.replace(/\s/g, "-")}`;
 
@@ -86,6 +95,7 @@ export default function ScoreArc({
           onSubmit={() => {
             setShowUnlock(false);
             setUnlocked(true);
+            setComputing(true);
           }}
         />
       )}
@@ -135,7 +145,7 @@ export default function ScoreArc({
               </svg>
             </div>
             <Button variant="primary" className="relative mt-1" onClick={() => setShowUnlock(true)}>
-              Débloquer mon score
+              Calculer mon score sémantique
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
               </svg>
@@ -153,7 +163,7 @@ export default function ScoreArc({
       <ScoreInfoModal info={info} icon={icon} onClose={() => setShowInfo(false)} />
     )}
     <div
-      className="group relative flex flex-col items-center justify-between rounded-2xl border border-border-subtle bg-bg-card p-5 backdrop-blur-[6px] transition-all duration-300 hover:bg-bg-card-hover md:p-6"
+      className={`group relative flex flex-col items-center justify-between rounded-2xl border border-border-subtle bg-bg-card p-5 backdrop-blur-[6px] transition-all duration-300 hover:bg-bg-card-hover md:p-6 ${computing ? "score-computing" : ""}`}
       style={{ transitionTimingFunction: "var(--ease-out)", ...animStyle }}
     >
       {/* Header */}
@@ -173,12 +183,12 @@ export default function ScoreArc({
             d="M4 90.3301C4 67.4339 13.0955 45.4755 29.2855 29.2855C45.4756 13.0955 67.434 4 90.3302 4C113.226 4 135.185 13.0955 151.375 29.2855C167.565 45.4755 176.66 67.4339 176.66 90.3301"
             fill="none" stroke="var(--arc-bg)" strokeWidth="8" strokeLinecap="round"
           />
-          {/* Progress arc */}
+          {/* Progress arc — reste vide tant que le score se calcule */}
           <path
             d="M4 90.3301C4 67.4339 13.0955 45.4755 29.2855 29.2855C45.4756 13.0955 67.434 4 90.3302 4C113.226 4 135.185 13.0955 151.375 29.2855C167.565 45.4755 176.66 67.4339 176.66 90.3301"
             fill="none" stroke={`url(#${gradientId})`} strokeWidth="8" strokeLinecap="round"
             strokeDasharray={circumference}
-            strokeDashoffset={visible ? offset : circumference}
+            strokeDashoffset={visible && !computing ? offset : circumference}
             style={{ transition: `stroke-dashoffset 1.2s var(--ease-in-out) ${delay}ms` }}
           />
           <defs>
@@ -189,8 +199,17 @@ export default function ScoreArc({
           </defs>
         </svg>
         <div className="absolute inset-0 flex items-end justify-center pb-0">
-          <span className="text-3xl font-bold tabular-nums text-text-primary">{score}</span>
-          <span className="mb-1 text-sm text-text-muted">/100</span>
+          {computing ? (
+            <span className="mb-1 flex flex-col items-center gap-2">
+              <span className="h-11 w-11 animate-spin rounded-full border-[3.5px] border-accent-pink/20 border-t-accent-pink" />
+              <span className="text-[13px] font-semibold text-text-secondary">Calcul…</span>
+            </span>
+          ) : (
+            <>
+              <span className="text-3xl font-bold tabular-nums text-text-primary">{score}</span>
+              <span className="mb-1 text-sm text-text-muted">/100</span>
+            </>
+          )}
         </div>
       </div>
 

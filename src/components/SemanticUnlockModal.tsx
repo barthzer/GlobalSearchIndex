@@ -3,10 +3,15 @@
 import ModalPortal from "./ModalPortal";
 import { useState, useRef, useEffect } from "react";
 import Button from "./Button";
+import { getSemanticInputs, saveSemanticInputs, type SemanticInputs } from "@/lib/semanticInputs";
 
 interface SemanticUnlockModalProps {
   onClose: () => void;
   onSubmit: () => void;
+  /** Mode benchmark concurrents : uniquement l'étape concurrents (pas de mots-clés). */
+  competitorsOnly?: boolean;
+  /** Libellé du bouton final (mode competitorsOnly). */
+  submitLabel?: string;
 }
 
 type Item = { value: string; checked: boolean };
@@ -36,15 +41,28 @@ const KW_REQ = 3;
 
 const emptyItems = (n: number): Item[] => Array.from({ length: n }, () => ({ value: "", checked: false }));
 
-export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnlockModalProps) {
+/** Items pré-remplis depuis le store (cochés, éditables). */
+function itemsFromStore(values: string[], min: number, max: number): Item[] {
+  const items: Item[] = values.slice(0, max).map((value) => ({ value, checked: true }));
+  while (items.length < min) items.push({ value: "", checked: false });
+  return items;
+}
+
+export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly = false, submitLabel }: SemanticUnlockModalProps) {
+  // Lecture du store une seule fois au montage (pré-remplissage lié au benchmark).
+  const stored = useRef<SemanticInputs>(getSemanticInputs()).current;
+  const compInit = stored.competitors.length ? itemsFromStore(stored.competitors, 3, COMP_MAX) : emptyItems(3);
+  const kwInit = stored.keywords.length ? itemsFromStore(stored.keywords, 5, KW_MAX) : emptyItems(5);
+
   const [step, setStep] = useState<1 | 2>(1);
-  const [competitors, setCompetitors] = useState<Item[]>(() => emptyItems(3));
-  const [keywords, setKeywords] = useState<Item[]>(() => emptyItems(5));
+  const [competitors, setCompetitors] = useState<Item[]>(compInit);
+  const [keywords, setKeywords] = useState<Item[]>(kwInit);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const [aiBusy, setAiBusy] = useState<null | "comp" | "kw">(null);
-  const [compLoading, setCompLoading] = useState<boolean[]>(() => Array(3).fill(false));
-  const [kwLoading, setKwLoading] = useState<boolean[]>(() => Array(5).fill(false));
+  const [compLoading, setCompLoading] = useState<boolean[]>(() => Array(compInit.length).fill(false));
+  const [kwLoading, setKwLoading] = useState<boolean[]>(() => Array(kwInit.length).fill(false));
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -55,8 +73,8 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
   const kwChecked = keywords.filter((k) => k.checked).length;
 
   /**
-   * Révèle les candidats un par un : chaque ligne (y compris les nouvelles, au-delà des
-   * lignes déjà présentes) apparaît avec une entrée animée, pulse, puis se remplit.
+   * Révèle les candidats un par un : chaque ligne apparaît vide et "cherche" (pulsation),
+   * puis se remplit. Les lignes remplies par l'IA passent en mode affichage (crayon pour éditer).
    */
   function runAiFill(
     candidates: string[],
@@ -72,11 +90,10 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
     setList(emptyItems(baseCount));
     setLoading(Array(baseCount).fill(false));
 
-    const APPEAR = 150; // cadence d'apparition des lignes (vides)
-    const SEARCH_PAUSE = 750; // temps de "recherche" une fois toutes les lignes affichées
-    const FILL = 300; // cadence de remplissage
+    const APPEAR = 150;
+    const SEARCH_PAUSE = 750;
+    const FILL = 300;
 
-    // Phase 1 — les lignes apparaissent une par une, vides et en train de "chercher" (pulsation).
     candidates.forEach((_, i) => {
       setTimeout(() => {
         if (!mounted.current) return;
@@ -94,7 +111,6 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
       }, 300 + i * APPEAR);
     });
 
-    // Phase 2 — une fois toutes affichées, elles se remplissent une par une.
     const fillStart = 300 + (candidates.length - 1) * APPEAR + SEARCH_PAUSE;
     candidates.forEach((value, i) => {
       setTimeout(() => {
@@ -132,12 +148,38 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
     );
   }
 
+  /** Ajoute une ligne vide éditable sous la liste (saisie manuelle d'un concurrent / mot-clé). */
+  function addRow(
+    setList: React.Dispatch<React.SetStateAction<Item[]>>,
+    setLoading: React.Dispatch<React.SetStateAction<boolean[]>>,
+    idPrefix: string,
+  ) {
+    let newIdx = 0;
+    setList((prev) => {
+      newIdx = prev.length;
+      return [...prev, { value: "", checked: false }];
+    });
+    setLoading((prev) => [...prev, false]);
+    setTimeout(() => document.getElementById(`${idPrefix}-${newIdx}`)?.focus(), 0);
+  }
+
+  function persistAndSubmit(payload: Partial<SemanticInputs>) {
+    saveSemanticInputs(payload);
+    setSubmitting(true);
+    // On laisse la vibration se jouer avant de fermer / révéler le loader.
+    setTimeout(() => { if (mounted.current) onSubmit(); }, 560);
+  }
+
   function handleStep1() {
     if (compChecked < COMP_REQ) {
       setError(`Sélectionnez ${COMP_REQ} concurrents.`);
       return;
     }
     setError("");
+    if (competitorsOnly) {
+      persistAndSubmit({ competitors: competitors.filter((c) => c.checked).map((c) => c.value.trim()) });
+      return;
+    }
     setStep(2);
   }
 
@@ -147,7 +189,10 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
       setError(`Sélectionnez au moins ${KW_REQ} mots-clés.`);
       return;
     }
-    onSubmit();
+    persistAndSubmit({
+      competitors: competitors.filter((c) => c.checked).map((c) => c.value.trim()),
+      keywords: keywords.filter((k) => k.checked).map((k) => k.value.trim()),
+    });
   }
 
   function renderRow(
@@ -158,12 +203,14 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
     max: number,
     setList: React.Dispatch<React.SetStateAction<Item[]>>,
     placeholder: string,
+    idPrefix: string,
   ) {
     const atCap = !item.checked && checkedCount >= max;
     const canCheck = !loading && item.value.trim().length > 0 && !atCap;
     return (
       <div key={i} className="relative" style={{ animation: "fade-up 380ms var(--ease-out) both" }}>
         <input
+          id={`${idPrefix}-${i}`}
           type="text"
           value={item.value}
           onChange={(e) => updateItem(setList, max, i, e.target.value)}
@@ -178,6 +225,8 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
           }`}
           style={{ transitionTimingFunction: "var(--ease-out)" }}
         />
+
+        {/* Check sélection — à droite */}
         <button
           type="button"
           onClick={() => toggleItem(setList, max, i)}
@@ -200,6 +249,8 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
     );
   }
 
+  const finalLabel = submitLabel ?? "Calculer mon score sémantique";
+
   return (
     <ModalPortal>
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
@@ -210,7 +261,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
       />
 
       <div
-        className="relative w-full max-w-[440px] rounded-[2rem] border border-white/[0.06] bg-input-bg p-2"
+        className={`relative w-full max-w-[440px] rounded-[2rem] border border-white/[0.06] bg-input-bg p-2 ${submitting ? "shake-x" : ""}`}
         style={{ animation: "fade-up 400ms var(--ease-expo) both" }}
       >
         <div
@@ -237,11 +288,13 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
             </svg>
           </button>
 
-          {/* Steps indicator */}
-          <div className="mb-6 mr-10 flex items-center gap-2">
-            <div className="h-1 flex-1 rounded-full transition-all duration-300" style={{ background: step === 1 ? "var(--accent-pink)" : "rgba(236,77,203,0.45)" }} />
-            <div className="h-1 flex-1 rounded-full transition-all duration-300" style={{ background: step === 2 ? "var(--accent-pink)" : "var(--step-future)" }} />
-          </div>
+          {/* Steps indicator (masqué en mode concurrents seuls) */}
+          {!competitorsOnly && (
+            <div className="mb-6 mr-10 flex items-center gap-2">
+              <div className="h-1 flex-1 rounded-full transition-all duration-300" style={{ background: step === 1 ? "var(--accent-pink)" : "rgba(236,77,203,0.45)" }} />
+              <div className="h-1 flex-1 rounded-full transition-all duration-300" style={{ background: step === 2 ? "var(--accent-pink)" : "var(--step-future)" }} />
+            </div>
+          )}
 
           {step === 1 ? (
             /* Step 1: Competitors */
@@ -263,7 +316,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
               <button
                 type="button"
                 onClick={() => runAiFill(AI_COMPETITORS, setCompetitors, setCompLoading, "comp", COMP_REQ, 3)}
-                disabled={aiBusy !== null}
+                disabled={aiBusy !== null || submitting}
                 className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-accent-pink/30 bg-accent-pink/[0.08] py-2.5 text-[13px] font-medium text-accent-pink transition-all duration-200 hover:bg-accent-pink/[0.14] active:scale-[0.98] disabled:cursor-default disabled:opacity-70"
                 style={{ transitionTimingFunction: "var(--ease-out)" }}
               >
@@ -282,8 +335,20 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
 
               <div className="flex flex-col gap-2.5">
                 {competitors.map((item, i) =>
-                  renderRow(item, i, compLoading[i] ?? false, compChecked, COMP_MAX, setCompetitors, `https://concurrent${i + 1}.com`),
+                  renderRow(item, i, compLoading[i] ?? false, compChecked, COMP_MAX, setCompetitors, `https://concurrent${i + 1}.com`, "comp"),
                 )}
+                <button
+                  type="button"
+                  onClick={() => addRow(setCompetitors, setCompLoading, "comp")}
+                  disabled={aiBusy !== null || submitting}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border-badge bg-transparent py-2.5 text-[13px] font-medium text-text-muted transition-all duration-200 hover:border-accent-pink/40 hover:text-accent-pink active:scale-[0.99] disabled:opacity-50"
+                  style={{ transitionTimingFunction: "var(--ease-out)" }}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  Ajouter un concurrent
+                </button>
               </div>
 
               {error && (
@@ -296,11 +361,17 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
               )}
 
               <div className="mt-6">
-                <Button variant="primary" fullWidth onClick={handleStep1} disabled={compChecked < COMP_REQ || aiBusy !== null}>
-                  Continuer
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                  </svg>
+                <Button variant="primary" fullWidth onClick={handleStep1} disabled={compChecked < COMP_REQ || aiBusy !== null || submitting}>
+                  {competitorsOnly ? finalLabel : "Continuer"}
+                  {competitorsOnly ? (
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                  )}
                 </Button>
               </div>
             </div>
@@ -336,7 +407,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
                 <button
                   type="button"
                   onClick={() => runAiFill(AI_KEYWORDS, setKeywords, setKwLoading, "kw", KW_REQ, 5)}
-                  disabled={aiBusy !== null}
+                  disabled={aiBusy !== null || submitting}
                   className="mb-0.5 flex w-full items-center justify-center gap-2 rounded-xl border border-accent-pink/30 bg-accent-pink/[0.08] py-2.5 text-[13px] font-medium text-accent-pink transition-all duration-200 hover:bg-accent-pink/[0.14] active:scale-[0.98] disabled:cursor-default disabled:opacity-70"
                   style={{ transitionTimingFunction: "var(--ease-out)" }}
                 >
@@ -354,8 +425,20 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
                 </div>
 
                 {keywords.map((item, i) =>
-                  renderRow(item, i, kwLoading[i] ?? false, kwChecked, KW_MAX, setKeywords, `Mot-clé ${i + 1}`),
+                  renderRow(item, i, kwLoading[i] ?? false, kwChecked, KW_MAX, setKeywords, `Mot-clé ${i + 1}`, "kw"),
                 )}
+                <button
+                  type="button"
+                  onClick={() => addRow(setKeywords, setKwLoading, "kw")}
+                  disabled={aiBusy !== null || submitting}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border-badge bg-transparent py-2.5 text-[13px] font-medium text-text-muted transition-all duration-200 hover:border-accent-pink/40 hover:text-accent-pink active:scale-[0.99] disabled:opacity-50"
+                  style={{ transitionTimingFunction: "var(--ease-out)" }}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  Ajouter un mot-clé
+                </button>
 
                 {error && (
                   <p className="mt-1 flex items-center gap-1.5 text-[12px] text-red-400">
@@ -367,10 +450,10 @@ export default function SemanticUnlockModal({ onClose, onSubmit }: SemanticUnloc
                 )}
 
                 <div className="mt-3">
-                  <Button variant="primary" type="submit" fullWidth disabled={kwChecked < KW_REQ || aiBusy !== null}>
-                    Débloquer mon score
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                  <Button variant="primary" type="submit" fullWidth disabled={kwChecked < KW_REQ || aiBusy !== null || submitting}>
+                    Calculer mon score sémantique
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                     </svg>
                   </Button>
                 </div>

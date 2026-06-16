@@ -41,7 +41,7 @@ export default function CoverageHeatmap({ data, compact = false }: Props) {
         <thead>
           <tr>
             <th className="text-left text-[12px] font-medium text-text-muted">
-              Mot-clé
+              Mot-clé / position
             </th>
             {brands.map((b) => (
               <th key={b.id} className="px-1 text-center">

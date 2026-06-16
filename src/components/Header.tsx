@@ -194,7 +194,12 @@ export default function Header({ onExpertClick, hideLogo = false, sidebarWidth =
 
       {/* Mobile menu overlay */}
       {mobileOpen && (
-        <MobileMenu onClose={() => setMobileOpen(false)} onExpertClick={onExpertClick} />
+        <MobileMenu
+          onClose={() => setMobileOpen(false)}
+          onExpertClick={onExpertClick}
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+        />
       )}
 
       {/* WebTV modal */}
