@@ -10,6 +10,8 @@ import { PageHeader } from "./AnalysePage";
 
 interface Props {
   client: Generation;
+  pageNumber?: number;
+  totalPages?: number;
 }
 
 const competitorPalette = [
@@ -69,7 +71,7 @@ function buildData(client: Generation): ConcurrenceData {
   return { brands: [main, ...others], keywords, positions };
 }
 
-export default function ConcurrencePage({ client }: Props) {
+export default function ConcurrencePage({ client, pageNumber = 4, totalPages }: Props) {
   const data = buildData(client);
   const coverages = data.brands.map((_, bIdx) =>
     coverageRate(data.positions.map((row) => row[bIdx]))
@@ -84,15 +86,15 @@ export default function ConcurrencePage({ client }: Props) {
   const delta = clientShare - leaderShare;
 
   return (
-    <ReportPage pageNumber={4} id="page-concurrence">
+    <ReportPage pageNumber={pageNumber} totalPages={totalPages} id="page-concurrence">
       <div className="flex h-full flex-col">
-        <PageHeader title="Positionnement vs concurrents" subtitle="Page 04 · Concurrence" client={client} />
+        <PageHeader title="Positionnement vs concurrents" subtitle={`Page ${String(pageNumber).padStart(2, "0")} · Concurrence`} client={client} />
 
         {/* KPI headline */}
         <div className="mt-5 grid grid-cols-3 gap-3">
           <div className="rounded-2xl border border-border-subtle bg-bg-card p-4">
             <div className="text-[11px] font-medium text-text-muted">
-              Votre Share of Voice
+              Votre part de voix
             </div>
             <div className="mt-2 flex items-baseline gap-1">
               <span className="text-[34px] font-semibold leading-none tabular-nums text-text-primary">
@@ -138,17 +140,17 @@ export default function ConcurrencePage({ client }: Props) {
         </div>
 
         {/* Heatmap */}
-        <div className="mt-4 rounded-2xl border border-border-subtle bg-bg-card p-4">
-          <h3 className="mb-3 text-[12px] font-medium text-text-secondary">
+        <div className="mt-3 rounded-2xl border border-border-subtle bg-bg-card p-3">
+          <h3 className="mb-2 text-[12px] font-medium text-text-secondary">
             Couverture sur les requêtes stratégiques
           </h3>
           <CoverageHeatmap data={data} compact />
         </div>
 
         {/* Share of voice — version simplifiée + insight */}
-        <div className="mt-3 rounded-2xl border border-border-subtle bg-bg-card p-4">
-          <h3 className="mb-3 text-[12px] font-medium text-text-secondary">
-            Répartition du Share of Voice
+        <div className="mt-3 rounded-2xl border border-border-subtle bg-bg-card p-3">
+          <h3 className="mb-2 text-[12px] font-medium text-text-secondary">
+            Répartition de la part de voix
           </h3>
           <SovStatic data={data} traffic={traffic} totalTraffic={totalTraffic} />
 
@@ -159,7 +161,7 @@ export default function ConcurrencePage({ client }: Props) {
             <p className="text-[11px] font-light leading-relaxed text-text-primary">
               {isLeader
                 ? `Vous menez la part de voix avec ${clientShare}% des clics estimés sur les requêtes stratégiques.`
-                : `${leader.name} capte ${leaderShare}% du Share of Voice, soit ${Math.abs(delta)} points devant ${client.name} (${clientShare}%). Récupérer une partie de cet écart passe par 2 leviers : améliorer les positions sur les mots-clés à fort volume, et renforcer la couverture top 10 (actuellement ${coverages[0]}%).`}
+                : `${leader.name} capte ${leaderShare}% de la part de voix, soit ${Math.abs(delta)} points devant ${client.name} (${clientShare}%), porté par ses positions sur les mots-clés à fort volume.`}
             </p>
           </div>
         </div>

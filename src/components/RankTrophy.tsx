@@ -3,7 +3,7 @@
 /**
  * Trophée de positionnement benchmark : or (1er), argent (2e), bronze (3e).
  * Icône trophée blanche nette sur pastille pleine couleur médaille.
- * Au-delà du podium, rien n'est rendu (null).
+ * Hors podium (4e+) : pastille neutre avec une icône drapeau (marqueur de position).
  */
 const MEDALS: Record<number, { from: string; to: string; label: string }> = {
   1: { from: "#FCD34D", to: "#F59E0B", label: "Or" },
@@ -13,7 +13,36 @@ const MEDALS: Record<number, { from: string; to: string; label: string }> = {
 
 export default function RankTrophy({ rank, size = 22 }: { rank: number; size?: number }) {
   const medal = MEDALS[rank];
-  if (!medal) return null;
+
+  // Hors podium : marqueur de position neutre (pastille slate + drapeau).
+  if (!medal) {
+    return (
+      <span
+        className="inline-flex shrink-0 items-center justify-center rounded-full"
+        style={{
+          width: size,
+          height: size,
+          background: "linear-gradient(140deg, #CBD5E1, #475569)",
+          boxShadow: "0 1px 4px -1px rgba(71,85,105,0.5)",
+        }}
+        title={`${rank}ᵉ`}
+        aria-label={`Rang ${rank}`}
+      >
+        <svg
+          width={size * 0.58}
+          height={size * 0.58}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#fff"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M5 21V4m0 0h11l-2 3.5L16 11H5" />
+        </svg>
+      </span>
+    );
+  }
 
   return (
     <span

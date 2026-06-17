@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Button from "./Button";
 import SemanticUnlockModal from "./SemanticUnlockModal";
 import ScoreInfoModal from "./ScoreInfoModal";
+import { scoreBand } from "@/lib/scoreLabel";
 
 interface ScoreInfoData {
   title: string;
@@ -163,7 +164,7 @@ export default function ScoreArc({
       <ScoreInfoModal info={info} icon={icon} onClose={() => setShowInfo(false)} />
     )}
     <div
-      className={`group relative flex flex-col items-center justify-between rounded-2xl border border-border-subtle bg-bg-card p-5 backdrop-blur-[6px] transition-all duration-300 hover:bg-bg-card-hover md:p-6 ${computing ? "score-computing" : ""}`}
+      className={`group relative flex flex-col items-center rounded-2xl border border-border-subtle bg-bg-card p-5 backdrop-blur-[6px] transition-all duration-300 hover:bg-bg-card-hover md:p-6 ${computing ? "score-computing" : ""}`}
       style={{ transitionTimingFunction: "var(--ease-out)", ...animStyle }}
     >
       {/* Header */}
@@ -176,7 +177,8 @@ export default function ScoreArc({
         </div>
       </div>
 
-      <div className="relative mb-2">
+      <div className="flex flex-1 flex-col items-center justify-center gap-2.5">
+      <div className="relative">
         <svg viewBox="0 0 181 95" className="h-24 w-44">
           {/* Background arc */}
           <path
@@ -211,6 +213,13 @@ export default function ScoreArc({
             </>
           )}
         </div>
+      </div>
+
+      {!computing && (
+        <span className={`whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${scoreBand(score).chip}`}>
+          {scoreBand(score).label}
+        </span>
+      )}
       </div>
 
     </div>

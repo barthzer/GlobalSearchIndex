@@ -21,7 +21,7 @@ export default function ExpertCtaBanner({
 }) {
   return (
     <div
-      className={`animate-fade-up relative flex flex-col overflow-hidden rounded-2xl border border-white/10 lg:flex-row lg:items-stretch ${className}`}
+      className={`animate-fade-up relative flex flex-col overflow-hidden rounded-2xl lg:flex-row lg:items-stretch ${className}`}
       style={{
         background:
           "linear-gradient(180deg, rgba(20,4,18,0.10) 0%, rgba(20,4,18,0.45) 100%), url('/expert-card-bg-wide.jpg') center/cover no-repeat, radial-gradient(120% 80% at 50% 0%, rgba(236,77,203,0.3) 0%, transparent 55%), linear-gradient(160deg, #2b0826 0%, #46103c 100%)",

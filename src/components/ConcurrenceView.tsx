@@ -273,6 +273,9 @@ export default function ConcurrenceView({ onExpertClick }: { onExpertClick?: () 
               <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
             </svg>
           </button>
+          <p className="mt-4 text-[12px] font-light text-text-muted">
+            Quelques concurrents et mots-clés suffisent (≈ 2 min).
+          </p>
         </div>
       ) : (
         <>
@@ -345,11 +348,11 @@ export default function ConcurrenceView({ onExpertClick }: { onExpertClick?: () 
                   <path d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" />
                 </svg>
                 <h3 className="text-[length:var(--text-body-lg)] font-medium text-text-heading">
-                  Share of Voice
+                  Part de voix
                 </h3>
               </div>
               <span className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
-                Pondéré par CTR × volume
+                Pondérée par le trafic estimé
               </span>
             </div>
             <div className="p-5 md:p-6">

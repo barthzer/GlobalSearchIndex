@@ -40,9 +40,18 @@ export function resetTour() {
   }
 }
 
+const RecoBadge = (
+  <>
+    Recommandations
+    <span className="-mt-2.5 rounded-full bg-accent-pink px-1.5 py-[1px] text-[10px] font-bold leading-none text-white shadow-[0_2px_6px_-1px_rgba(236,77,203,0.5)]">
+      +10
+    </span>
+  </>
+);
+
 const STEPS: {
   tab: TabKey;
-  badge: string;
+  badge: React.ReactNode;
   title: string;
   desc: string;
   visual: React.ReactNode;
@@ -63,7 +72,7 @@ const STEPS: {
   },
   {
     tab: "recommandations",
-    badge: "Recommandations",
+    badge: RecoBadge,
     title: "Votre plan d'action",
     desc: "Une dizaine de recommandations priorisées et filtrables, chacune avec l'action concrète à mener et le gain estimé.",
     visual: <NetlinkingVisual />,
@@ -158,7 +167,7 @@ export default function TutorialModal({
       {/* Onglet actif rendu net au-dessus de l'overlay flouté (pas de contour, pas de flou). */}
       {pos.tab && (
         <div
-          className="pointer-events-none absolute flex items-center justify-center rounded-full bg-bg-card text-[16px] font-medium text-text-primary shadow-sm"
+          className="pointer-events-none absolute flex items-center justify-center gap-1.5 rounded-full bg-bg-card text-[16px] font-medium text-text-primary shadow-sm"
           style={{
             top: pos.tab.top,
             left: pos.tab.left,

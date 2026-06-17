@@ -2,6 +2,7 @@
 
 import CompetitorsTable from "./CompetitorsTable";
 import RankTrophy from "../RankTrophy";
+import InsightNote from "../InsightNote";
 import { CompetitorRow } from "./data";
 
 interface Props {
@@ -30,21 +31,14 @@ function PositionBlock({ rank, total, hint }: { rank: number; total: number; hin
       </div>
 
       <div className="flex flex-col items-start gap-2">
-        <div className="flex items-center gap-3">
-          <div className="flex items-baseline">
-            <span className="text-[56px] font-bold leading-none tracking-tight tabular-nums text-text-primary">
-              {rank}
-            </span>
-            <span className="ml-1 text-base font-semibold text-text-muted">/ {total}</span>
+        <div className="flex items-center gap-3 rounded-2xl border border-border-subtle bg-card-inner-bg px-6 py-4">
+          <RankTrophy rank={rank} size={40} />
+          <div className="flex items-baseline gap-1">
+            <span className="text-4xl font-bold tabular-nums text-text-primary">{rank}</span>
+            <span className="text-lg font-medium text-text-muted">/ {total}</span>
           </div>
-          <RankTrophy rank={rank} size={28} />
         </div>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
-          Rang concurrentiel
-        </span>
-        <p className="mt-1 text-[12px] font-light leading-snug text-text-secondary">
-          {hint}
-        </p>
+        <InsightNote className="mt-2 w-full">{hint}</InsightNote>
       </div>
     </div>
   );

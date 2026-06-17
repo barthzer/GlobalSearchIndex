@@ -232,12 +232,12 @@ export function TrafficCard() {
         </div>
       </div>
       <div className="border-t border-border-subtle px-4 pb-4 pt-3 md:px-5">
-        <TrafficChart values={tab === "traffic" ? traffic : visibility} months={months} rows={rows} />
+        <TrafficChart values={tab === "traffic" ? traffic : visibility} months={months} rows={rows} showPositions={tab === "visibility"} />
         <InsightNote className="mt-3">
           {tab === "traffic" ? (
-            <>Le <span className="font-medium text-text-primary">trafic mensuel</span> correspond aux visites organiques estimées depuis Google sur les {is2y ? "24" : "12"} derniers mois. Le tableau « Positions » détaille l&apos;évolution de vos mots-clés dans le top 3 à 100.</>
+            <>Le <span className="font-medium text-text-primary">trafic mensuel</span> correspond aux visites organiques estimées depuis Google sur les {is2y ? "24" : "12"} derniers mois.</>
           ) : (
-            <>L&apos;<span className="font-medium text-text-primary">indice de visibilité</span> (source Ahrefs, 0-100) reflète la part de clics potentiels que vous captez sur l&apos;ensemble de vos mots-clés suivis. Plus il monte, plus vous gagnez en présence organique.</>
+            <>L&apos;<span className="font-medium text-text-primary">indice de visibilité</span> (source Ahrefs, 0-100) reflète la part de clics potentiels que vous captez sur l&apos;ensemble de vos mots-clés suivis. Le tableau « Positions » détaille l&apos;évolution de vos mots-clés dans le top 3 à 100.</>
           )}
         </InsightNote>
       </div>
@@ -306,7 +306,7 @@ export function PositionsTable() {
   );
 }
 
-export function TrafficChart({ values, months = MONTHS, rows = positionRows }: { values: number[]; months?: string[]; rows?: { label: string; data: number[] }[] }) {
+export function TrafficChart({ values, months = MONTHS, rows = positionRows, showPositions = true }: { values: number[]; months?: string[]; rows?: { label: string; data: number[] }[]; showPositions?: boolean }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [posOpen, setPosOpen] = useState(false);
   const W = 616;
@@ -413,7 +413,8 @@ export function TrafficChart({ values, months = MONTHS, rows = positionRows }: {
         ))}
       </svg>
 
-      {/* Position table */}
+      {/* Position table — uniquement sur l'indice de visibilité */}
+      {showPositions && (
       <div className="mt-3 overflow-hidden rounded-xl border border-border-subtle bg-card-inner-bg">
         <button
           className="flex w-full items-center justify-between px-5 py-4"
@@ -473,6 +474,7 @@ export function TrafficChart({ values, months = MONTHS, rows = positionRows }: {
           </div>
         </div>
       </div>
+      )}
 
       {/* tooltip */}
       {hoverIdx !== null && (

@@ -40,8 +40,8 @@ export default function ProcessingBanner() {
       </span>
 
       <p className="flex-1 text-[13px] font-light leading-snug text-text-primary">
-        <span className="font-medium">Votre rapport se complète.</span>{" "}
-        Certaines données sont encore en cours de calcul et seront disponibles d&apos;ici ~30 min.
+        <span className="font-medium">Votre rapport finalise ses derniers calculs.</span>{" "}
+        Vous pouvez déjà explorer vos premiers résultats. Les données complètes arrivent d&apos;ici ~30 min.
       </p>
 
       <button

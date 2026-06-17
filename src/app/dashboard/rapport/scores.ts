@@ -6,7 +6,7 @@ export interface AnalyseScore {
 
 export const analyseScores: AnalyseScore[] = [
   { label: "SEO Technique", score: 79 },
-  { label: "SEO Sémantique", score: null, note: "Non audité dans cette mission" },
+  { label: "SEO Sémantique", score: 67 },
   { label: "GEO", score: 62 },
   { label: "Autorité", score: 48 },
 ];

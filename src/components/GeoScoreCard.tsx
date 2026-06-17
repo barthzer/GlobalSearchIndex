@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import ScoreInfoModal from "./ScoreInfoModal";
 import InsightNote from "./InsightNote";
+import { scoreBand } from "@/lib/scoreLabel";
 import { geoScore, geoByModel } from "@/app/dashboard/rapport/scores";
 
 type ScoreInfo = React.ComponentProps<typeof ScoreInfoModal>["info"];
@@ -74,8 +75,9 @@ export default function GeoScoreCard({ info, delay = 0 }: { info?: ScoreInfo; de
         </div>
 
         <div className="flex flex-col items-center gap-5 p-5 md:flex-row md:items-center md:gap-8 md:p-6">
-          {/* Arc score — même format que les autres scores */}
-          <div className="relative shrink-0">
+          {/* Arc score + interprétation lisible */}
+          <div className="flex shrink-0 flex-col items-center gap-2.5">
+          <div className="relative">
             <svg viewBox="0 0 181 95" className="h-24 w-44">
               <path
                 d="M4 90.3301C4 67.4339 13.0955 45.4755 29.2855 29.2855C45.4756 13.0955 67.434 4 90.3302 4C113.226 4 135.185 13.0955 151.375 29.2855C167.565 45.4755 176.66 67.4339 176.66 90.3301"
@@ -99,6 +101,10 @@ export default function GeoScoreCard({ info, delay = 0 }: { info?: ScoreInfo; de
               <span className="text-3xl font-bold tabular-nums text-text-primary">{geoScore}</span>
               <span className="mb-1 text-sm text-text-muted">/100</span>
             </div>
+          </div>
+          <span className={`whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${scoreBand(geoScore).chip}`}>
+            {scoreBand(geoScore).label}
+          </span>
           </div>
 
           {/* Détail par IA */}

@@ -1,6 +1,6 @@
 import type { Generation } from "@/components/GenerationProvider";
 import ReportPage from "./ReportPage";
-import { analyseScores, pageSpeedScores, performanceStats, globalScore, type PerfTier } from "./scores";
+import { analyseScores, pageSpeedScores, performanceStats, globalScore, geoByModel, type PerfTier } from "./scores";
 
 const tierColor: Record<PerfTier, string> = {
   success: "#16a34a",
@@ -10,6 +10,8 @@ const tierColor: Record<PerfTier, string> = {
 
 interface Props {
   client: Generation;
+  pageNumber?: number;
+  totalPages?: number;
 }
 
 function ScoreColor(score: number): string {
@@ -93,15 +95,15 @@ function PageSpeedCircle({ score }: { score: number }) {
   );
 }
 
-export default function AnalysePage({ client }: Props) {
+export default function AnalysePage({ client, pageNumber = 2, totalPages }: Props) {
   return (
-    <ReportPage pageNumber={2} id="page-analyse">
+    <ReportPage pageNumber={pageNumber} totalPages={totalPages} id="page-analyse">
       <div className="flex h-full flex-col">
         {/* Header */}
         <PageHeader title="Diagnostic SEO & Performance" subtitle="Page 02 · Analyse" client={client} />
 
         {/* Executive summary */}
-        <div className="mt-6 rounded-2xl border border-border-subtle bg-card-inner-bg p-5">
+        <div className="mt-5 rounded-2xl border border-border-subtle bg-card-inner-bg p-4">
           <div className="flex items-start gap-3">
             <svg className="mt-0.5 h-4 w-4 shrink-0 text-accent-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path d="M11.25 11.25h1.5v5.25M12 7.5h.008v.008H12V7.5Zm9.75 4.5a9.75 9.75 0 1 1-19.5 0 9.75 9.75 0 0 1 19.5 0Z" />
@@ -121,7 +123,7 @@ export default function AnalysePage({ client }: Props) {
         </div>
 
         {/* Scores grid 2x2 */}
-        <div className="mt-6">
+        <div className="mt-4">
           <h3 className="mb-4 text-[12px] font-medium text-text-secondary">
             Score par pilier
           </h3>
@@ -158,8 +160,51 @@ export default function AnalysePage({ client }: Props) {
           </div>
         </div>
 
+        {/* Détail GEO par moteur d'IA — 2 colonnes compactes */}
+        <div className="mt-4">
+          <h3 className="mb-2 text-[12px] font-medium text-text-secondary">
+            Visibilité GEO par moteur d&apos;IA
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {[geoByModel.slice(0, Math.ceil(geoByModel.length / 2)), geoByModel.slice(Math.ceil(geoByModel.length / 2))].map((col, ci) => (
+              <div key={ci} className="overflow-hidden rounded-xl border border-border-subtle bg-bg-card">
+                <div className="grid grid-cols-[minmax(0,1fr)_46px_44px] border-b border-border-subtle bg-card-inner-bg px-2.5 py-1 text-[8px] font-semibold uppercase tracking-wider text-text-muted">
+                  <span>Moteur</span>
+                  <span className="text-right">Citations</span>
+                  <span className="text-right">Pages</span>
+                </div>
+                {col.map((m, i) => (
+                  <div
+                    key={m.name}
+                    className={`grid grid-cols-[minmax(0,1fr)_46px_44px] items-center px-2.5 py-[4px] ${i > 0 ? "border-t border-border-subtle/50" : ""}`}
+                  >
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-subtle bg-card-inner-bg">
+                        {m.logo ? (
+                          <img src={m.logo} alt="" className="h-full w-full object-contain p-0.5" />
+                        ) : (
+                          <span className="text-[8px] font-semibold text-text-secondary">{m.name[0]}</span>
+                        )}
+                      </span>
+                      <span className="truncate text-[10px] font-medium text-text-primary">{m.name}</span>
+                    </span>
+                    {m.citations === null ? (
+                      <span className="col-span-2 text-right text-[9px] text-text-muted">Non audité</span>
+                    ) : (
+                      <>
+                        <span className="text-right text-[11px] font-semibold tabular-nums text-text-primary">{m.citations}</span>
+                        <span className="text-right text-[11px] tabular-nums text-text-secondary">{m.pages}</span>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* PageSpeed strip */}
-        <div className="mt-5">
+        <div className="mt-4">
           <h3 className="mb-3 text-[12px] font-medium text-text-secondary">
             PageSpeed Insights · Mobile
           </h3>
@@ -218,10 +263,8 @@ export default function AnalysePage({ client }: Props) {
         </div>
 
         {/* Footer note */}
-        <p className="mt-auto pt-5 text-[10px] font-light italic leading-relaxed text-text-muted">
-          Méthodologie : scores Lighthouse (Mobile) sur la page d&apos;accueil et les pages stratégiques,
-          consolidés avec l&apos;audit technique AWI et l&apos;analyse de l&apos;empreinte GEO sur ChatGPT,
-          Gemini et Perplexity.
+        <p className="mt-auto pt-3 text-[9px] font-light leading-relaxed text-text-muted">
+          Méthodologie : scores Lighthouse (Mobile), audit technique AWI et analyse de l&apos;empreinte GEO sur ChatGPT, Gemini et Perplexity.
         </p>
       </div>
     </ReportPage>

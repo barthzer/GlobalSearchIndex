@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { generations } from "@/components/GenerationProvider";
 import CoverPage from "./CoverPage";
 import AnalysePage from "./AnalysePage";
-import RecommendationsPage from "./RecommendationsPage";
+import RecommendationsPage, { RECO_PER_PAGE } from "./RecommendationsPage";
 import ConcurrencePage from "./ConcurrencePage";
 import NotorietePage from "./NotorietePage";
 import Sommaire from "./Sommaire";
+import { recommendations } from "./recommendations";
 
 export default function RapportPage() {
   const [clientId, setClientId] = useState<string | null>(null);
@@ -23,13 +24,22 @@ export default function RapportPage() {
 
   const client = generations.find((g) => g.id === clientId) ?? generations[0];
 
+  // Numérotation dynamique : les recommandations s'étalent sur plusieurs pages
+  // pour ne jamais couper une carte.
+  const recoPages = Math.max(1, Math.ceil(recommendations.length / RECO_PER_PAGE));
+  const pAnalyse = 2;
+  const pRecoStart = 3;
+  const pConcurrence = pRecoStart + recoPages;
+  const pNotoriete = pConcurrence + 1;
+  const total = pNotoriete; // cover(1) + analyse(1) + recoPages + concurrence(1) + notoriete(1)
+
   return (
     <>
       <CoverPage client={client} consultant={consultant} />
-      <AnalysePage client={client} />
-      <RecommendationsPage client={client} />
-      <ConcurrencePage client={client} />
-      <NotorietePage client={client} consultant={consultant} />
+      <AnalysePage client={client} pageNumber={pAnalyse} totalPages={total} />
+      <RecommendationsPage client={client} startPage={pRecoStart} totalPages={total} />
+      <ConcurrencePage client={client} pageNumber={pConcurrence} totalPages={total} />
+      <NotorietePage client={client} consultant={consultant} pageNumber={pNotoriete} totalPages={total} />
 
       <Sommaire />
 
