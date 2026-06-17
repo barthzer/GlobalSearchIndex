@@ -45,7 +45,7 @@ export default function RapportPage() {
 
       <button
         onClick={() => window.print()}
-        className="no-print fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-gradient-to-r from-accent-purple via-accent-pink via-[47%] to-accent-pink-light px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:shadow-lg hover:shadow-accent-pink/20 active:scale-[0.97]"
+        className="no-print fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-gradient-to-r from-accent-purple via-accent-pink via-[47%] to-accent-pink-light px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
         style={{ transitionTimingFunction: "var(--ease-out)" }}
         title="Pensez à cocher « Graphiques d'arrière-plan » dans la boîte d'impression"
       >

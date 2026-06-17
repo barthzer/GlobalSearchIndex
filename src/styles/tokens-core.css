@@ -22,12 +22,12 @@
   --motion-slowest: 1200ms;
 
   /* ──────────────── Échelle typographique ──────────────── */
-  --text-xs: 11px;     /* micro labels, badges */
-  --text-sm: 12px;     /* captions, sous-labels */
-  --text-md: 13px;     /* body small */
-  --text-base: 14px;   /* body, boutons */
-  --text-body: 15px;   /* paragraphes par défaut */
-  --text-body-lg: 16px;/* h3 cards */
+  --text-xs: 12px;     /* micro labels, badges */
+  --text-sm: 13px;     /* captions, sous-labels */
+  --text-md: 14px;     /* body small */
+  --text-base: 15px;   /* body, boutons */
+  --text-body: 16px;   /* paragraphes par défaut */
+  --text-body-lg: 17px;/* h3 cards */
   --text-lg: 20px;     /* titres section */
   --text-xl: 24px;     /* titres page */
   --text-2xl: 32px;    /* grand chiffres / KPI */

@@ -276,7 +276,7 @@ export default function ProjectionView() {
                     const v = parseFloat(ctrDraft);
                     if (!isNaN(v) && v > 0) { setCtrCustom(v); setShowCtrEdit(false); }
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-accent-purple via-accent-pink via-[47%] to-accent-pink-light px-5 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:shadow-lg hover:shadow-accent-pink/20 active:scale-[0.97]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-accent-purple via-accent-pink via-[47%] to-accent-pink-light px-5 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
                   style={{ transitionTimingFunction: "var(--ease-out)" }}
                 >
                   Appliquer

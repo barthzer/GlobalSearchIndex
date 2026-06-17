@@ -135,6 +135,23 @@ const deviceData: Record<DeviceType, PageSpeedData> = {
 
 export const MONTHS = ["Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc", "Jan", "Fév", "Mar", "Avr"];
 
+const MONTH_NUM: Record<string, number> = {
+  Jan: 1, Fév: 2, Mar: 3, Avr: 4, Mai: 5, Jun: 6, Jul: 7, Aoû: 8, Sep: 9, Oct: 10, Nov: 11, Déc: 12,
+};
+
+/**
+ * Libellé « Mois année » pour le tooltip de la courbe : la dernière donnée correspond
+ * au dernier mois écoulé (année courante), et l'année se décrémente à chaque passage
+ * Déc → Jan en remontant la série. Appelé uniquement au survol (pas de risque d'hydratation).
+ */
+export function monthWithYear(months: string[], idx: number): string {
+  let year = new Date().getFullYear();
+  for (let i = months.length - 1; i > idx; i--) {
+    if (MONTH_NUM[months[i - 1]] > MONTH_NUM[months[i]]) year -= 1;
+  }
+  return `${months[idx]} ${year}`;
+}
+
 const MONTHLY = [8200, 9100, 8700, 10400, 11200, 10800, 12300, 13100, 12600, 14200, 13800, 15400];
 
 export function expandMonthly(monthly: number[], pts: number): number[] {
@@ -203,7 +220,7 @@ export function TrafficCard() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200 ${
+              className={`rounded-full px-4 py-2 text-[14px] font-medium transition-all duration-200 ${
                 tab === t.key
                   ? "bg-accent-pink/[0.12] text-accent-pink"
                   : "text-text-muted hover:text-text-primary"
@@ -485,7 +502,7 @@ export function TrafficChart({ values, months = MONTHS, rows = positionRows, sho
             transform: hoverIdx > n / 2 ? "translateX(-110%)" : "translateX(8px)",
           }}
         >
-          <p className="text-[11px] font-medium text-text-muted">{months[Math.floor(hoverIdx / pts)]}</p>
+          <p className="text-[11px] font-medium text-text-muted">{monthWithYear(months, Math.floor(hoverIdx / pts))}</p>
           <p className="mt-0.5 text-[13px] font-semibold tabular-nums text-text-primary">
             {values[hoverIdx].toLocaleString("fr-FR")} visites
           </p>

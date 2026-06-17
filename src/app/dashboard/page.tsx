@@ -281,7 +281,7 @@ export default function DashboardPage() {
                   className="animate-fade-up mt-2 text-[length:var(--text-body)] font-light text-text-secondary"
                   style={{ animationDelay: "120ms" }}
                 >
-                  Votre indice de visibilité global : présence sur les moteurs d&apos;IA, SEO technique, sémantique et autorité réunis en un seul score.
+                  Découvrez vos scores de visibilité digitale : moteurs d&apos;IA, SEO technique, SEO sémantique et autorité.
                 </p>
               )}
               {activeTabSafe === "projection" && (
@@ -298,6 +298,14 @@ export default function DashboardPage() {
                   style={{ animationDelay: "120ms" }}
                 >
                   Comparez votre présence SEO à celle de vos concurrents sur vos mots-clés stratégiques.
+                </p>
+              )}
+              {activeTabSafe === "recommandations" && (
+                <p
+                  className="animate-fade-up mt-2 text-[length:var(--text-body)] font-light text-text-secondary"
+                  style={{ animationDelay: "120ms" }}
+                >
+                  Vos leviers prioritaires pour gagner en visibilité, classés par priorité et gain estimé.
                 </p>
               )}
               {activeTabSafe === "notoriete" && (
@@ -635,7 +643,7 @@ export default function DashboardPage() {
                     </p>
 
                     <Button variant="primary" fullWidth onClick={() => setShowExpert(true)}>
-                      Obtenez mon plan d&apos;action
+                      Demandez votre plan d&apos;action
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                       </svg>

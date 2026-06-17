@@ -241,7 +241,7 @@ export default function HomePage() {
               />
               <button
                 type="submit"
-                className="inline-flex shrink-0 items-center justify-center gap-1 rounded-full bg-gradient-to-r from-[#5f14fb] via-[#ec4dcb] via-[47%] to-[#f987e0] px-4 py-2.5 text-[14px] font-medium tracking-[-0.4px] text-white transition-all duration-200 hover:shadow-lg hover:shadow-[#ec4dcb]/20 active:scale-[0.97] md:px-6 md:py-3 md:text-[18px]"
+                className="inline-flex shrink-0 items-center justify-center gap-1 rounded-full bg-gradient-to-r from-[#5f14fb] via-[#ec4dcb] via-[47%] to-[#f987e0] px-4 py-2.5 text-[14px] font-medium tracking-[-0.4px] text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97] md:px-6 md:py-3 md:text-[18px]"
                 style={{ transitionTimingFunction: "var(--ease-out)" }}
               >
                 Analyser

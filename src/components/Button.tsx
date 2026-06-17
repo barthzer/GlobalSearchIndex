@@ -20,11 +20,11 @@ const base =
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-gradient-to-r from-accent-purple via-accent-pink via-[47%] to-accent-pink-light text-white px-6 py-3 text-sm hover:shadow-lg hover:shadow-accent-pink/20",
+    "bg-gradient-to-r from-accent-purple via-accent-pink via-[47%] to-accent-pink-light text-white px-6 py-3 text-sm hover:brightness-110 hover:-translate-y-px",
   secondary:
-    "bg-text-primary text-bg-primary px-6 py-3 text-sm hover:opacity-90",
+    "bg-text-primary text-bg-primary px-6 py-3 text-sm hover:opacity-90 hover:-translate-y-px",
   tertiary:
-    "bg-bg-card border border-border-subtle text-text-primary px-6 py-3 text-sm hover:bg-bg-card-hover",
+    "bg-bg-card border border-border-subtle text-text-primary px-6 py-3 text-sm hover:bg-bg-card-hover hover:border-border-badge hover:-translate-y-px",
 };
 
 export default function Button({
