@@ -61,6 +61,38 @@ export function getLeadByEmail(email: string): OnboardingLead | null {
   }
 }
 
+/** Email de l'analyse de démonstration (connexion de test). */
+export const DEMO_LEAD_EMAIL = "demo@maisonkleber.fr";
+
+/**
+ * Mock dev : garantit qu'une analyse de démo existe pour tester la connexion
+ * (saisie d'un email reconnu). N'écrase jamais les leads réels.
+ * TODO(backend): à retirer — les comptes existeront en base.
+ */
+export function ensureDemoLead() {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(LEADS_KEY);
+    const list: OnboardingLead[] = raw ? JSON.parse(raw) : [];
+    if (list.some((l) => l.email?.trim().toLowerCase() === DEMO_LEAD_EMAIL)) return;
+    list.push({
+      firstName: "Marie",
+      lastName: "Kleber",
+      company: "Maison Kleber",
+      email: DEMO_LEAD_EMAIL,
+      phone: "",
+      companySize: "11-50",
+      worksWithAgency: "non",
+      goals: ["geo"],
+      url: "maisonkleber.fr",
+      submittedAt: 0,
+    });
+    window.localStorage.setItem(LEADS_KEY, JSON.stringify(list));
+  } catch {
+    /* mode privé — on ignore */
+  }
+}
+
 /** Dernier lead capturé (pour préremplir les formulaires consultant). */
 export function getLatestLead(): OnboardingLead | null {
   if (typeof window === "undefined") return null;
