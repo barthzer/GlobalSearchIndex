@@ -20,6 +20,7 @@ import ConcurrenceView, { CoverageSection } from "@/components/ConcurrenceView";
 import NotorieteView from "@/components/NotorieteView";
 import { useAccount } from "@/components/AccountProvider";
 import { useGeneration } from "@/components/GenerationProvider";
+import { withBasePath } from "@/lib/api";
 import { recommendations } from "./rapport/recommendations";
 import { tabsForRole, defaultTabForRole, type TabKey } from "@/lib/tabs";
 import RecommendationsView from "@/components/RecommendationsView";
@@ -215,7 +216,7 @@ export default function DashboardPage() {
   }
 
   function handleDownloadReport() {
-    window.open(reportUrl, "_blank");
+    window.open(withBasePath(reportUrl), "_blank");
   }
 
   // Déconnecté : on n'affiche rien (la redirection vers la landing est en cours).
@@ -395,7 +396,7 @@ export default function DashboardPage() {
                           ),
                           onClick: () => {
                             setShowActions(false);
-                            window.open(`/dashboard/rapport?clientId=${currentGeneration.id}`, "_blank");
+                            window.open(withBasePath(`/dashboard/rapport?clientId=${currentGeneration.id}`), "_blank");
                           },
                         },
                         {

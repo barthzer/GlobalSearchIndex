@@ -138,3 +138,13 @@ export async function bootstrapAuth(): Promise<AuthUser | null> {
 export function logout(): void {
   authStore.clear();
 }
+
+// basePath injecté par Next (‘’ sur Vercel racine, ‘/barth’ sur notre infra). Pour
+// les navigations MANUELLES (window.open) que Next ne préfixe pas automatiquement
+// contrairement à <Link>/router.
+const BASE_PATH =
+  (process.env.__NEXT_ROUTER_BASEPATH as string | undefined) ?? "";
+
+export function withBasePath(path: string): string {
+  return `${BASE_PATH}${path}`;
+}
