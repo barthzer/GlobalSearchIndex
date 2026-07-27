@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/check-vendor-leak.mjs && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:vendor-leak": "node scripts/check-vendor-leak.mjs"
   },
   "dependencies": {
     "@next/font": "^14.2.15",

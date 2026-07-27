@@ -254,7 +254,7 @@ export function TrafficCard() {
           {tab === "traffic" ? (
             <>Le <span className="font-medium text-text-primary">trafic mensuel</span> correspond aux visites organiques estimées depuis Google sur les {is2y ? "24" : "12"} derniers mois.</>
           ) : (
-            <>L&apos;<span className="font-medium text-text-primary">indice de visibilité</span> (source Ahrefs, 0-100) reflète la part de clics potentiels que vous captez sur l&apos;ensemble de vos mots-clés suivis. Le tableau « Positions » détaille l&apos;évolution de vos mots-clés dans le top 3 à 100.</>
+            <>L&apos;<span className="font-medium text-text-primary">indice de visibilité</span> (0-100) reflète la part de clics potentiels que vous captez sur l&apos;ensemble de vos mots-clés suivis. Le tableau « Positions » détaille l&apos;évolution de vos mots-clés dans le top 3 à 100.</>
           )}
         </InsightNote>
       </div>

@@ -24,7 +24,7 @@ const RESEND_COOLDOWN = 30; // secondes
 const DEMO_CODE = "000000";
 
 export default function LoginModal({ onClose }: LoginModalProps) {
-  const { accounts, login, loginWith } = useAccount();
+  const { loginWith, loginWithCredentials } = useAccount();
   const router = useRouter();
   const [view, setView] = useState<"client" | "admin" | "verify">("client");
   const [email, setEmail] = useState("");
@@ -126,22 +126,21 @@ export default function LoginModal({ onClose }: LoginModalProps) {
   }
 
   // Admin : vrai compte (email + mot de passe). Mock = email admin connu + mot de passe non vide.
-  function handleAdminLogin(e: React.FormEvent) {
+  // Connexion interne réelle (commercial + admin) : email + mot de passe → POST /auth/login.
+  // Le rôle renvoyé par l'API pilote isAdmin ; le libellé « admin » de la vue est conservé.
+  async function handleAdminLogin(e: React.FormEvent) {
     e.preventDefault();
-    const admin = accounts.find(
-      (a) => a.type === "admin" && a.email.toLowerCase() === email.trim().toLowerCase(),
-    );
-    if (!admin) {
-      setError("Identifiants administrateur invalides.");
+    if (!email.trim() || !password.trim()) {
+      setError("Email et mot de passe requis.");
       return;
     }
-    if (!password.trim()) {
-      setError("Veuillez entrer votre mot de passe.");
-      return;
+    setError("");
+    try {
+      await loginWithCredentials(email.trim(), password);
+      goToDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Connexion impossible.");
     }
-    // TODO(backend): vérifier le mot de passe côté serveur. En mock, l'email admin suffit.
-    login("admin");
-    goToDashboard();
   }
 
   function switchView(next: "client" | "admin") {
