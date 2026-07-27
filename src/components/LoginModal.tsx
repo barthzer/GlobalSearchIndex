@@ -12,6 +12,9 @@ import { validateProEmail } from "@/lib/proEmail";
 
 interface LoginModalProps {
   onClose: () => void;
+  /** Vue d'ouverture. Défaut "client" (OTP) = comportement maquette inchangé.
+   *  La route interne /login passe "admin" pour ouvrir directement email + mot de passe. */
+  initialView?: "client" | "admin";
 }
 
 const inputClass =
@@ -23,10 +26,10 @@ const RESEND_COOLDOWN = 30; // secondes
 // En mock, on accepte ce code de démo. À supprimer au branchement de l'API.
 const DEMO_CODE = "000000";
 
-export default function LoginModal({ onClose }: LoginModalProps) {
+export default function LoginModal({ onClose, initialView = "client" }: LoginModalProps) {
   const { loginWith, loginWithCredentials } = useAccount();
   const router = useRouter();
-  const [view, setView] = useState<"client" | "admin" | "verify">("client");
+  const [view, setView] = useState<"client" | "admin" | "verify">(initialView);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
