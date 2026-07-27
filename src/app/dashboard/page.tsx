@@ -167,7 +167,7 @@ const scores = [
 export default function DashboardPage() {
   const { isAdmin, isLoggedIn, hydrated } = useAccount();
   const router = useRouter();
-  const { selected: currentGeneration, collapsed } = useGeneration();
+  const { selected: currentGeneration, collapsed, loading } = useGeneration();
 
   // Pas de dashboard en déconnecté : on renvoie vers la landing une fois la session restaurée.
   useEffect(() => {
@@ -220,6 +220,15 @@ export default function DashboardPage() {
 
   // Déconnecté : on n'affiche rien (la redirection vers la landing est en cours).
   if (hydrated && !isLoggedIn) return null;
+
+  // M1 : la liste réelle (sidebar + en-tête) se charge depuis l'API → loader sobre
+  // tant qu'on n'a pas les projets (évite un rendu avec le placeholder vide).
+  if (loading)
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-bg-primary">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-purple border-t-transparent" />
+      </div>
+    );
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col">
