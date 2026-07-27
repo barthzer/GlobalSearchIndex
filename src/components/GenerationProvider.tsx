@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { useAccount } from "./AccountProvider";
 
 export interface Generation {
   id: string;
@@ -103,6 +104,7 @@ export function useGeneration() {
 }
 
 export default function GenerationProvider({ children }: { children: React.ReactNode }) {
+  const { isLoggedIn, hydrated } = useAccount();
   const [all, setAll] = useState<Generation[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [collapsed, setCollapsed] = useState(false);
@@ -110,8 +112,17 @@ export default function GenerationProvider({ children }: { children: React.React
 
   // M1 : liste réelle (GET /projects, lecture seule). Le corps du rapport reste
   // factice jusqu'à M3.
+  // Le fetch attend l'AUTHENTIFICATION : le provider est monté au layout racine,
+  // donc sans ce garde il partait au chargement (avant login) → 401 → liste vide.
   useEffect(() => {
+    if (!hydrated) return; // on attend la restauration de session
+    if (!isLoggedIn) {
+      setAll([]);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
+    setLoading(true);
     (async () => {
       try {
         const res = await apiFetch(
@@ -165,7 +176,7 @@ export default function GenerationProvider({ children }: { children: React.React
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [hydrated, isLoggedIn]);
 
   const selected = all.find((g) => g.id === selectedId) || all[0] || PLACEHOLDER;
 

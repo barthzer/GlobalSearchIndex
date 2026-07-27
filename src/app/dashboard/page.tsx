@@ -21,6 +21,7 @@ import NotorieteView from "@/components/NotorieteView";
 import { useAccount } from "@/components/AccountProvider";
 import { useGeneration } from "@/components/GenerationProvider";
 import { withBasePath } from "@/lib/api";
+import NotWiredNotice from "@/components/NotWiredNotice";
 import { recommendations } from "./rapport/recommendations";
 import { tabsForRole, defaultTabForRole, type TabKey } from "@/lib/tabs";
 import RecommendationsView from "@/components/RecommendationsView";
@@ -188,6 +189,13 @@ export default function DashboardPage() {
   const activeTabSafe: TabKey = roleTabs.some((t) => t.key === activeTab)
     ? activeTab
     : defaultTabForRole(isAdmin);
+
+  // Onglets branchés sur des DONNÉES RÉELLES. Vide pour l'instant : M0/M1 ont câblé
+  // l'auth + la liste de projets, mais AUCUN corps d'analyse (scores, GEO, autorité,
+  // PageSpeed, trafic, notoriété, recos) — tout est encore factice. Tant qu'un onglet
+  // n'est pas ici, on affiche un état explicite, jamais un chiffre inventé. M3+ les ajoute.
+  const WIRED_TABS: TabKey[] = [];
+  const tabWired = WIRED_TABS.includes(activeTabSafe);
 
   const [copied, setCopied] = useState(false);
   const reportUrl = `/dashboard/rapport?clientId=${currentGeneration.id}`;
@@ -432,7 +440,9 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {activeTabSafe === "home" ? (
+            {!tabWired ? (
+              <NotWiredNotice label="Cette analyse (SEO technique, GEO, autorité, PageSpeed, trafic, notoriété, recommandations)" />
+            ) : activeTabSafe === "home" ? (
             <>
               {/* Trafic mensuel / Indice de visibilité */}
               <div className="animate-fade-up mb-4 rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]" style={{ animationDelay: "300ms" }}>
