@@ -22,6 +22,7 @@ import { useAccount } from "@/components/AccountProvider";
 import { useGeneration } from "@/components/GenerationProvider";
 import { withBasePath } from "@/lib/api";
 import NotWiredNotice from "@/components/NotWiredNotice";
+import AnalyseTab from "@/components/AnalyseTab";
 import { recommendations } from "./rapport/recommendations";
 import { tabsForRole, defaultTabForRole, type TabKey } from "@/lib/tabs";
 import RecommendationsView from "@/components/RecommendationsView";
@@ -194,7 +195,7 @@ export default function DashboardPage() {
   // l'auth + la liste de projets, mais AUCUN corps d'analyse (scores, GEO, autorité,
   // PageSpeed, trafic, notoriété, recos) — tout est encore factice. Tant qu'un onglet
   // n'est pas ici, on affiche un état explicite, jamais un chiffre inventé. M3+ les ajoute.
-  const WIRED_TABS: TabKey[] = [];
+  const WIRED_TABS: TabKey[] = ["analyse"]; // M3 : l'analyse (4 scores) est câblée sur du réel
   const tabWired = WIRED_TABS.includes(activeTabSafe);
 
   const [copied, setCopied] = useState(false);
@@ -521,103 +522,7 @@ export default function DashboardPage() {
               </section>
             </>
             ) : activeTabSafe === "analyse" ? (
-            <>
-            {/* Encart GEO dédié — au-dessus des autres scores */}
-            <div className="mb-4">
-              <GeoScoreCard info={scoreInfos.geo} delay={280} />
-            </div>
-
-            {/* Score Cards */}
-            <section className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {scores.map((s, i) => (
-                <ScoreArc key={s.label} {...s} delay={420 + i * 120} />
-              ))}
-            </section>
-
-            {/* Google PageSpeed — accordion */}
-            <div className="animate-fade-up mb-4 rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]" style={{ animationDelay: "480ms" }}>
-              <button
-                className="flex w-full items-center justify-between px-5 py-4 md:px-6"
-                onClick={() => setPsOpen((v) => !v)}
-              >
-                <div className="flex items-center gap-2.5">
-                  <svg className="h-4 w-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-                  </svg>
-                  <span className="text-[14px] font-medium text-text-primary">Google PageSpeed Insights</span>
-                </div>
-                <svg
-                  className="h-4 w-4 text-text-muted transition-transform duration-300"
-                  style={{ transform: psOpen ? "rotate(180deg)" : "rotate(0deg)", transitionTimingFunction: "var(--ease-out)" }}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
-              </button>
-              <div
-                className="grid transition-[grid-template-rows] duration-300"
-                style={{ gridTemplateRows: psOpen ? "1fr" : "0fr", transitionTimingFunction: "var(--ease-out)" }}
-              >
-                <div className={psOpen ? "" : "overflow-hidden"}>
-                  <div className="border-t border-border-subtle">
-                    <PageSpeedCard />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Trafic mensuel / Indice de visibilité */}
-            <div className="animate-fade-up mb-4 rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]" style={{ animationDelay: "540ms" }}>
-              <TrafficCard />
-            </div>
-
-            {/* Notoriété & autorité — fusionnée dans Analyse (client + admin) */}
-            <section className="animate-fade-up mb-2 mt-8" style={{ animationDelay: "600ms" }}>
-              <h2 className="mb-5 text-xl font-medium tracking-tight text-text-primary">
-                Notoriété &amp; autorité média
-              </h2>
-              <NotorieteInsights />
-            </section>
-
-            {/* Recommandations (pleine largeur) */}
-            <section className="mt-6 pb-16">
-              {/* Recommendations */}
-              <div>
-                <h2
-                  className="animate-fade-up mb-6 text-xl font-medium tracking-tight text-text-primary"
-                  style={{ animationDelay: "400ms" }}
-                >
-                  Recommandations Stratégiques
-                </h2>
-                <div className="relative">
-                  <div className="flex flex-col gap-3">
-                    {recommendations.slice(0, 3).map((rec, i) => (
-                      <RecommendationCard key={rec.title} rec={rec} index={i} delay={480 + i * 60} />
-                    ))}
-                  </div>
-                  {/* Fade mask over last recommendations */}
-                  <div
-                    className="pointer-events-none absolute bottom-0 left-0 right-0 h-40"
-                    style={{ background: "linear-gradient(to bottom, transparent 0%, var(--bg-primary) 100%)" }}
-                  />
-                </div>
-
-                <div className="mt-4 flex justify-center">
-                  <div className="animate-fade-up" style={{ animationDelay: "800ms" }}>
-                  <Button variant="tertiary" className="text-text-secondary" onClick={() => setActiveTab("recommandations")}>
-                    Voir toutes les recommandations
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                    </svg>
-                  </Button>
-                  </div>
-                </div>
-
-                {/* Expert CTA — bannière full width */}
-                <ExpertCtaBanner onExpertClick={() => setShowExpert(true)} className="mt-8" />
-              </div>
-            </section>
-            </>
+            <AnalyseTab projectId={currentGeneration.id} />
             ) : activeTabSafe === "projection" ? (
               <ProjectionView />
             ) : activeTabSafe === "concurrence" ? (
