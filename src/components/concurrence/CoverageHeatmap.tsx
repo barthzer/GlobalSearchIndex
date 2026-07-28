@@ -1,53 +1,52 @@
 "use client";
 
+import {
+  coverageRate,
+  getEmptyCellDisplay,
+  getPositionTier,
+  type Brand,
+  type ConcurrenceData,
+} from "@/lib/concurrence";
+
 import BrandAvatar from "./BrandAvatar";
-import { ConcurrenceData, coverageRate, getPositionTier } from "./types";
 
 interface Props {
   data: ConcurrenceData;
-  /**
-   * Mode compact : utilise des cellules + spacings + paddings réduits
-   * pour faire tenir 10 mots-clés sur une page A4 dans le rapport.
-   */
+  // Mode dense (rapport PDF) : cellules resserrées.
   compact?: boolean;
 }
 
 export default function CoverageHeatmap({ data, compact = false }: Props) {
-  const { brands, keywords, positions } = data;
-  const cellHeight = compact ? "h-7" : "h-10";
-  const cellTextSize = compact ? "text-[12px]" : "text-[14px]";
-  const spacingY = compact ? "border-spacing-y-1" : "border-spacing-y-2";
-  const kwTextSize = compact ? "text-[12px]" : "text-[13px]";
-  const summaryTextSize = compact ? "text-[16px]" : "text-[18px]";
+  const { brands, keywords, positions, sources } = data;
+  const cellText = compact ? "text-[11px]" : "text-[14px]";
 
-  const coverages = brands.map((_, bIdx) =>
-    coverageRate(positions.map((row) => row[bIdx]))
+  // Garde-fou : pas de concurrent mesuré, on affiche une note explicite
+  // plutôt que de disparaître silencieusement.
+  if (brands.length === 0 || keywords.length === 0) {
+    return (
+      <div className="rounded-lg border border-border-subtle bg-card-inner-bg p-4 text-[13px] font-light text-text-muted">
+        Pas assez de concurrents mesurés pour afficher la couverture.
+      </div>
+    );
+  }
+
+  const coverages = brands.map((_: Brand, bIdx: number) =>
+    coverageRate(positions.map((row) => row[bIdx])),
   );
-
-  // Le tableau prend 100% de son conteneur. Le keyword col garde 30%, les
-  // concurrents se partagent les 70% restants à parts égales : plus ils sont
-  // nombreux, plus chaque cellule se rétrécit.
-  const brandColPct = 70 / brands.length;
 
   return (
     <div className="overflow-x-auto">
-      <table className={`w-full table-fixed border-separate border-spacing-x-2 ${spacingY}`}>
-        <colgroup>
-          <col style={{ width: "30%" }} />
-          {brands.map((b) => (
-            <col key={b.id} style={{ width: `${brandColPct}%` }} />
-          ))}
-        </colgroup>
+      <table className="w-full min-w-[560px] border-separate border-spacing-x-2 border-spacing-y-2">
         <thead>
           <tr>
-            <th className="text-left text-[12px] font-medium text-text-muted">
-              Mot-clé / position
+            <th className="text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
+              Mot-clé
             </th>
-            {brands.map((b) => (
-              <th key={b.id} className="px-1 text-center">
-                <div className="flex flex-col items-center justify-center gap-1">
+            {brands.map((b: Brand) => (
+              <th key={b.id} className="text-center">
+                <div className="flex items-center justify-center gap-2">
                   <BrandAvatar brand={b} size={20} textSize="text-[10px]" />
-                  <span className="text-[10px] font-medium leading-tight text-text-secondary">
+                  <span className="text-[12px] font-medium text-text-secondary">
                     {b.name}
                   </span>
                 </div>
@@ -58,19 +57,36 @@ export default function CoverageHeatmap({ data, compact = false }: Props) {
         <tbody>
           {keywords.map((kw, kIdx) => (
             <tr key={kw.label}>
-              <td className={`${kwTextSize} font-light text-text-secondary`}>
-                <div className="truncate" title={kw.label}>{kw.label}</div>
+              <td className="text-[13px] font-light text-text-secondary">
+                {kw.label}
               </td>
-              {brands.map((b, bIdx) => {
+              {brands.map((b: Brand, bIdx: number) => {
                 const pos = positions[kIdx][bIdx];
-                const tier = getPositionTier(pos);
+                if (pos !== null) {
+                  const tier = getPositionTier(pos);
+                  return (
+                    <td key={b.id}>
+                      <div
+                        className={`flex h-10 items-center justify-center rounded-lg ${cellText} font-semibold tabular-nums ${tier.text}`}
+                        style={{ background: tier.bg }}
+                      >
+                        {pos}
+                      </div>
+                    </td>
+                  );
+                }
+                // Pas de position : "NR" = vraie absence (miss top 100 en
+                // mesure temps réel) vs "—" = tracking indisponible.
+                // On honore le null, jamais coercé en 0.
+                const empty = getEmptyCellDisplay(sources?.[kIdx]?.[bIdx] ?? null);
                 return (
                   <td key={b.id}>
                     <div
-                      className={`flex ${cellHeight} w-full items-center justify-center rounded-lg ${cellTextSize} font-semibold tabular-nums ${tier.text}`}
-                      style={{ background: tier.bg }}
+                      title={empty.title}
+                      className={`flex h-10 items-center justify-center rounded-lg ${cellText} font-semibold tabular-nums ${empty.textClass}`}
+                      style={{ background: empty.bg }}
                     >
-                      {pos === null ? "-" : pos}
+                      {empty.text}
                     </div>
                   </td>
                 );
@@ -83,13 +99,13 @@ export default function CoverageHeatmap({ data, compact = false }: Props) {
             </td>
           </tr>
           <tr>
-            <td className="text-[12px] font-medium text-text-muted">
+            <td className="text-[12px] font-medium uppercase tracking-wider text-text-muted">
               Couverture top 10
             </td>
-            {brands.map((b, bIdx) => (
+            {brands.map((b: Brand, bIdx: number) => (
               <td key={b.id} className="text-center">
                 <span
-                  className={`${summaryTextSize} font-bold tabular-nums`}
+                  className="text-[18px] font-bold tabular-nums"
                   style={{ color: b.color }}
                 >
                   {coverages[bIdx]}%
@@ -100,7 +116,6 @@ export default function CoverageHeatmap({ data, compact = false }: Props) {
         </tbody>
       </table>
 
-      {/* Legend */}
       <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px] font-medium text-text-muted">
         {[
           { label: "Top 3", bg: "rgba(45,212,191,0.25)" },
@@ -108,6 +123,10 @@ export default function CoverageHeatmap({ data, compact = false }: Props) {
           { label: "Top 20", bg: "rgba(245,158,11,0.15)" },
           { label: "21-30", bg: "rgba(249,115,22,0.12)" },
           { label: "30+", bg: "rgba(239,68,68,0.15)" },
+          { label: "NR (non positionné)", bg: "rgba(239,68,68,0.15)" },
+          // "SERP indisponible" = mesure temps réel absente, on n'invente
+          // aucun chiffre estimé (le null reste un null affiché "—").
+          { label: "SERP indisponible", bg: "rgba(148,163,184,0.10)" },
         ].map((l) => (
           <div key={l.label} className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-sm" style={{ background: l.bg }} />

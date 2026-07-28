@@ -16,7 +16,8 @@ import ProcessingBanner from "@/components/ProcessingBanner";
 import TutorialModal, { tourSeen } from "@/components/TutorialModal";
 import PageSpeedCard, { TrafficCard } from "@/components/PageSpeedCard";
 import ProjectionView from "@/components/ProjectionView";
-import ConcurrenceView, { CoverageSection } from "@/components/ConcurrenceView";
+import { CoverageSection } from "@/components/ConcurrenceView";
+import ConcurrenceTab from "@/components/concurrence/ConcurrenceTab";
 import { useAccount } from "@/components/AccountProvider";
 import { useGeneration } from "@/components/GenerationProvider";
 import { withBasePath } from "@/lib/api";
@@ -525,7 +526,11 @@ export default function DashboardPage() {
             ) : activeTabSafe === "projection" ? (
               <ProjectionView />
             ) : activeTabSafe === "concurrence" ? (
-              <ConcurrenceView onExpertClick={() => setShowExpert(true)} />
+              <ConcurrenceTab
+                projectId={currentGeneration.id}
+                clientName={currentGeneration.name}
+                clientInitial={currentGeneration.initial}
+              />
             ) : activeTabSafe === "recommandations" ? (
               <RecommendationsView onExpertClick={() => setShowExpert(true)} />
             ) : (

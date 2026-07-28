@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ConcurrenceData } from "./types";
+import {
+  type ConcurrenceData,
+  getEmptyCellDisplay,
+} from "@/lib/concurrence";
 
 interface Props {
   data: ConcurrenceData;
 }
 
-// Monotone cubic interpolation → Cubic Bézier (smoother than Catmull-Rom, no overshoot)
+// Interpolation cubique monotone (Fritsch-Carlson) → courbes lisses sans overshoot
 function smoothPath(points: { x: number; y: number }[]): string {
   if (points.length === 0) return "";
   if (points.length === 1) return `M${points[0].x},${points[0].y}`;
@@ -16,15 +19,13 @@ function smoothPath(points: { x: number; y: number }[]): string {
   }
 
   const n = points.length;
-  // Slopes between successive points
   const dx: number[] = [];
   const dy: number[] = [];
-  const m: number[] = []; // tangent slopes
+  const m: number[] = []; // pentes tangentes
   for (let i = 0; i < n - 1; i++) {
     dx[i] = points[i + 1].x - points[i].x;
     dy[i] = points[i + 1].y - points[i].y;
   }
-  // Initial tangents (Fritsch-Carlson)
   m[0] = dy[0] / dx[0];
   for (let i = 1; i < n - 1; i++) {
     const slopePrev = dy[i - 1] / dx[i - 1];
@@ -49,9 +50,26 @@ function smoothPath(points: { x: number; y: number }[]): string {
   return d;
 }
 
+/** État inline explicite quand le graphe ne peut pas s'afficher (jamais d'affichage vide). */
+function EmptyNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex w-full items-center justify-center rounded-lg border border-border-subtle bg-card-inner-bg px-4 py-8 text-center text-[13px] font-light text-text-muted">
+      {children}
+    </div>
+  );
+}
+
 export default function CoverageBump({ data }: Props) {
-  const { brands, keywords, positions } = data;
+  const { brands, keywords, positions, sources } = data;
   const [hovered, setHovered] = useState<string | null>(null);
+
+  // États insuffisants rendus explicitement — pas de disparition silencieuse.
+  if (brands.length === 0) {
+    return <EmptyNote>Pas assez de concurrents mesurés</EmptyNote>;
+  }
+  if (keywords.length === 0) {
+    return <EmptyNote>Aucun mot-clé mesuré pour tracer les positions</EmptyNote>;
+  }
 
   const width = 960;
   const height = 360;
@@ -64,6 +82,8 @@ export default function CoverageBump({ data }: Props) {
   const xFor = (i: number) =>
     keywords.length === 1 ? padX + innerW / 2 : padX + (i / (keywords.length - 1)) * innerW;
   const yFor = (pos: number | null) => {
+    // Une position null (hors top 100 ou tracking indisponible) se projette sur
+    // le plancher du graphe : on n'invente jamais une valeur numérique.
     const p = pos === null || pos > maxPos ? maxPos : pos;
     return padY + ((p - 1) / (maxPos - 1)) * innerH;
   };
@@ -77,20 +97,34 @@ export default function CoverageBump({ data }: Props) {
         className="w-full"
         style={{ height: "auto" }}
       >
-        {/* Y axis lines + labels */}
+        {/* Axe Y : lignes + libellés */}
         {yTicks.map((t) => {
           const y = yFor(t);
           return (
             <g key={t}>
-              <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="var(--border-subtle)" strokeWidth={0.5} strokeDasharray="2 4" />
-              <text x={padX - 8} y={y} dominantBaseline="central" textAnchor="end" className="fill-text-muted text-[11px] font-medium">
+              <line
+                x1={padX}
+                y1={y}
+                x2={width - padX}
+                y2={y}
+                stroke="var(--border-subtle)"
+                strokeWidth={0.5}
+                strokeDasharray="2 4"
+              />
+              <text
+                x={padX - 8}
+                y={y}
+                dominantBaseline="central"
+                textAnchor="end"
+                className="fill-text-muted text-[11px] font-medium"
+              >
                 #{t}
               </text>
             </g>
           );
         })}
 
-        {/* X axis labels (keywords) */}
+        {/* Axe X : mots-clés */}
         {keywords.map((kw, i) => (
           <text
             key={i}
@@ -103,7 +137,7 @@ export default function CoverageBump({ data }: Props) {
           </text>
         ))}
 
-        {/* Lines per brand */}
+        {/* Une courbe par marque */}
         {brands.map((b, bIdx) => {
           const isHovered = hovered === b.id;
           const isOther = hovered !== null && hovered !== b.id;
@@ -128,21 +162,32 @@ export default function CoverageBump({ data }: Props) {
                 strokeWidth={isHovered ? 3.5 : 2.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                style={{ transition: "stroke-width 0.2s var(--ease-out), opacity 0.2s var(--ease-out)" }}
+                style={{
+                  transition:
+                    "stroke-width 0.2s var(--ease-out), opacity 0.2s var(--ease-out)",
+                }}
               />
               {keywords.map((_, i) => {
                 const pos = positions[i][bIdx];
+                // Un point null (absence réelle top 100, ou mesure indisponible)
+                // reste posé sur le plancher, marqué visuellement en vide.
+                const isMissing = pos === null;
+                const source = sources?.[i]?.[bIdx] ?? null;
+                const missing = getEmptyCellDisplay(source);
                 return (
                   <circle
                     key={i}
                     cx={xFor(i)}
                     cy={yFor(pos)}
                     r={isHovered ? 5 : 4}
-                    fill={b.color}
-                    stroke="var(--bg-card)"
+                    fill={isMissing ? "var(--bg-card)" : b.color}
+                    stroke={b.color}
                     strokeWidth={2}
+                    strokeDasharray={isMissing ? "2 2" : undefined}
                     style={{ transition: "r 0.2s var(--ease-out)" }}
-                  />
+                  >
+                    {isMissing ? <title>{missing.title}</title> : null}
+                  </circle>
                 );
               })}
             </g>
@@ -150,7 +195,7 @@ export default function CoverageBump({ data }: Props) {
         })}
       </svg>
 
-      {/* Legend */}
+      {/* Légende */}
       <div className="flex flex-wrap items-center justify-center gap-3">
         {brands.map((b) => {
           const isActive = hovered === b.id;

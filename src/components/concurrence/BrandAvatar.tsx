@@ -1,6 +1,6 @@
 "use client";
 
-import { Brand } from "./types";
+import { Brand } from "@/lib/concurrence";
 
 interface Props {
   brand: Brand;
