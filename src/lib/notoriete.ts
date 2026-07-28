@@ -124,6 +124,31 @@ export interface BenchmarkView {
   compositeUnscored: boolean; // prospect lui-même « — »
 }
 
+// ── M7b : Calendrier éditorial ──────────────────────────────────────────────
+export interface EditorialSlot {
+  month: string;
+  title: string;
+  description: string;
+  media_label: string;
+  media_subtitle?: string | null;
+  tag: string;
+}
+
+export function extractEditorial(raw: Record<string, unknown> | null): {
+  slots: EditorialSlot[];
+  subtitle: string | null;
+} {
+  const plan = (
+    raw as {
+      editorial_plan?: { slots?: EditorialSlot[]; marronniers_subtitle?: string };
+    } | null
+  )?.editorial_plan;
+  return {
+    slots: Array.isArray(plan?.slots) ? plan!.slots : [],
+    subtitle: plan?.marronniers_subtitle ?? null,
+  };
+}
+
 export function deriveBenchmark(raw: Record<string, unknown> | null): BenchmarkView {
   const empty: BenchmarkView = {
     unlocked: false,

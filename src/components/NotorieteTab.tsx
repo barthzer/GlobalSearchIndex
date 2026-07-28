@@ -11,6 +11,7 @@ import {
   mapNotoriete,
   pickNotoriete,
   deriveBenchmark,
+  extractEditorial,
   fmtFr,
   growthShown,
   type BacklinksView,
@@ -18,6 +19,7 @@ import {
 } from "@/lib/notoriete";
 import RealScoreArc from "./RealScoreArc";
 import BenchmarkSection from "./BenchmarkSection";
+import EditorialTimeline from "./EditorialTimeline";
 
 // M7a — jauge d'autorité (5 régimes, MÊME bloc display que la carte Autorité de
 // l'onglet Analyse : source unique, pas de 2e calcul) + backlinks + grands médias.
@@ -268,6 +270,12 @@ export default function NotorieteTab({
       {/* Benchmark concurrents (M7b) — 4 modes composite, ligne client retirée en
           BAS pur (jamais « 56 vs 12 »), rang « — » jamais inventé. */}
       <BenchmarkSection view={deriveBenchmark(noto.rawData)} clientName={clientName} />
+
+      {/* Calendrier éditorial média (M7b). */}
+      {(() => {
+        const ed = extractEditorial(noto.rawData);
+        return <EditorialTimeline slots={ed.slots} subtitle={ed.subtitle} />;
+      })()}
     </div>
   );
 }
