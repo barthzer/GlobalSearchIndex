@@ -10,12 +10,14 @@ import {
 import {
   mapNotoriete,
   pickNotoriete,
+  deriveBenchmark,
   fmtFr,
   growthShown,
   type BacklinksView,
   type MediaView,
 } from "@/lib/notoriete";
 import RealScoreArc from "./RealScoreArc";
+import BenchmarkSection from "./BenchmarkSection";
 
 // M7a — jauge d'autorité (5 régimes, MÊME bloc display que la carte Autorité de
 // l'onglet Analyse : source unique, pas de 2e calcul) + backlinks + grands médias.
@@ -171,7 +173,13 @@ function NotorieteEmpty({ score }: { score: ProjectScore | undefined }) {
   );
 }
 
-export default function NotorieteTab({ projectId }: { projectId: string }) {
+export default function NotorieteTab({
+  projectId,
+  clientName = "Votre entreprise",
+}: {
+  projectId: string;
+  clientName?: string;
+}) {
   const [scores, setScores] = useState<ProjectScore[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -251,11 +259,15 @@ export default function NotorieteTab({ projectId }: { projectId: string }) {
         </p>
       </div>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <RealScoreArc label="Score d'autorité" icon={trophyIcon} display={authDisplay} />
         {mapped && <BacklinksCard data={mapped.backlinks} />}
         {mapped && <MajorMediaCard data={mapped.medias} />}
       </section>
+
+      {/* Benchmark concurrents (M7b) — 4 modes composite, ligne client retirée en
+          BAS pur (jamais « 56 vs 12 »), rang « — » jamais inventé. */}
+      <BenchmarkSection view={deriveBenchmark(noto.rawData)} clientName={clientName} />
     </div>
   );
 }

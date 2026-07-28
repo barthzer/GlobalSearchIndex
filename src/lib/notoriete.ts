@@ -72,3 +72,124 @@ export function pickNotoriete(scores: ProjectScore[]): {
     authority: scores.find((s) => s.scoreType === "authority"),
   };
 }
+
+// ── M7b : Benchmark concurrents ────────────────────────────────────────────
+// Portage de la logique de apps/web notoriete-view.tsx. Le benchmark est
+// INTERNE (jamais rendu côté prospect) → pas d'enjeu source-unique, on reproduit
+// fidèlement apps/web. Invariants durs :
+//  - insufficient → retour BAS pur : colonne BAS, rang BAS, LIGNE CLIENT RETIRÉE
+//    (sa jauge composite /100 est déjà au-dessus → jamais « 56 vs 12 ») ;
+//  - prospect non scoré → « — », hors décompte, rang « X sur N notés » ;
+//  - pending → « en cours », jamais un score provisoire.
+
+export interface CompetitorRow {
+  name: string;
+  domain?: string;
+  isYou?: boolean;
+  ref_domains?: number | null;
+  score: number; // BAS brut
+  composite?: number | null; // /100 composite, null = non classé, undefined = en cours
+  composite_reason?: "growth_null" | "bas_floor";
+  medias?: number | null;
+  medias_status?: "processing" | "completed" | "error";
+  presence?: string | null;
+  media_details?: { media: string; label: string; backlinks: number }[];
+  unavailable?: boolean;
+  unavailable_reason?: string;
+}
+
+type CompositeRank =
+  | { kind: "ranked"; rank: number; total: number; hint: string }
+  | { kind: "prospect_unscored"; hint: string }
+  | { kind: "insufficient"; hint: string };
+
+interface BenchmarkRaw {
+  rank?: number;
+  total?: number;
+  rank_hint?: string;
+  competitors?: CompetitorRow[];
+  composite_rank?: CompositeRank;
+  composite_status?: "pending" | "ready";
+}
+
+export interface BenchmarkView {
+  unlocked: boolean;
+  rows: CompetitorRow[];
+  rank: number;
+  total: number;
+  rankHint: string;
+  compositeMode: boolean; // colonne Autorité /100 + ligne client visible
+  compositeReady: boolean; // composites fiables (sinon « en cours »)
+  compositePending: boolean; // activé mais médias en cours
+  compositeUnscored: boolean; // prospect lui-même « — »
+}
+
+export function deriveBenchmark(raw: Record<string, unknown> | null): BenchmarkView {
+  const empty: BenchmarkView = {
+    unlocked: false,
+    rows: [],
+    rank: 0,
+    total: 0,
+    rankHint: "",
+    compositeMode: false,
+    compositeReady: false,
+    compositePending: false,
+    compositeUnscored: false,
+  };
+  const b = (raw as { benchmark?: BenchmarkRaw } | null)?.benchmark;
+  if (!b || !Array.isArray(b.competitors) || b.competitors.length === 0) {
+    return b ? { ...empty, unlocked: true } : empty;
+  }
+
+  const compositeRank = b.composite_rank ?? null;
+  // flagOn : le composite n'est actif que si composite_status est présent.
+  const flagOn = b.composite_status != null;
+  const compositePending = flagOn && b.composite_status === "pending";
+  const compositeRanked =
+    flagOn && b.composite_status === "ready" && compositeRank?.kind === "ranked";
+  const compositeUnscored =
+    flagOn &&
+    b.composite_status === "ready" &&
+    compositeRank?.kind === "prospect_unscored";
+  // 'insufficient' EXCLU du mode composite → retombe en présentation BAS pure.
+  const compositeMode = compositePending || compositeRanked || compositeUnscored;
+  const compositeReady = compositeRanked || compositeUnscored;
+
+  // Rang affiché.
+  let rank = 0;
+  let total = 0;
+  let rankHint = "";
+  if (compositeRanked && compositeRank?.kind === "ranked") {
+    rank = compositeRank.rank;
+    total = compositeRank.total;
+    rankHint = compositeRank.hint;
+  } else if (compositeUnscored && compositeRank) {
+    // Prospect « — » : JAMAIS de rang inventé.
+    rankHint = compositeRank.hint;
+  } else if (compositePending) {
+    rankHint = "";
+  } else {
+    // Mode BAS (flag OFF, ou 'insufficient' → retour BAS pur).
+    rank = b.rank ?? 0;
+    total = b.total ?? 0;
+    rankHint = b.rank_hint ?? "";
+  }
+
+  // Ligne client : retirée en mode BAS pur (sa jauge /100 est au-dessus →
+  // jamais un BAS brut du client à côté d'une colonne d'une autre nature).
+  const rows = compositeMode
+    ? b.competitors
+    : b.competitors.filter((r) => !r.isYou);
+
+  return {
+    unlocked: true,
+    rows,
+    rank,
+    total,
+    rankHint,
+    compositeMode,
+    compositeReady,
+    compositePending,
+    compositeUnscored,
+  };
+}
