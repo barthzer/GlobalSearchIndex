@@ -122,6 +122,11 @@ export interface BenchmarkView {
   compositeReady: boolean; // composites fiables (sinon « en cours »)
   compositePending: boolean; // activé mais médias en cours
   compositeUnscored: boolean; // prospect lui-même « — »
+  // Raison du repli en BAS pur APRÈS calcul composite (< 2 concurrents
+  // exploitables). null = legacy sans composite (aucun calcul lancé). Distingue
+  // « j'ai saisi 3 concurrents, aucun mesurable » (action requise) d'un projet
+  // legacy (rien à faire).
+  basFallbackReason: string | null;
 }
 
 // ── M7b : Calendrier éditorial ──────────────────────────────────────────────
@@ -160,6 +165,7 @@ export function deriveBenchmark(raw: Record<string, unknown> | null): BenchmarkV
     compositeReady: false,
     compositePending: false,
     compositeUnscored: false,
+    basFallbackReason: null,
   };
   const b = (raw as { benchmark?: BenchmarkRaw } | null)?.benchmark;
   if (!b || !Array.isArray(b.competitors) || b.competitors.length === 0) {
@@ -179,6 +185,16 @@ export function deriveBenchmark(raw: Record<string, unknown> | null): BenchmarkV
   // 'insufficient' EXCLU du mode composite → retombe en présentation BAS pure.
   const compositeMode = compositePending || compositeRanked || compositeUnscored;
   const compositeReady = compositeRanked || compositeUnscored;
+
+  // Repli BAS APRÈS calcul composite : < 2 concurrents exploitables. On DIT
+  // pourquoi, sinon indiscernable d'un legacy BAS (le 1er demande une action, le
+  // 2nd non). Legacy (composite_status absent) → pas de message.
+  const compositeInsufficient =
+    flagOn && b.composite_status === "ready" && compositeRank?.kind === "insufficient";
+  const basFallbackReason = compositeInsufficient
+    ? (compositeRank && compositeRank.kind === "insufficient" && compositeRank.hint) ||
+      "Moins de 2 concurrents saisis ont une autorité mesurable : classement en autorité brute. Saisissez des concurrents plus établis pour obtenir un classement composite sur 100."
+    : null;
 
   // Rang affiché.
   let rank = 0;
@@ -216,5 +232,6 @@ export function deriveBenchmark(raw: Record<string, unknown> | null): BenchmarkV
     compositeReady,
     compositePending,
     compositeUnscored,
+    basFallbackReason,
   };
 }

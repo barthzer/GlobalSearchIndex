@@ -265,20 +265,34 @@ export default function BenchmarkSection({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-5">
-      <PositionBlock
+    <div className="flex flex-col gap-4">
+      {/* Repli BAS après calcul composite (< 2 concurrents exploitables) : on DIT
+          pourquoi. Absent pour un legacy sans composite. */}
+      {view.basFallbackReason && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-400/30 bg-amber-400/[0.08] px-4 py-3">
+          <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25h1.5v5.25M12 7.5h.008v.008H12V7.5Zm9.75 4.5a9.75 9.75 0 1 1-19.5 0 9.75 9.75 0 0 1 19.5 0Z" />
+          </svg>
+          <p className="text-[13px] font-light leading-relaxed text-amber-200/90">
+            {view.basFallbackReason}
+          </p>
+        </div>
+      )}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-5">
+        <PositionBlock
         rank={view.rank}
         total={view.total}
         hint={view.rankHint}
         pending={view.compositePending}
         unscored={view.compositeUnscored}
       />
-      <CompetitorsTable
-        rows={view.rows}
-        clientName={clientName}
-        compositeMode={view.compositeMode}
-        compositeReady={view.compositeReady}
-      />
+        <CompetitorsTable
+          rows={view.rows}
+          clientName={clientName}
+          compositeMode={view.compositeMode}
+          compositeReady={view.compositeReady}
+        />
+      </div>
     </div>
   );
 }
