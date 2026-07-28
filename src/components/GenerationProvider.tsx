@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useAccount } from "./AccountProvider";
 
@@ -90,6 +90,8 @@ const GenerationContext = createContext<{
   collapsed: boolean;
   toggleCollapsed: () => void;
   loading: boolean;
+  /** Re-fetch la liste (ex. après création d'un projet). */
+  refresh: () => Promise<void>;
 }>({
   selected: PLACEHOLDER,
   setSelectedId: () => {},
@@ -97,6 +99,7 @@ const GenerationContext = createContext<{
   collapsed: false,
   toggleCollapsed: () => {},
   loading: true,
+  refresh: async () => {},
 });
 
 export function useGeneration() {
@@ -111,7 +114,57 @@ export default function GenerationProvider({ children }: { children: React.React
   const [loading, setLoading] = useState(true);
 
   // M1 : liste réelle (GET /projects, lecture seule). Le corps du rapport reste
-  // factice jusqu'à M3.
+  // factice jusqu'à M3. Extrait en loadProjects pour l'exposer en refresh()
+  // (rafraîchissement après création de projet — M2).
+  const loadProjects = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch(
+        "/projects?page=1&limit=30&sort=createdAt&order=DESC",
+      );
+      if (!res.ok) throw new Error(`projects ${res.status}`);
+      const body = (await res.json()) as { data: ApiProject[]; total: number };
+      const gens = body.data.map(toGeneration);
+      setAll(gens);
+      if (gens.length) setSelectedId((prev) => prev || gens[0].id);
+
+      // Statut par projet (N+1) — borné au seuil, au-delà on trace et on n'affiche
+      // pas de statut (badge neutre) plutôt que d'exploser le nombre de requêtes.
+      if (body.total > NPLUS1_THRESHOLD) {
+        console.warn(
+          `[GSI] ${body.total} projets : N+1 statut borné à ${NPLUS1_THRESHOLD}. ` +
+            `Basculer sur scoreSummary côté API quand ce seuil est régulièrement dépassé.`,
+        );
+      }
+      const withStatus = gens.slice(0, NPLUS1_THRESHOLD);
+      await Promise.all(
+        withStatus.map(async (gen) => {
+          try {
+            const r = await apiFetch(`/projects/${gen.id}/scores`);
+            if (!r.ok) return;
+            const scores = (await r.json()) as ApiScore[];
+            const processing = scores.some(
+              (s) => s.status === "pending" || s.status === "processing",
+            );
+            setAll((cur) =>
+              cur.map((g) =>
+                g.id === gen.id
+                  ? { ...g, status: processing ? "processing" : "ready" }
+                  : g,
+              ),
+            );
+          } catch {
+            /* statut best-effort */
+          }
+        }),
+      );
+    } catch {
+      setAll([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Le fetch attend l'AUTHENTIFICATION : le provider est monté au layout racine,
   // donc sans ce garde il partait au chargement (avant login) → 401 → liste vide.
   useEffect(() => {
@@ -121,62 +174,8 @@ export default function GenerationProvider({ children }: { children: React.React
       setLoading(false);
       return;
     }
-    let cancelled = false;
-    setLoading(true);
-    (async () => {
-      try {
-        const res = await apiFetch(
-          "/projects?page=1&limit=30&sort=createdAt&order=DESC",
-        );
-        if (!res.ok) throw new Error(`projects ${res.status}`);
-        const body = (await res.json()) as { data: ApiProject[]; total: number };
-        if (cancelled) return;
-        const gens = body.data.map(toGeneration);
-        setAll(gens);
-        if (gens.length) setSelectedId((prev) => prev || gens[0].id);
-
-        // Statut par projet (N+1) — borné au seuil, au-delà on trace et on n'affiche
-        // pas de statut (badge neutre) plutôt que d'exploser le nombre de requêtes.
-        if (body.total > NPLUS1_THRESHOLD) {
-          console.warn(
-            `[GSI] ${body.total} projets : N+1 statut borné à ${NPLUS1_THRESHOLD}. ` +
-              `Basculer sur scoreSummary côté API quand ce seuil est régulièrement dépassé.`,
-          );
-        }
-        const withStatus = gens.slice(0, NPLUS1_THRESHOLD);
-        await Promise.all(
-          withStatus.map(async (gen) => {
-            try {
-              const r = await apiFetch(`/projects/${gen.id}/scores`);
-              if (!r.ok) return;
-              const scores = (await r.json()) as ApiScore[];
-              const processing = scores.some(
-                (s) => s.status === "pending" || s.status === "processing",
-              );
-              if (!cancelled) {
-                setAll((cur) =>
-                  cur.map((g) =>
-                    g.id === gen.id
-                      ? { ...g, status: processing ? "processing" : "ready" }
-                      : g,
-                  ),
-                );
-              }
-            } catch {
-              /* statut best-effort */
-            }
-          }),
-        );
-      } catch {
-        if (!cancelled) setAll([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [hydrated, isLoggedIn]);
+    loadProjects();
+  }, [hydrated, isLoggedIn, loadProjects]);
 
   const selected = all.find((g) => g.id === selectedId) || all[0] || PLACEHOLDER;
 
@@ -186,7 +185,7 @@ export default function GenerationProvider({ children }: { children: React.React
 
   return (
     <GenerationContext.Provider
-      value={{ selected, setSelectedId, all, collapsed, toggleCollapsed, loading }}
+      value={{ selected, setSelectedId, all, collapsed, toggleCollapsed, loading, refresh: loadProjects }}
     >
       {children}
     </GenerationContext.Provider>

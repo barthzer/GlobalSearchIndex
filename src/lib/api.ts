@@ -79,7 +79,9 @@ export async function apiFetch(
   const headers = new Headers(init.headers);
   const access = authStore.access();
   if (access) headers.set("Authorization", `Bearer ${access}`);
-  if (init.body && !headers.has("Content-Type"))
+  // FormData (upload logo) : NE PAS forcer application/json — le navigateur pose
+  // le multipart/form-data + boundary lui-même.
+  if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type"))
     headers.set("Content-Type", "application/json");
 
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });

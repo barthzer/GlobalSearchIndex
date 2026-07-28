@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "./Button";
 import { useGeneration } from "./GenerationProvider";
-import NewAnalysisModal from "./NewAnalysisModal";
+import NewProjectModal from "./NewProjectModal";
 import ClientInfoModal from "./ClientInfoModal";
 import AWILogoCompact from "./AWILogoCompact";
 
@@ -238,7 +238,7 @@ export default function GenerationsSidebar() {
       </div>
 
 
-      {showNewAnalysis && <NewAnalysisModal onClose={() => setShowNewAnalysis(false)} />}
+      {showNewAnalysis && <NewProjectModal onClose={() => setShowNewAnalysis(false)} />}
       {userModal && (
         <ClientInfoModal genId={userModal.id} genName={userModal.name} onClose={() => setUserModal(null)} />
       )}
