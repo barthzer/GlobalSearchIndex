@@ -84,7 +84,15 @@ export async function apiFetch(
   if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type"))
     headers.set("Content-Type", "application/json");
 
-  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  // Données authentifiées (scores, recos, projets) : JAMAIS servies depuis le
+  // cache navigateur — une réponse figée re-produit un état obsolète à l'écran
+  // (« Ces 8 leviers » après le fix serveur à 9). no-store par défaut, un appelant
+  // peut toujours forcer un autre mode via init.cache.
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers,
+    cache: init.cache ?? "no-store",
+  });
 
   if (res.status === 401 && !_retried) {
     try {
