@@ -17,18 +17,17 @@ import TutorialModal, { tourSeen } from "@/components/TutorialModal";
 import PageSpeedCard, { TrafficCard } from "@/components/PageSpeedCard";
 import ProjectionView from "@/components/ProjectionView";
 import ConcurrenceView, { CoverageSection } from "@/components/ConcurrenceView";
-import NotorieteView from "@/components/NotorieteView";
 import { useAccount } from "@/components/AccountProvider";
 import { useGeneration } from "@/components/GenerationProvider";
 import { withBasePath } from "@/lib/api";
 import NotWiredNotice from "@/components/NotWiredNotice";
 import AnalyseTab from "@/components/AnalyseTab";
+import NotorieteTab from "@/components/NotorieteTab";
 import { recommendations } from "./rapport/recommendations";
 import { tabsForRole, defaultTabForRole, type TabKey } from "@/lib/tabs";
 import RecommendationsView from "@/components/RecommendationsView";
 import RecommendationCard from "@/components/RecommendationCard";
 import ExpertCtaBanner from "@/components/ExpertCtaBanner";
-import { NotorieteInsights } from "@/components/NotorieteView";
 
 const priorityConfig = {
   critique: { label: "Critique", bg: "bg-red-500/15", text: "text-red-400", border: "border-red-500/20" },
@@ -530,7 +529,7 @@ export default function DashboardPage() {
             ) : activeTabSafe === "recommandations" ? (
               <RecommendationsView onExpertClick={() => setShowExpert(true)} />
             ) : (
-              <NotorieteView />
+              <NotorieteTab projectId={currentGeneration.id} />
             )}
 
             </div>
