@@ -7,6 +7,7 @@ import {
   type ProjectScore,
 } from "@/lib/scores";
 import RealScoreArc from "./RealScoreArc";
+import RealPageSpeed from "./RealPageSpeed";
 import NotWiredNotice from "./NotWiredNotice";
 
 // Les 4 scores de l'analyse, rendus depuis le display SERVEUR (M3). Les autres
@@ -104,10 +105,20 @@ export default function AnalyseTab({ projectId }: { projectId: string }) {
         })}
       </section>
 
-      {/* Blocs pas encore câblés (M3 PageSpeed, M7 notoriété, M4 recos, M6
-          concurrence) → état explicite, jamais un chiffre factice. */}
+      {/* PageSpeed — câblé sur le rawData réel (Lighthouse). */}
+      {(() => {
+        const ps = byType("page_speed");
+        return ps ? (
+          <div className="mb-6">
+            <RealPageSpeed raw={ps.rawData as Parameters<typeof RealPageSpeed>[0]["raw"]} />
+          </div>
+        ) : null;
+      })()}
+
+      {/* Blocs pas encore câblés (M7 notoriété, M4 recos, M6 concurrence) →
+          état explicite, jamais un chiffre factice. */}
       <div className="mt-6">
-        <NotWiredNotice label="PageSpeed, trafic mensuel, notoriété & autorité média, et recommandations" />
+        <NotWiredNotice label="Le trafic mensuel, la notoriété & autorité média, et les recommandations" />
       </div>
     </>
   );

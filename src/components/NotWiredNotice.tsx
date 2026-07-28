@@ -23,7 +23,7 @@ export default function NotWiredNotice({ label }: { label?: string }) {
         Données en cours de câblage
       </h2>
       <p className="mx-auto max-w-md text-[14px] leading-relaxed text-text-muted">
-        {label ?? "Ce contenu"} sera branché aux données réelles de l&apos;API,
+        {label ?? "Ce contenu"}{" "}sera branché aux données réelles de l&apos;API,
         pilier par pilier. Aucun chiffre n&apos;est affiché tant que la donnée
         n&apos;est pas réelle — pas de valeur de démonstration.
       </p>
