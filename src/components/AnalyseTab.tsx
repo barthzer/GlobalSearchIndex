@@ -5,9 +5,11 @@ import {
   fetchProjectScores,
   anyProcessing,
   type ProjectScore,
+  type ScoreDisplay,
 } from "@/lib/scores";
 import RealScoreArc from "./RealScoreArc";
 import RealPageSpeed from "./RealPageSpeed";
+import RealRecommendations from "./RealRecommendations";
 import NotWiredNotice from "./NotWiredNotice";
 
 // Les 4 scores de l'analyse, rendus depuis le display SERVEUR (M3). Les autres
@@ -93,32 +95,49 @@ export default function AnalyseTab({ projectId }: { projectId: string }) {
       <section className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {ARC_SCORES.map(({ type, label }) => {
           const sc = byType(type);
-          if (!sc) return null;
+          // Score absent → arc « non disponible » (jamais un arc qui disparaît).
+          const display: ScoreDisplay = sc
+            ? sc.display
+            : {
+                type: "seo",
+                scorable: false,
+                value: null,
+                absolute: false,
+                neutralArc: false,
+                tone: "muted",
+                label: null,
+                message: "Score non disponible pour ce projet.",
+                caption: "Non disponible",
+              };
           return (
-            <RealScoreArc
-              key={type}
-              label={label}
-              icon={icon()}
-              display={sc.display}
-            />
+            <RealScoreArc key={type} label={label} icon={icon()} display={display} />
           );
         })}
       </section>
 
-      {/* PageSpeed — câblé sur le rawData réel (Lighthouse). */}
-      {(() => {
-        const ps = byType("page_speed");
-        return ps ? (
-          <div className="mb-6">
-            <RealPageSpeed raw={ps.rawData as Parameters<typeof RealPageSpeed>[0]["raw"]} />
-          </div>
-        ) : null;
-      })()}
+      {/* PageSpeed — toujours affiché : les vraies données, ou « non disponible »
+          explicite (crawl dégradé). Jamais un bloc qui disparaît en silence. */}
+      <div className="mb-6">
+        <RealPageSpeed
+          raw={
+            (byType("page_speed")?.rawData ?? null) as Parameters<
+              typeof RealPageSpeed
+            >[0]["raw"]
+          }
+          reason={byType("page_speed")?.display?.message ?? null}
+        />
+      </div>
 
-      {/* Blocs pas encore câblés (M7 notoriété, M4 recos, M6 concurrence) →
-          état explicite, jamais un chiffre factice. */}
+      {/* Recommandations (M4) — la donnée existe, l'endpoint est câblé. */}
+      <div className="mt-8">
+        <RealRecommendations projectId={projectId} />
+      </div>
+
+      {/* Restent explicitement non câblés : trafic mensuel (source Ahrefs non
+          tranchée — CGU + courbe mondiale vs snapshot France) et notoriété (M7).
+          Jamais un chiffre factice. */}
       <div className="mt-6">
-        <NotWiredNotice label="Le trafic mensuel, la notoriété & autorité média, et les recommandations" />
+        <NotWiredNotice label="Le trafic mensuel et la notoriété & autorité média" />
       </div>
     </>
   );

@@ -32,10 +32,36 @@ function fmt(value: number, unit: string): string {
   return unit === "s" ? `${n} s` : unit === "ms" ? `${n} ms` : `${n}${unit}`;
 }
 
-export default function RealPageSpeed({ raw }: { raw: PageSpeedRaw | null }) {
+export default function RealPageSpeed({
+  raw,
+  reason,
+}: {
+  raw: PageSpeedRaw | null;
+  reason?: string | null;
+}) {
   const cats = raw?.mobile?.categories ?? [];
   const metrics = raw?.mobile?.metrics ?? [];
-  if (cats.length === 0 && metrics.length === 0) return null;
+
+  // Donnée absente (crawl bloqué / dégradé) : on le DIT, jamais un bloc qui
+  // disparaît en silence. Avec la raison si le serveur l'a donnée.
+  if (cats.length === 0 && metrics.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border-subtle bg-bg-card p-5 md:p-6">
+        <div className="mb-2 flex items-center gap-2.5">
+          <svg className="h-4 w-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+          </svg>
+          <span className="text-[14px] font-medium text-text-primary">
+            Google PageSpeed Insights
+          </span>
+        </div>
+        <p className="text-[13px] leading-relaxed text-text-muted">
+          PageSpeed non disponible pour ce site
+          {reason ? ` — ${reason}` : " (le crawl n'a pas produit de données)"}.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-border-subtle bg-bg-card p-5 backdrop-blur-[6px] md:p-6">
