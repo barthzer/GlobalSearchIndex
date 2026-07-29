@@ -92,6 +92,7 @@ export default function ScoreArc({
       <>
       {showUnlock && (
         <SemanticUnlockModal
+          projectId=""
           onClose={() => setShowUnlock(false)}
           onSubmit={() => {
             setShowUnlock(false);

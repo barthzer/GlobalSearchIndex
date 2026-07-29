@@ -4,10 +4,13 @@ import ModalPortal from "./ModalPortal";
 import { useState, useRef, useEffect } from "react";
 import Button from "./Button";
 import { getSemanticInputs, saveSemanticInputs, type SemanticInputs } from "@/lib/semanticInputs";
+import { apiFetch } from "@/lib/api";
 
 interface SemanticUnlockModalProps {
   onClose: () => void;
   onSubmit: () => void;
+  /** Projet courant : cible des appels réels (génération, submit, écart de taille). */
+  projectId: string;
   /** Mode benchmark concurrents : uniquement l'étape concurrents (pas de mots-clés). */
   competitorsOnly?: boolean;
   /** Libellé du bouton final (mode competitorsOnly). */
@@ -16,28 +19,16 @@ interface SemanticUnlockModalProps {
 
 type Item = { value: string; checked: boolean };
 
-// Candidats proposés par l'IA (mock — à brancher sur le moteur de suggestion).
-const AI_COMPETITORS = [
-  "sezane.com",
-  "balzac-paris.fr",
-  "rouje.com",
-  "ba-sh.com",
-  "soeur.fr",
-  "claudiepierlot.com",
-];
-const AI_KEYWORDS = [
-  "robe en lin femme",
-  "vêtements éco-responsables",
-  "mode made in france",
-  "blouse coton bio",
-  "jupe midi plissée",
-  "robe coton bio",
-];
+// Génération vide (rare : la génération complète avec des acteurs du secteur, cf
+// van-it/blackpearlparis). Message qui dit ce que le commercial PEUT faire.
+const NO_COMP_MSG =
+  "Aucun concurrent n'a pu être proposé automatiquement, ce qui arrive sur un site très récent ou un secteur de niche. Saisissez au moins un acteur de votre secteur, même plus gros : il sert de point de comparaison. C'est une limite de notre source de données, pas une erreur de votre part.";
 
+// Bornes corrigées (SEO Engine v7.30 : 1-3 concurrents + 5-10 mots-clés).
 const COMP_MAX = 3;
-const COMP_REQ = 3;
-const KW_MAX = 5;
-const KW_REQ = 3;
+const COMP_MIN = 1;
+const KW_MAX = 10;
+const KW_MIN = 5;
 
 const emptyItems = (n: number): Item[] => Array.from({ length: n }, () => ({ value: "", checked: false }));
 
@@ -48,7 +39,7 @@ function itemsFromStore(values: string[], min: number, max: number): Item[] {
   return items;
 }
 
-export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly = false, submitLabel }: SemanticUnlockModalProps) {
+export default function SemanticUnlockModal({ onClose, onSubmit, projectId, competitorsOnly = false, submitLabel }: SemanticUnlockModalProps) {
   // Lecture du store une seule fois au montage (pré-remplissage lié au benchmark).
   const stored = useRef<SemanticInputs>(getSemanticInputs()).current;
   const compInit = stored.competitors.length ? itemsFromStore(stored.competitors, 3, COMP_MAX) : emptyItems(3);
@@ -125,6 +116,45 @@ export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly
     });
   }
 
+  // Génération RÉELLE (POST /semantic/generate) : la même passe LLM propose
+  // concurrents + mots-clés du secteur. Anime les vrais candidats via runAiFill.
+  async function handleGenerate(key: "comp" | "kw") {
+    if (aiBusy) return;
+    setAiBusy(key);
+    setError("");
+    try {
+      const res = await apiFetch(`/projects/${projectId}/semantic/generate`, {
+        method: "POST",
+        body: "{}",
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as {
+        generated?: boolean;
+        competitors?: string[];
+        keywords?: string[];
+      };
+      const cap = key === "comp" ? COMP_MAX : KW_MAX;
+      const candidates = (key === "comp" ? data.competitors ?? [] : data.keywords ?? []).slice(0, cap);
+      if (!data.generated || candidates.length === 0) {
+        setAiBusy(null);
+        setError(
+          key === "comp"
+            ? NO_COMP_MSG
+            : "Aucun mot-clé n'a pu être proposé — saisissez ceux de votre activité.",
+        );
+        return;
+      }
+      if (key === "comp") {
+        runAiFill(candidates, setCompetitors, setCompLoading, "comp", COMP_MAX, candidates.length);
+      } else {
+        runAiFill(candidates, setKeywords, setKwLoading, "kw", KW_MAX, candidates.length);
+      }
+    } catch {
+      setAiBusy(null);
+      setError("La génération a échoué. Réessayez, ou saisissez à la main.");
+    }
+  }
+
   function toggleItem(setList: React.Dispatch<React.SetStateAction<Item[]>>, max: number, i: number) {
     setError("");
     setList((prev) => {
@@ -163,16 +193,42 @@ export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly
     setTimeout(() => document.getElementById(`${idPrefix}-${newIdx}`)?.focus(), 0);
   }
 
-  function persistAndSubmit(payload: Partial<SemanticInputs>) {
+  async function persistAndSubmit(payload: Partial<SemanticInputs>) {
     saveSemanticInputs(payload);
     setSubmitting(true);
-    // On laisse la vibration se jouer avant de fermer / révéler le loader.
-    setTimeout(() => { if (mounted.current) onSubmit(); }, 560);
+    try {
+      // Mode benchmark (concurrents seuls) → notoriété ; sinon → sémantique complet.
+      if (competitorsOnly) {
+        const res = await apiFetch(`/projects/${projectId}/notoriete/benchmark`, {
+          method: "POST",
+          body: JSON.stringify({ competitors: payload.competitors ?? [] }),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+      } else {
+        const res = await apiFetch(`/projects/${projectId}/semantic`, {
+          method: "POST",
+          body: JSON.stringify({
+            competitors: payload.competitors ?? [],
+            keywords: payload.keywords ?? [],
+          }),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+      }
+      // On laisse la vibration se jouer avant de fermer / révéler le loader.
+      setTimeout(() => { if (mounted.current) onSubmit(); }, 560);
+    } catch {
+      if (mounted.current) {
+        setSubmitting(false);
+        setError("Le lancement de l'analyse a échoué. Réessayez.");
+      }
+    }
   }
 
   function handleStep1() {
-    if (compChecked < COMP_REQ) {
-      setError(`Sélectionnez ${COMP_REQ} concurrents.`);
+    if (compChecked < COMP_MIN) {
+      setError(
+        "Saisissez au moins un concurrent. Si vous n'en connaissez pas, cliquez sur « Générer avec l'IA » : l'outil vous en propose dans votre secteur. C'est une contrainte de notre source de données, pas une erreur de votre part.",
+      );
       return;
     }
     setError("");
@@ -185,8 +241,8 @@ export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly
 
   function handleStep2(e: React.FormEvent) {
     e.preventDefault();
-    if (kwChecked < KW_REQ) {
-      setError(`Sélectionnez au moins ${KW_REQ} mots-clés.`);
+    if (kwChecked < KW_MIN) {
+      setError(`Sélectionnez au moins ${KW_MIN} mots-clés.`);
       return;
     }
     persistAndSubmit({
@@ -309,13 +365,13 @@ export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly
                   Vos concurrents
                 </h2>
                 <p className="text-[14px] font-extralight leading-relaxed text-text-secondary">
-                  Générez des concurrents avec l&apos;IA puis cochez-en {COMP_REQ}, ou saisissez les vôtres.
+                  Générez des concurrents avec l&apos;IA puis cochez-en {COMP_MIN} à {COMP_MAX}, ou saisissez les vôtres.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => runAiFill(AI_COMPETITORS, setCompetitors, setCompLoading, "comp", COMP_REQ, 3)}
+                onClick={() => handleGenerate("comp")}
                 disabled={aiBusy !== null || submitting}
                 className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-accent-pink/30 bg-accent-pink/[0.08] py-2.5 text-[13px] font-medium text-accent-pink transition-all duration-200 hover:bg-accent-pink/[0.14] active:scale-[0.98] disabled:cursor-default disabled:opacity-70"
                 style={{ transitionTimingFunction: "var(--ease-out)" }}
@@ -328,7 +384,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly
 
               <div className="mb-2 flex items-center justify-between px-0.5">
                 <span className="text-[11px] font-medium uppercase tracking-wide text-text-muted">Concurrents</span>
-                <span className={`text-[12px] font-medium ${compChecked >= COMP_REQ ? "text-accent-pink" : "text-text-muted"}`}>
+                <span className={`text-[12px] font-medium ${compChecked >= COMP_MIN ? "text-accent-pink" : "text-text-muted"}`}>
                   {compChecked}/{COMP_MAX} sélectionné{compChecked > 1 ? "s" : ""}
                 </span>
               </div>
@@ -361,7 +417,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly
               )}
 
               <div className="mt-6">
-                <Button variant="primary" fullWidth onClick={handleStep1} disabled={compChecked < COMP_REQ || aiBusy !== null || submitting}>
+                <Button variant="primary" fullWidth onClick={handleStep1} disabled={compChecked < COMP_MIN || aiBusy !== null || submitting}>
                   {competitorsOnly ? finalLabel : "Continuer"}
                   {competitorsOnly ? (
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -399,14 +455,14 @@ export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly
                   Vos mots-clés cibles
                 </h2>
                 <p className="text-[14px] font-extralight leading-relaxed text-text-secondary">
-                  Générez des mots-clés avec l&apos;IA puis cochez-en {KW_REQ} à {KW_MAX}, ou saisissez les vôtres.
+                  Générez des mots-clés avec l&apos;IA puis cochez-en {KW_MIN} à {KW_MAX}, ou saisissez les vôtres.
                 </p>
               </div>
 
               <form onSubmit={handleStep2} className="flex flex-col gap-2.5">
                 <button
                   type="button"
-                  onClick={() => runAiFill(AI_KEYWORDS, setKeywords, setKwLoading, "kw", KW_REQ, 5)}
+                  onClick={() => handleGenerate("kw")}
                   disabled={aiBusy !== null || submitting}
                   className="mb-0.5 flex w-full items-center justify-center gap-2 rounded-xl border border-accent-pink/30 bg-accent-pink/[0.08] py-2.5 text-[13px] font-medium text-accent-pink transition-all duration-200 hover:bg-accent-pink/[0.14] active:scale-[0.98] disabled:cursor-default disabled:opacity-70"
                   style={{ transitionTimingFunction: "var(--ease-out)" }}
@@ -419,7 +475,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly
 
                 <div className="mb-0.5 mt-1 flex items-center justify-between px-0.5">
                   <span className="text-[11px] font-medium uppercase tracking-wide text-text-muted">Mots-clés</span>
-                  <span className={`text-[12px] font-medium ${kwChecked >= KW_REQ ? "text-accent-pink" : "text-text-muted"}`}>
+                  <span className={`text-[12px] font-medium ${kwChecked >= KW_MIN ? "text-accent-pink" : "text-text-muted"}`}>
                     {kwChecked}/{KW_MAX} sélectionné{kwChecked > 1 ? "s" : ""}
                   </span>
                 </div>
@@ -450,7 +506,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, competitorsOnly
                 )}
 
                 <div className="mt-3">
-                  <Button variant="primary" type="submit" fullWidth disabled={kwChecked < KW_REQ || aiBusy !== null || submitting}>
+                  <Button variant="primary" type="submit" fullWidth disabled={kwChecked < KW_MIN || aiBusy !== null || submitting}>
                     Calculer mon score sémantique
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />

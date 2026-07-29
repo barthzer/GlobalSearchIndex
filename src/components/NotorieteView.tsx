@@ -36,6 +36,7 @@ export function NotorieteInsights() {
     <div>
       {showBenchmarkUnlock && (
         <SemanticUnlockModal
+          projectId=""
           competitorsOnly
           submitLabel="Débloquer le benchmark"
           onClose={() => setShowBenchmarkUnlock(false)}
