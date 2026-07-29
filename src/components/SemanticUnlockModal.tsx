@@ -54,6 +54,18 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
   const [aiBusy, setAiBusy] = useState<null | "comp" | "kw">(null);
   const [compLoading, setCompLoading] = useState<boolean[]>(() => Array(compInit.length).fill(false));
   const [kwLoading, setKwLoading] = useState<boolean[]>(() => Array(kwInit.length).fill(false));
+
+  // Écart de taille (M5) : ref_domains de chaque concurrent vs le prospect.
+  // Débouncé + dédup session + non-bloquant (le submit reste actif).
+  type SizeResult = { ref_domains: number | null; ratio: number | null };
+  const [sizes, setSizes] = useState<Record<string, SizeResult>>({});
+  const [sizing, setSizing] = useState<Set<string>>(new Set());
+  const sizesRef = useRef(sizes);
+  const sizingRef = useRef(sizing);
+  const sizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { sizesRef.current = sizes; }, [sizes]);
+  useEffect(() => { sizingRef.current = sizing; }, [sizing]);
+
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -62,6 +74,55 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
 
   const compChecked = competitors.filter((c) => c.checked).length;
   const kwChecked = keywords.filter((k) => k.checked).length;
+
+  // Mesure d'écart : après STABILISATION du set concurrents cochés (débounce 1,5s),
+  // jamais à la frappe. Dédup par domaine (session + cache serveur). Non-bloquant :
+  // le submit reste actif, les badges arrivent quand ils arrivent.
+  const checkedKey = competitors
+    .filter((c) => c.checked && c.value.trim())
+    .map((c) => c.value.trim())
+    .join("|");
+  useEffect(() => {
+    if (sizeDebounceRef.current) clearTimeout(sizeDebounceRef.current);
+    const domains = checkedKey ? checkedKey.split("|") : [];
+    if (domains.length === 0) return;
+    sizeDebounceRef.current = setTimeout(async () => {
+      const toMeasure = domains
+        .filter((d) => !(d in sizesRef.current) && !sizingRef.current.has(d))
+        .slice(0, 3);
+      if (toMeasure.length === 0) return;
+      setSizing((prev) => new Set([...prev, ...toMeasure]));
+      try {
+        const res = await apiFetch(`/projects/${projectId}/competitor-size`, {
+          method: "POST",
+          body: JSON.stringify({ competitors: toMeasure }),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as {
+            competitors?: { domain: string; ref_domains: number | null; ratio: number | null }[];
+          };
+          const next: Record<string, SizeResult> = {};
+          (data.competitors ?? []).forEach((c) => {
+            next[c.domain] = { ref_domains: c.ref_domains, ratio: c.ratio };
+          });
+          if (mounted.current) setSizes((prev) => ({ ...prev, ...next }));
+        }
+      } catch {
+        // Silencieux côté données : jamais un faux chiffre ; le badge reste absent.
+      } finally {
+        if (mounted.current) {
+          setSizing((prev) => {
+            const n = new Set(prev);
+            toMeasure.forEach((d) => n.delete(d));
+            return n;
+          });
+        }
+      }
+    }, 1500);
+    return () => {
+      if (sizeDebounceRef.current) clearTimeout(sizeDebounceRef.current);
+    };
+  }, [checkedKey, projectId]);
 
   /**
    * Révèle les candidats un par un : chaque ligne apparaît vide et "cherche" (pulsation),
@@ -301,6 +362,40 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
             </svg>
           )}
         </button>
+
+        {/* Badge d'écart de taille (concurrents uniquement) : lisible, jamais un
+            chiffre nu. « à vérifier » si non mesuré (jamais un vide silencieux). */}
+        {idPrefix === "comp" && item.value.trim() && !loading && (() => {
+          const d = item.value.trim();
+          if (sizing.has(d)) {
+            return (
+              <p className="mt-1.5 pl-1 text-[11px] italic text-text-muted animate-pulse">
+                Analyse de la taille du concurrent…
+              </p>
+            );
+          }
+          const r = sizes[d];
+          if (!r) return null;
+          if (r.ratio === null) {
+            return (
+              <p className="mt-1.5 pl-1 text-[11px] text-text-muted">
+                Autorité non mesurée pour ce domaine : vérifiez qu&apos;il s&apos;agit bien d&apos;un concurrent réel.
+              </p>
+            );
+          }
+          if (r.ratio >= 2) {
+            return (
+              <p className="mt-1.5 pl-1 text-[11px] text-amber-400">
+                {Math.round(r.ratio)}× plus de domaines référents que votre prospect. National ou régional ?
+              </p>
+            );
+          }
+          return (
+            <p className="mt-1.5 pl-1 text-[11px] text-text-secondary">
+              Profil comparable au vôtre en domaines référents.
+            </p>
+          );
+        })()}
       </div>
     );
   }
@@ -417,8 +512,10 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
               )}
 
               <div className="mt-6">
-                <Button variant="primary" fullWidth onClick={handleStep1} disabled={compChecked < COMP_MIN || aiBusy !== null || submitting}>
-                  {competitorsOnly ? finalLabel : "Continuer"}
+                {/* Jamais désactivé sur le compte : le clic déclenche la validation
+                    qui DIT pourquoi (message ci-dessus), pas un bouton muet. */}
+                <Button variant="primary" fullWidth onClick={handleStep1} disabled={aiBusy !== null || submitting}>
+                  {submitting ? "Lancement…" : competitorsOnly ? finalLabel : "Continuer"}
                   {competitorsOnly ? (
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
@@ -506,8 +603,8 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
                 )}
 
                 <div className="mt-3">
-                  <Button variant="primary" type="submit" fullWidth disabled={kwChecked < KW_MIN || aiBusy !== null || submitting}>
-                    Calculer mon score sémantique
+                  <Button variant="primary" type="submit" fullWidth disabled={aiBusy !== null || submitting}>
+                    {submitting ? "Lancement…" : "Calculer mon score sémantique"}
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                     </svg>
