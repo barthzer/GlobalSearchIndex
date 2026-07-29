@@ -195,7 +195,7 @@ export default function DashboardPage() {
   // l'auth + la liste de projets, mais AUCUN corps d'analyse (scores, GEO, autorité,
   // PageSpeed, trafic, notoriété, recos) — tout est encore factice. Tant qu'un onglet
   // n'est pas ici, on affiche un état explicite, jamais un chiffre inventé. M3+ les ajoute.
-  const WIRED_TABS: TabKey[] = ["analyse", "notoriete"]; // M3 : analyse (4 scores) ; M7 : notoriété (jauge+benchmark+éditorial)
+  const WIRED_TABS: TabKey[] = ["analyse", "notoriete", "concurrence"]; // M3 : analyse (4 scores) ; M7 : notoriété (jauge+benchmark+éditorial)
   const tabWired = WIRED_TABS.includes(activeTabSafe);
 
   const [copied, setCopied] = useState(false);
