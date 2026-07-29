@@ -18,6 +18,7 @@ import CoverageBars from "./CoverageBars";
 import CoverageRadar from "./CoverageRadar";
 import CoverageBump from "./CoverageBump";
 import CompetitorBadge from "./CompetitorBadge";
+import SemanticUnlockModal from "../SemanticUnlockModal";
 
 // M6 — Onglet Concurrence. Données = score sémantique (concurrents saisis +
 // mots-clés). Jamais un vide silencieux : chaque cas (verrouillé, sans
@@ -60,6 +61,9 @@ export default function ConcurrenceTab({
   const [scores, setScores] = useState<ProjectScore[] | null>(null);
   const [error, setError] = useState(false);
   const [view, setView] = useState<CoverageView>("heatmap");
+  const [setupOpen, setSetupOpen] = useState(false);
+  // Incrémenté après un déblocage réussi → relance le fetch/poll des scores.
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
     if (!projectId) return;
@@ -83,7 +87,7 @@ export default function ConcurrenceTab({
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [projectId]);
+  }, [projectId, reloadNonce]);
 
   if (error) {
     return <EmptyCard title="Concurrence" body="Impossible de charger l'analyse concurrentielle — réessayez." />;
@@ -104,10 +108,38 @@ export default function ConcurrenceTab({
   // saisis). Le déblocage est M5 → ici on l'annonce, sans chiffre factice.
   if (!semantic || semantic.status !== "completed") {
     return (
-      <EmptyCard
-        title="Analyse concurrentielle non débloquée"
-        body="Saisissez vos concurrents et vos mots-clés depuis l'interface commerciale pour comparer votre visibilité SERP à la leur. Aucune donnée n'est simulée."
-      />
+      <>
+        <div className="animate-fade-up mx-auto max-w-2xl rounded-2xl border border-border-subtle bg-bg-card p-10 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-card-inner-bg">
+            <svg className="h-6 w-6 text-accent-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+            </svg>
+          </div>
+          <h2 className="mb-2 text-lg font-medium text-text-primary">
+            Analyse concurrentielle non débloquée
+          </h2>
+          <p className="mx-auto mb-5 max-w-md text-[14px] leading-relaxed text-text-muted">
+            Saisissez 1 à 3 concurrents et vos mots-clés pour comparer votre visibilité SERP à la leur. Si vous ne connaissez pas de concurrents, l&apos;outil vous en propose dans votre secteur.
+          </p>
+          <button
+            type="button"
+            onClick={() => setSetupOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-accent-pink px-5 py-2.5 text-[14px] font-medium text-white transition-all hover:opacity-90 active:scale-[0.97]"
+          >
+            Saisir / générer mes concurrents
+          </button>
+        </div>
+        {setupOpen && (
+          <SemanticUnlockModal
+            projectId={projectId}
+            onClose={() => setSetupOpen(false)}
+            onSubmit={() => {
+              setSetupOpen(false);
+              setReloadNonce((n) => n + 1);
+            }}
+          />
+        )}
+      </>
     );
   }
 
