@@ -1,17 +1,19 @@
 "use client";
 
 import type { ScoreDisplay } from "@/lib/scores";
+import { bandLabel } from "@/lib/scoreLabel";
 
 // Arc rendu À PARTIR du display serveur. Le front ne décide NI le régime, NI le
-// scorable, NI la neutralité — il rend. Seule la teinte du dégradé RELATIF dérive
-// de la valeur (présentation pure, comme l'ancien front prospect) ; la décision
-// « neutre » vient du serveur (neutralArc).
+// scorable, NI la neutralité, NI la BANDE — il rend. La bande (rouge/ambre/vert)
+// est décidée SERVEUR (display.band) : le front ne recalcule plus de seuils 50/75
+// (invariant « 56 vs 12 » : un seul endroit décide). La décision « neutre » vient
+// aussi du serveur (neutralArc).
 const NEUTRAL = { start: "#9ca3af", end: "#cbd5e1" };
-function valueGradient(v: number): { start: string; end: string } {
-  if (v < 50) return { start: "#ef4444", end: "#f97316" };
-  if (v < 75) return { start: "#f97316", end: "#eab308" };
-  return { start: "#22c55e", end: "#4ade80" };
-}
+const BAND_GRADIENT: Record<"critical" | "medium" | "good", { start: string; end: string }> = {
+  critical: { start: "#ef4444", end: "#f97316" },
+  medium: { start: "#f97316", end: "#eab308" },
+  good: { start: "#22c55e", end: "#4ade80" },
+};
 
 const ARC_PATH =
   "M4 90.3301C4 67.4339 13.0955 45.4755 29.2855 29.2855C45.4756 13.0955 67.434 4 90.3302 4C113.226 4 135.185 13.0955 151.375 29.2855C167.565 45.4755 176.66 67.4339 176.66 90.3301";
@@ -56,7 +58,10 @@ export default function RealScoreArc({
   const value = display.value;
   // ① COULEUR : GRISE si régime neutre (absolu ou confiance réduite) — décision
   // SERVEUR (neutralArc). Sinon dégradé par valeur (relatif).
-  const col = display.neutralArc ? NEUTRAL : valueGradient(value);
+  // !display.band couvre null ET undefined : si l'API n'envoie pas encore la
+  // bande (déploiement en cours), on retombe sur neutre plutôt que de crasher.
+  const col =
+    display.neutralArc || !display.band ? NEUTRAL : BAND_GRADIENT[display.band];
   const pct = Math.min(Math.max(value, 0), 100) / 100;
   const offset = circumference - pct * circumference;
 
@@ -106,6 +111,17 @@ export default function RealScoreArc({
             )}
           </div>
         </div>
+
+        {/* Pastille d'interprétation (COMEX) depuis la bande SERVEUR — le front
+            LIT display.band, il ne recalcule pas de seuils. Absente en régime
+            absolu/neutre (band null : un BAS brut n'est pas « bon/mauvais »). */}
+        {display.band && (
+          <span
+            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${bandLabel(display.band).chip}`}
+          >
+            {bandLabel(display.band).label}
+          </span>
+        )}
 
         {/* Caveat/label du régime (confiance réduite, absolu…) — texte serveur. */}
         {display.message && (

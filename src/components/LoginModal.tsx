@@ -7,8 +7,9 @@ import ModalPortal from "./ModalPortal";
 import Button from "./Button";
 import OtpInput from "./OtpInput";
 import { useAccount } from "./AccountProvider";
-import { getLeadByEmail, ensureDemoLead, DEMO_LEAD_EMAIL, type OnboardingLead } from "@/lib/lead";
+import { getLeadByEmail, type OnboardingLead } from "@/lib/lead";
 import { validateProEmail } from "@/lib/proEmail";
+import { apiFetch } from "@/lib/api";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -22,12 +23,11 @@ const inputClass =
 
 const CODE_LENGTH = 6;
 const RESEND_COOLDOWN = 30; // secondes
-// TODO(backend): le code est généré et vérifié côté serveur (envoi via ESP transactionnel).
-// En mock, on accepte ce code de démo. À supprimer au branchement de l'API.
-const DEMO_CODE = "000000";
+// La connexion par code est vérifiée CÔTÉ SERVEUR (POST /auth/verify-code). Aucun
+// contournement client : pas de code de démo qui ouvre l'espace à tous.
 
 export default function LoginModal({ onClose, initialView = "client" }: LoginModalProps) {
-  const { loginWith, loginWithCredentials } = useAccount();
+  const { loginWithCredentials } = useAccount();
   const router = useRouter();
   const [view, setView] = useState<"client" | "admin" | "verify">(initialView);
   const [email, setEmail] = useState("");
@@ -42,12 +42,6 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
   const [verified, setVerified] = useState(false);
   const [resendIn, setResendIn] = useState(0);
   const [resent, setResent] = useState(false);
-
-  // Mock dev : seede une analyse de démo pour pouvoir tester la connexion.
-  // TODO(backend): à retirer.
-  useEffect(() => {
-    ensureDemoLead();
-  }, []);
 
   // Compte à rebours du renvoi.
   useEffect(() => {
@@ -83,31 +77,28 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
     setView("verify");
   }
 
-  function verifyCode() {
+  async function verifyCode() {
     if (code.length !== CODE_LENGTH || verifying) return;
     setVerifying(true);
     setCodeError("");
-    // TODO(backend): POST /auth/verify-code { email, code } → 200 si valide.
-    setTimeout(() => {
-      if (code === DEMO_CODE) {
-        setVerified(true);
-        const lead = pendingLead;
-        setTimeout(() => {
-          if (lead) {
-            loginWith({
-              type: "user",
-              name: `${lead.firstName} ${lead.lastName}`.trim() || lead.company || "Mon compte",
-              email: lead.email,
-            });
-          }
-          goToDashboard();
-        }, 650);
-      } else {
-        setVerifying(false);
-        setCode("");
-        setCodeError("Code incorrect ou expiré. Vérifiez votre saisie ou renvoyez un code.");
-      }
-    }, 700);
+    // Vérification RÉELLE côté serveur. Tant que l'endpoint n'est pas livré, la
+    // connexion par code échoue proprement — jamais un faux succès client.
+    try {
+      const res = await apiFetch("/auth/verify-code", {
+        method: "POST",
+        body: JSON.stringify({ email: pendingLead?.email ?? email, code }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      // La session (token/refresh) est posée par l'API — on entre.
+      setVerified(true);
+      setTimeout(goToDashboard, 650);
+    } catch {
+      setVerifying(false);
+      setCode("");
+      setCodeError(
+        "La connexion par code n'est pas encore disponible. Utilisez l'accès par mot de passe.",
+      );
+    }
   }
 
   function resendCode() {
@@ -228,11 +219,6 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
                   <p className="mt-3 text-center text-[12px] font-light leading-relaxed text-red-400">{codeError}</p>
                 )}
 
-                {/* TODO(backend): retirer cet indice — le vrai code arrive par email. */}
-                <p className="mt-3 text-center text-[11px] font-light text-text-muted/70">
-                  Mode démo : saisissez le code {DEMO_CODE}
-                </p>
-
                 {/* Renvoi avec compte à rebours */}
                 <div className="mt-4 text-center text-[13px]">
                   {resent ? (
@@ -324,15 +310,6 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
                     />
                     {error && <p className="mt-1.5 text-[12px] font-light text-red-400">{error}</p>}
                     {/* TODO(backend): retirer cet indice de test. */}
-                    {!error && (
-                      <button
-                        type="button"
-                        onClick={() => { setEmail(DEMO_LEAD_EMAIL); setError(""); }}
-                        className="mt-1.5 text-[11px] font-light text-text-muted/70 transition-colors hover:text-accent-pink"
-                      >
-                        Test : {DEMO_LEAD_EMAIL} (cliquer pour pré-remplir)
-                      </button>
-                    )}
                   </div>
                   <Button variant="primary" fullWidth type="submit">
                     Accéder à mon analyse

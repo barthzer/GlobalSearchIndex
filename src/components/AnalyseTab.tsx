@@ -105,6 +105,7 @@ export default function AnalyseTab({ projectId }: { projectId: string }) {
                 absolute: false,
                 neutralArc: false,
                 tone: "muted",
+                band: null,
                 label: null,
                 message: "Score non disponible pour ce projet.",
                 caption: "Non disponible",

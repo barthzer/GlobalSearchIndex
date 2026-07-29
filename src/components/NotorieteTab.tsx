@@ -243,6 +243,7 @@ export default function NotorieteTab({
     absolute: false,
     neutralArc: false,
     tone: "muted",
+    band: null,
     label: null,
     message: "Autorité non disponible pour ce projet.",
     caption: "Non calculable",

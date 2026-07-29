@@ -8,8 +8,20 @@ export interface ScoreBand {
   chip: string;
 }
 
+const BAND_LABEL: Record<"critical" | "medium" | "good", ScoreBand> = {
+  critical: { label: "À traiter en priorité", chip: "border-red-500/25 bg-red-500/10 text-red-500" },
+  medium: { label: "Marge de progression", chip: "border-amber-500/25 bg-amber-500/10 text-amber-500" },
+  good: { label: "Un atout", chip: "border-emerald-500/25 bg-emerald-500/10 text-emerald-500" },
+};
+
+// Pastille depuis la bande décidée SERVEUR (display.band) : AUCUN seuil recalculé
+// côté front — le serveur a déjà tranché 50/75. C'est ce qui empêche le « 56 vs 12 ».
+export function bandLabel(band: "critical" | "medium" | "good"): ScoreBand {
+  return BAND_LABEL[band];
+}
+
+// Legacy : composants mock qui n'ont qu'un score brut (pas de bloc display serveur).
+// Dérive la bande côté client — À NE PAS utiliser sur les cartes réelles.
 export function scoreBand(score: number): ScoreBand {
-  if (score < 50) return { label: "À traiter en priorité", chip: "border-red-500/25 bg-red-500/10 text-red-500" };
-  if (score < 75) return { label: "Marge de progression", chip: "border-amber-500/25 bg-amber-500/10 text-amber-500" };
-  return { label: "Un atout", chip: "border-emerald-500/25 bg-emerald-500/10 text-emerald-500" };
+  return bandLabel(score < 50 ? "critical" : score < 75 ? "medium" : "good");
 }

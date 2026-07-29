@@ -11,6 +11,9 @@ export interface ScoreDisplay {
   absolute: boolean; // true → échelle non-/100 (BAS absolu / legacy) → arc neutre
   neutralArc: boolean; // arc gris : absolu OU confiance réduite
   tone: "ok" | "warn" | "muted";
+  // Bande /100 décidée SERVEUR (rouge < 50, ambre 50-74, vert >= 75). Le front la
+  // LIT pour la couleur d'arc et la pastille — il ne recalcule pas les seuils.
+  band: "critical" | "medium" | "good" | null;
   label: string | null;
   message: string | null;
   caption: string;
