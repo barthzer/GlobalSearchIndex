@@ -83,7 +83,7 @@ const fontWeights = [
 ];
 
 const fontFamilies = [
-  { name: "Outfit (sans)", varName: "--font-outfit" },
+  { name: "Hanken Grotesk (sans)", varName: "--font-outfit" },
   { name: "Instrument Serif", varName: "--font-instrument-serif" },
   { name: "Manrope", varName: "--font-manrope" },
   { name: "Space Grotesk", varName: "--font-space-grotesk" },

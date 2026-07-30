@@ -61,6 +61,23 @@ export function getLeadByEmail(email: string): OnboardingLead | null {
   }
 }
 
+/**
+ * Construit les champs de compte client à partir d'un lead (onboarding / connexion).
+ * Centralise le mapping lead → compte pour rester cohérent sur tous les points d'entrée.
+ */
+export function accountFieldsFromLead(lead: OnboardingLead) {
+  return {
+    type: "user" as const,
+    name: `${lead.firstName} ${lead.lastName}`.trim() || lead.company || "Mon compte",
+    email: lead.email,
+    firstName: lead.firstName,
+    lastName: lead.lastName,
+    company: lead.company,
+    phone: lead.phone,
+  };
+}
+
+
 /** Dernier lead capturé (pour préremplir les formulaires consultant). */
 export function getLatestLead(): OnboardingLead | null {
   if (typeof window === "undefined") return null;

@@ -55,3 +55,38 @@ body {
     background-color var(--motion-base) var(--ease-out),
     color var(--motion-base) var(--ease-out);
 }
+
+/* ──────────────── Smooth scroll (Lenis) + Reveal (GSAP) ──────────────── */
+/* Lenis : requis pour le smooth scroll */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Reveal (GSAP) — visible par défaut (JS off / crawlers), masqué uniquement
+   quand le JS est actif (html.js posé avant le paint). Contenu toujours dans le DOM. */
+[data-reveal] {
+  will-change: opacity, transform;
+}
+html.js [data-reveal] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto;
+  }
+}
