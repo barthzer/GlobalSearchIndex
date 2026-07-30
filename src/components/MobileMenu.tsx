@@ -14,9 +14,11 @@ interface MobileMenuProps {
   onExpertClick?: () => void;
   activeTab?: TabKey;
   onTabChange?: (tab: TabKey) => void;
+  /** Masque la ligne « Thème » (switch light/dark), ex. landing en light forcé. */
+  hideThemeToggle?: boolean;
 }
 
-export default function MobileMenu({ onClose, onExpertClick, activeTab, onTabChange }: MobileMenuProps) {
+export default function MobileMenu({ onClose, onExpertClick, activeTab, onTabChange, hideThemeToggle = false }: MobileMenuProps) {
   const { isAdmin } = useAccount();
   const { selected, setSelectedId, all: generations } = useGeneration();
   const [search, setSearch] = useState("");
@@ -222,13 +224,15 @@ export default function MobileMenu({ onClose, onExpertClick, activeTab, onTabCha
 
       {/* Bottom */}
       <div className="relative flex flex-col gap-4 border-t border-border-subtle px-6 py-6">
-        <div
-          className="flex items-center justify-between"
-          style={{ animation: "fade-up 300ms var(--ease-expo) 250ms both" }}
-        >
-          <span className="text-sm text-text-secondary">Thème</span>
-          <ThemeToggle />
-        </div>
+        {!hideThemeToggle && (
+          <div
+            className="flex items-center justify-between"
+            style={{ animation: "fade-up 300ms var(--ease-expo) 250ms both" }}
+          >
+            <span className="text-sm text-text-secondary">Thème</span>
+            <ThemeToggle />
+          </div>
+        )}
         <div
           className="flex items-center justify-between"
           style={{ animation: "fade-up 300ms var(--ease-expo) 300ms both" }}

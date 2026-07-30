@@ -4,7 +4,18 @@ import { useState } from "react";
 import ModalPortal from "./ModalPortal";
 import Button from "./Button";
 import { validateProEmail } from "@/lib/proEmail";
+import { getLeadByEmail } from "@/lib/lead";
 import type { OnboardingLead, CompanySize, AgencyAnswer } from "@/lib/lead";
+
+/** Normalise une URL pour comparaison souple (protocole, www, casse, slash final). */
+function normalizeUrl(u: string) {
+  return u
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/+$/, "");
+}
 
 interface OnboardingModalProps {
   url: string;
@@ -20,36 +31,43 @@ const COMPANY_SIZES: { key: CompanySize; label: string }[] = [
   { key: "200+", label: "200+" },
 ];
 
+// Objectifs business (pas de jargon technique) : un dirigeant raisonne en résultats,
+// c'est le GSI qui traduit ensuite en leviers (SEO, GEO, trafic…).
 const GOALS: { key: string; label: string; icon: React.ReactNode }[] = [
   {
-    key: "seo-technique",
-    label: "SEO technique",
-    icon: <path d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />,
+    key: "visibilite-clients",
+    label: "Être visible auprès de mes clients",
+    icon: (
+      <>
+        <path d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.183.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+        <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+      </>
+    ),
   },
   {
-    key: "geo",
-    label: "Visibilité sur les IA",
-    icon: <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2Z" />,
+    key: "generer-demandes",
+    label: "Générer plus de demandes business",
+    icon: <path d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />,
+  },
+  {
+    key: "devancer-concurrents",
+    label: "Devancer mes concurrents",
+    icon: <path d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" />,
   },
   {
     key: "notoriete",
-    label: "Notoriété & autorité",
-    icon: <path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />,
+    label: "Renforcer ma notoriété",
+    icon: <path d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" />,
   },
   {
-    key: "concurrence",
-    label: "Analyse concurrentielle",
-    icon: <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />,
+    key: "visibilite-ia",
+    label: "Exister dans les réponses IA",
+    icon: <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />,
   },
   {
-    key: "trafic",
-    label: "Trafic organique",
+    key: "developper-activite",
+    label: "Développer mon activité en ligne",
     icon: <path d="M2.25 18 9 11.25l4.306 4.307a11.95 11.95 0 0 1 5.814-5.519l2.74-1.22m0 0-5.94-2.28m5.94 2.28-2.28 5.941" />,
-  },
-  {
-    key: "semantique",
-    label: "Mots-clés & sémantique",
-    icon: <path d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z M6 6h.008v.008H6V6Z" />,
   },
 ];
 
@@ -86,7 +104,15 @@ export default function OnboardingModal({ url, onComplete, onClose }: Onboarding
     if (!form.lastName.trim()) errs.lastName = "Requis";
     if (!form.company.trim()) errs.company = "Requis";
     const emailErr = validateProEmail(form.email);
-    if (emailErr) errs.email = emailErr;
+    if (emailErr) {
+      errs.email = emailErr;
+    } else {
+      // Email déjà utilisé pour une analyse d'une AUTRE URL → une seule analyse offerte par adresse.
+      const existing = getLeadByEmail(form.email);
+      if (existing && normalizeUrl(existing.url) !== normalizeUrl(url)) {
+        errs.email = `Cette adresse a déjà lancé une analyse pour ${existing.url}. Une seule analyse offerte par email.`;
+      }
+    }
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
@@ -282,7 +308,7 @@ export default function OnboardingModal({ url, onComplete, onClose }: Onboarding
 
                   {/* Objectifs */}
                   <div>
-                    <FieldLabel>Que souhaitez-vous améliorer ?</FieldLabel>
+                    <FieldLabel>Quels sont les objectifs de votre entreprise ?</FieldLabel>
                     <div className="grid grid-cols-2 gap-2">
                       {GOALS.map(({ key, label, icon }) => {
                         const selected = form.goals.includes(key);

@@ -17,6 +17,12 @@ import { useAccount } from "./AccountProvider";
 const MONTHLY_QUOTA = 1;
 const STORAGE_PREFIX = "gsi:credits:v1:";
 
+/**
+ * Dev : analyses illimitées pour tester les flux sans se faire bloquer par le
+ * quota freemium. En production, comportement freemium normal (1 analyse/mois).
+ */
+const UNLIMITED_IN_DEV = process.env.NODE_ENV === "development";
+
 interface StoredState {
   used: number;
   period: string; // "YYYY-MM" — sert au reset mensuel
@@ -91,12 +97,19 @@ export default function CreditProvider({ children }: { children: React.ReactNode
 
   // Hydratation + re-lecture à chaque changement de compte.
   useEffect(() => {
+    // Dev : on ignore l'état stocké → jamais bloqué, badge toujours au quota plein.
+    if (UNLIMITED_IN_DEV) {
+      setUsed(0);
+      setReady(true);
+      return;
+    }
     const state = readState(storageKey);
     setUsed(state.used);
     setReady(true);
   }, [storageKey]);
 
   const consume = useCallback(() => {
+    if (UNLIMITED_IN_DEV) return; // dev : ne consomme pas le quota
     setUsed((prev) => {
       const next = Math.min(MONTHLY_QUOTA, prev + 1);
       writeState(storageKey, { used: next, period: currentPeriod() });

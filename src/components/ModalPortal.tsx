@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useLightSurface } from "./LightSurfaceContext";
 
 interface Props {
   children: React.ReactNode;
@@ -20,6 +21,9 @@ interface Props {
  */
 export default function ModalPortal({ children, zIndex = 100 }: Props) {
   const [mounted, setMounted] = useState(false);
+  // Surface light-only (landing) : on force le thème clair sur le portail, sinon la
+  // modale hériterait du thème global (dark) puisqu'elle est rendue sur document.body.
+  const lightSurface = useLightSurface();
 
   useEffect(() => {
     setMounted(true);
@@ -33,7 +37,7 @@ export default function ModalPortal({ children, zIndex = 100 }: Props) {
   if (!mounted) return null;
 
   return createPortal(
-    <div style={{ position: "relative", zIndex }}>{children}</div>,
+    <div data-theme={lightSurface ? "light" : undefined} style={{ position: "relative", zIndex }}>{children}</div>,
     document.body
   );
 }
