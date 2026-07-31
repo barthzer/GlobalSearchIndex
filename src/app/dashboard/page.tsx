@@ -172,10 +172,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const { selected: currentGeneration, collapsed, loading } = useGeneration();
 
-  // Pas de dashboard en déconnecté : on renvoie vers la connexion interne (pas le
-  // funnel public) une fois la session restaurée.
+  // Pas de dashboard en déconnecté : on renvoie vers la page d'accueil (landing)
+  // une fois la session restaurée. La déconnexion atterrit ainsi sur l'accueil.
   useEffect(() => {
-    if (hydrated && !isLoggedIn) router.replace("/login");
+    if (hydrated && !isLoggedIn) router.replace("/");
   }, [hydrated, isLoggedIn, router]);
   const [showSEOEngine, setShowSEOEngine] = useState(false);
   const [showExpert, setShowExpert] = useState(false);

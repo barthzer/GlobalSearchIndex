@@ -490,7 +490,6 @@ export default function LandingPage() {
   const router = useRouter();
   const heroInputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");
-  const [inputFocused, setInputFocused] = useState(false);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showExpert, setShowExpert] = useState(false);
@@ -571,19 +570,21 @@ export default function LandingPage() {
         <section className="relative flex flex-col items-center overflow-hidden px-6 pt-24 pb-20 text-center md:pt-36 md:pb-28">
           <img src="/LandingPage/backgroundhero.jpg" alt="" className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[780px] w-full object-cover object-top" />
           <div className="relative z-10 flex w-full flex-col items-center">
-          <div className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-black/5 bg-white/80 py-1.5 pl-1.5 pr-4 backdrop-blur-md">
+          <div className="animate-fade-up mb-6 inline-flex items-center gap-1.5 rounded-full border border-black/5 bg-white/80 py-1.5 pl-1.5 pr-3.5 backdrop-blur-md sm:gap-2 sm:pr-4">
             <span className="flex items-center -space-x-1">
               {HERO_BADGE_LOGOS.map((src) => (
                 <span
                   key={src}
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-white"
+                  className={`h-5 w-5 items-center justify-center rounded-full bg-white sm:h-6 sm:w-6 ${
+                    src === "/perplexity.png" ? "hidden sm:flex" : "flex"
+                  }`}
                   style={{ boxShadow: "0 4px 20px 0 rgba(0, 0, 0, 0.10)" }}
                 >
-                  <img src={src} alt="" className="h-4 w-4 object-contain" />
+                  <img src={src} alt="" className="h-3.5 w-3.5 object-contain sm:h-4 sm:w-4" />
                 </span>
               ))}
             </span>
-            <span className="text-[13px] font-medium text-neutral-700">SEO, moteurs IA et concurrence réunis en un seul espace</span>
+            <span className="whitespace-nowrap text-[12px] font-medium text-neutral-700 sm:text-[13px]">Analyse moteurs IA, SEO et concurrence</span>
           </div>
 
           <h1
@@ -599,33 +600,33 @@ export default function LandingPage() {
 
           <form
             onSubmit={handleSubmit}
-            className={`animate-fade-up mt-10 flex w-full max-w-[560px] items-center rounded-full border bg-white/70 p-1.5 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.08)] backdrop-blur-xl transition-[border-color,box-shadow] duration-300 ${
-              inputFocused ? "border-accent-pink/50 shadow-[0_0_28px_-6px_rgba(236,77,203,0.25)]" : "border-[rgba(255,255,255,0.1)]"
-            }`}
+            className="animate-fade-up mt-10 flex w-full max-w-[560px] flex-col gap-2.5 md:flex-row md:items-center md:gap-0 md:rounded-full md:border md:border-black/10 md:bg-white/70 md:p-1.5 md:shadow-[0_2px_20px_-4px_rgba(0,0,0,0.08)] md:backdrop-blur-xl md:transition-[border-color,box-shadow] md:duration-300 md:focus-within:border-accent-pink/50 md:focus-within:shadow-[0_0_28px_-6px_rgba(236,77,203,0.25)]"
             style={{ animationDelay: "240ms", transitionTimingFunction: "var(--ease-out)" }}
           >
-            <div className="flex items-center pl-4 text-text-input">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5a17.92 17.92 0 0 1-8.716-2.247m0 0A9 9 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
-              </svg>
+            {/* Champ URL : pill autonome sur mobile, fondu dans la barre sur desktop */}
+            <div className="flex items-center rounded-full border border-black/10 bg-white/70 p-1.5 pl-0 shadow-[0_2px_20px_-4px_rgba(0,0,0,0.08)] backdrop-blur-xl transition-[border-color,box-shadow] duration-300 focus-within:border-accent-pink/50 focus-within:shadow-[0_0_28px_-6px_rgba(236,77,203,0.25)] md:flex-1 md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none md:transition-none md:focus-within:shadow-none">
+              <div className="flex items-center pl-4 text-text-input">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5a17.92 17.92 0 0 1-8.716-2.247m0 0A9 9 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+                </svg>
+              </div>
+              <input
+                ref={heroInputRef}
+                type="text"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://www.votresite.fr"
+                className="h-11 min-w-0 flex-1 bg-transparent px-3 text-[15px] font-light text-text-primary placeholder:text-text-input outline-none md:text-[16px]"
+              />
             </div>
-            <input
-              ref={heroInputRef}
-              type="text"
-              inputMode="url"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onFocus={() => setInputFocused(true)}
-              onBlur={() => setInputFocused(false)}
-              placeholder="https://www.votresite.fr"
-              className="h-11 min-w-0 flex-1 bg-transparent px-3 text-[15px] font-light text-text-primary placeholder:text-text-input outline-none md:text-[16px]"
-            />
+            {/* CTA : plein largeur sous le champ en mobile, dans la barre en desktop */}
             <button
               type="submit"
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-black/90 to-black/75 px-6 py-3 text-[16px] font-medium text-white transition-all duration-200 hover:from-black/80 hover:to-black/65 active:scale-[0.97]"
+              className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-black/90 to-black/75 px-6 py-3.5 text-[16px] font-medium text-white transition-all duration-200 hover:from-black/80 hover:to-black/65 active:scale-[0.97] md:w-auto md:py-3"
               style={{ transitionTimingFunction: "var(--ease-out)" }}
             >
               Analyser gratuitement
@@ -651,13 +652,20 @@ export default function LandingPage() {
         {/* ───────── Capture produit : photo + cartes flottantes ───────── */}
         <section className="px-6 pt-2 pb-10 md:pb-16">
           <Reveal className="relative mx-auto max-w-[1100px] overflow-hidden rounded-[28px]">
+            {/* Mobile : image dédiée (sans cartes ni dégradé) */}
+            <img
+              src="/LandingPage/image_hero_mobile.png"
+              alt="Un dirigeant consulte l'analyse de visibilité de son entreprise"
+              className="block aspect-[1120/677] w-full object-cover sm:hidden"
+            />
+            {/* Desktop : photo + dégradé + cartes flottantes */}
             <img
               src="/LandingPage/hommeregardantsonordinateur.jpg"
               alt="Un dirigeant consulte l'analyse de visibilité de son entreprise"
-              className="aspect-[16/10] w-full object-cover"
+              className="hidden aspect-[16/10] w-full object-cover sm:block"
             />
-            {/* Dégradé gauche → droite : 0% → 60% noir */}
-            <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%)" }} />
+            {/* Dégradé gauche → droite : 0% → 60% noir (desktop) */}
+            <div className="pointer-events-none absolute inset-0 hidden sm:block" style={{ background: "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%)" }} />
 
             {/* Cartes flottantes animées : cyclent les piliers toutes les 4 s */}
             <HeroPreviewCards />
@@ -669,7 +677,12 @@ export default function LandingPage() {
           <div className="flex w-full flex-col items-center gap-8">
             <div className="flex items-center gap-3">
               <div className="flex -space-x-2.5">
-                {["/consultant1.png", "/consultant2.png", "/consultant3.png"].map((src) => (
+                {[
+                  "/LandingPage/photo-dirigeants/image 21.png",
+                  "/LandingPage/photo-dirigeants/image 22.png",
+                  "/LandingPage/photo-dirigeants/image 23.png",
+                  "/LandingPage/photo-dirigeants/image 24.png",
+                ].map((src) => (
                   <img key={src} src={src} alt="" className="h-8 w-8 rounded-full border-2 border-bg-primary object-cover" />
                 ))}
               </div>
@@ -766,7 +779,7 @@ export default function LandingPage() {
             <img src="/LandingPage/img-outils-techs.png" alt="Le GSI agrège les données des meilleurs outils du marché de référence" className="relative w-full max-w-[880px] object-contain" />
           </Reveal>
           <p className="mx-auto mt-12 max-w-[830px] text-center text-[26px] font-medium leading-tight tracking-[-0.5px] text-text-heading md:text-[34px]">
-            Le GSI agrège les données des meilleurs outils du marché pour produire une analyse unique, enrichie par l&apos;expertise des équipes AWI.
+            GSI agrège les données des meilleurs outils du marché pour produire une analyse unique, enrichie par l&apos;expertise des équipes AWI.
           </p>
         </section>
 
@@ -854,7 +867,7 @@ export default function LandingPage() {
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-[16px] font-medium text-neutral-900 transition-all duration-200 hover:bg-white/90 active:scale-[0.97]"
                   style={{ transitionTimingFunction: "var(--ease-out)" }}
                 >
-                  Recevoir gratuitement mon GSI
+                  Mon analyse gratuite
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                   </svg>
