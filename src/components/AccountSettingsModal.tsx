@@ -5,16 +5,27 @@ import { createPortal } from "react-dom";
 import Button from "./Button";
 import AccountAvatar from "./AccountAvatar";
 import { useAccount } from "./AccountProvider";
+import { useLightSurface } from "./LightSurfaceContext";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
 }
 
+/** Découpe un nom complet legacy ("Jean Dupont") en prénom / nom (fallback si champs absents). */
+function splitName(name?: string): { first: string; last: string } {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  return { first: parts[0] ?? "", last: parts.slice(1).join(" ") };
+}
+
 export default function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const { account, updateAccount } = useAccount();
-  const [name, setName] = useState(account?.name ?? "");
-  const [email, setEmail] = useState(account?.email ?? "");
-  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+  const lightSurface = useLightSurface();
+  const fallback = splitName(account?.name);
+  const [firstName, setFirstName] = useState(account?.firstName ?? fallback.first);
+  const [lastName, setLastName] = useState(account?.lastName ?? fallback.last);
+  const [company, setCompany] = useState(account?.company ?? "");
+  const [phone, setPhone] = useState(account?.phone ?? "");
+  const [errors, setErrors] = useState<{ firstName?: string; lastName?: string }>({});
   const [saved, setSaved] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -27,38 +38,49 @@ export default function AccountSettingsModal({ onClose }: AccountSettingsModalPr
     };
   }, []);
 
-  // Réinitialise le feedback dès qu'on modifie un champ.
-  function onName(v: string) {
-    setName(v);
-    setSaved(false);
-    if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
-  }
-  function onEmail(v: string) {
-    setEmail(v);
-    setSaved(false);
-    if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+  // Modifier un champ réinitialise le feedback + efface son erreur.
+  function edit<T>(setter: (v: T) => void, key?: keyof typeof errors) {
+    return (v: T) => {
+      setter(v);
+      setSaved(false);
+      if (key && errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
+    };
   }
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    const errs: { name?: string; email?: string } = {};
-    if (!name.trim()) errs.name = "Requis";
-    if (!email.trim()) errs.email = "Requis";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Email invalide";
+    const errs: typeof errors = {};
+    if (!firstName.trim()) errs.firstName = "Requis";
+    if (!lastName.trim()) errs.lastName = "Requis";
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
-    updateAccount({ name: name.trim(), email: email.trim() });
+    const name = `${firstName.trim()} ${lastName.trim()}`.trim();
+    // Email volontairement non modifiable (identité du compte + garde-fou 1 analyse/email).
+    updateAccount({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      company: company.trim(),
+      phone: phone.trim(),
+      name,
+    });
     setSaved(true);
   }
 
   if (!mounted || !account) return null;
 
-  const dirty = name.trim() !== account.name || email.trim() !== account.email;
+  const accFirst = account.firstName ?? fallback.first;
+  const accLast = account.lastName ?? fallback.last;
+  const dirty =
+    firstName.trim() !== accFirst ||
+    lastName.trim() !== accLast ||
+    company.trim() !== (account.company ?? "") ||
+    phone.trim() !== (account.phone ?? "");
+  const displayName = `${firstName} ${lastName}`.trim() || account.name;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+    <div data-theme={lightSurface ? "light" : undefined} className="fixed inset-0 z-[100] flex items-center justify-center px-4">
       <div
         className="absolute inset-0 bg-bg-primary/80 backdrop-blur-md"
         onClick={onClose}
@@ -97,7 +119,7 @@ export default function AccountSettingsModal({ onClose }: AccountSettingsModalPr
           <div className="relative">
             {/* En-tête : avatar + identité */}
             <div className="mb-6 flex flex-col items-center text-center">
-              <AccountAvatar name={name || account.name} avatar={account.avatar} size={56} className="mb-3" />
+              <AccountAvatar name={displayName} avatar={account.avatar} size={56} className="mb-3" />
               <h2 className="text-[20px] font-medium tracking-[-0.4px] text-text-primary">
                 Paramètres du compte
               </h2>
@@ -108,23 +130,22 @@ export default function AccountSettingsModal({ onClose }: AccountSettingsModalPr
             </div>
 
             <form onSubmit={handleSave} className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Prénom" id="acc-first" value={firstName} error={errors.firstName} placeholder="Jean" onChange={edit(setFirstName, "firstName")} />
+                <Field label="Nom" id="acc-last" value={lastName} error={errors.lastName} placeholder="Dupont" onChange={edit(setLastName, "lastName")} />
+              </div>
+              <Field label="Entreprise" id="acc-company" value={company} placeholder="Nom de votre entreprise" optional onChange={edit(setCompany)} />
               <Field
-                label="Nom"
-                id="acc-name"
-                value={name}
-                error={errors.name}
-                placeholder="Jean Dupont"
-                onChange={onName}
-              />
-              <Field
-                label="Email"
+                label="Email professionnel"
                 id="acc-email"
                 type="email"
-                value={email}
-                error={errors.email}
-                placeholder="vous@entreprise.com"
-                onChange={onEmail}
+                value={account.email}
+                placeholder=""
+                locked
+                hint="Rattaché à votre analyse. Pour le modifier, contactez-nous."
+                onChange={() => {}}
               />
+              <Field label="Téléphone" id="acc-phone" type="tel" value={phone} placeholder="+33 6 12 34 56 78" optional onChange={edit(setPhone)} />
 
               <div className="mt-2">
                 <Button type="submit" variant="primary" fullWidth disabled={!dirty && !saved}>
@@ -160,6 +181,9 @@ function Field({
   error,
   placeholder,
   type = "text",
+  optional = false,
+  locked = false,
+  hint,
   onChange,
 }: {
   label: string;
@@ -168,27 +192,42 @@ function Field({
   error?: string;
   placeholder: string;
   type?: string;
+  optional?: boolean;
+  locked?: boolean;
+  hint?: string;
   onChange: (v: string) => void;
 }) {
   return (
     <div>
       <label htmlFor={id} className="mb-1.5 flex items-center gap-2 text-[13px] font-medium text-text-secondary">
         {label}
+        {optional && <span className="text-[11px] font-extralight text-text-muted">Optionnel</span>}
       </label>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`w-full rounded-xl border bg-input-bg px-4 py-3 text-[14px] text-text-primary placeholder:text-text-muted outline-none transition-all duration-300 ${
-          error
-            ? "border-red-400/50"
-            : "border-white/[0.06] focus:border-accent-pink/40 focus:shadow-[0_0_12px_-4px_rgba(236,77,203,0.15)]"
-        }`}
-        style={{ transitionTimingFunction: "var(--ease-out)" }}
-      />
+      <div className="relative">
+        <input
+          id={id}
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={locked}
+          className={`w-full rounded-xl border bg-input-bg px-4 py-3 text-[14px] outline-none transition-all duration-300 ${
+            locked
+              ? "cursor-not-allowed border-white/[0.06] pr-10 text-text-muted"
+              : error
+                ? "border-red-400/50 text-text-primary placeholder:text-text-muted"
+                : "border-white/[0.06] text-text-primary placeholder:text-text-muted focus:border-accent-pink/40 focus:shadow-[0_0_12px_-4px_rgba(236,77,203,0.15)]"
+          }`}
+          style={{ transitionTimingFunction: "var(--ease-out)" }}
+        />
+        {locked && (
+          <svg className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+          </svg>
+        )}
+      </div>
       {error && <p className="mt-1 text-[12px] text-red-400">{error}</p>}
+      {hint && !error && <p className="mt-1 text-[11px] font-light text-text-muted">{hint}</p>}
     </div>
   );
 }

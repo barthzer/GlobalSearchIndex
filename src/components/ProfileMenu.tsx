@@ -20,7 +20,7 @@ function ThemeIcon({ theme }: { theme: "dark" | "light" }) {
   );
 }
 
-export default function ProfileMenu({ dropUp = false }: { dropUp?: boolean }) {
+export default function ProfileMenu({ dropUp = false, hideThemeToggle = false }: { dropUp?: boolean; hideThemeToggle?: boolean }) {
   const { account, accounts, switchAccount, login, logout, isLoggedIn } = useAccount();
   const { theme, toggle } = useTheme();
   const [open, setOpen] = useState(false);
@@ -121,25 +121,27 @@ export default function ProfileMenu({ dropUp = false }: { dropUp?: boolean }) {
         {/* Settings + logout */}
         <div className="border-t border-border-subtle p-2">
           {/* Thème jour/nuit */}
-          <button
-            onClick={toggle}
-            className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-sm text-text-secondary transition-colors duration-150 hover:bg-card-inner-bg hover:text-text-primary"
-          >
-            <span className="flex items-center gap-2">
-              <ThemeIcon theme={theme} />
-              Thème {theme === "dark" ? "sombre" : "clair"}
-            </span>
-            <span
-              className={`relative h-5 w-9 rounded-full border transition-colors duration-200 ${
-                theme === "dark" ? "border-accent-pink/40 bg-accent-pink/20" : "border-border-subtle bg-card-inner-bg"
-              }`}
+          {!hideThemeToggle && (
+            <button
+              onClick={toggle}
+              className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-sm text-text-secondary transition-colors duration-150 hover:bg-card-inner-bg hover:text-text-primary"
             >
+              <span className="flex items-center gap-2">
+                <ThemeIcon theme={theme} />
+                Thème {theme === "dark" ? "sombre" : "clair"}
+              </span>
               <span
-                className="absolute top-0.5 h-3.5 w-3.5 rounded-full bg-text-primary transition-all duration-200"
-                style={{ left: theme === "dark" ? "18px" : "2px", transitionTimingFunction: "var(--ease-out)" }}
-              />
-            </span>
-          </button>
+                className={`relative h-5 w-9 rounded-full border transition-colors duration-200 ${
+                  theme === "dark" ? "border-accent-pink/40 bg-accent-pink/20" : "border-border-subtle bg-card-inner-bg"
+                }`}
+              >
+                <span
+                  className="absolute top-0.5 h-3.5 w-3.5 rounded-full bg-text-primary transition-all duration-200"
+                  style={{ left: theme === "dark" ? "18px" : "2px", transitionTimingFunction: "var(--ease-out)" }}
+                />
+              </span>
+            </button>
+          )}
           <button
             onClick={() => { resetTour(); window.location.assign("/dashboard"); }}
             className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-text-secondary transition-colors duration-150 hover:bg-card-inner-bg hover:text-text-primary"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Button from "./Button";
 import ProfileMenu from "./ProfileMenu";
@@ -9,6 +9,7 @@ import AWILogoCompact from "./AWILogoCompact";
 import WebtvModal from "./WebtvModal";
 import CreditBadge from "./CreditBadge";
 import { useGeneration } from "./GenerationProvider";
+import { useTheme } from "./ThemeProvider";
 import { tabsForRole, type TabKey } from "@/lib/tabs";
 
 interface HeaderProps {
@@ -20,6 +21,12 @@ interface HeaderProps {
   activeTab?: TabKey;
   onTabChange?: (tab: TabKey) => void;
   isAdmin?: boolean;
+  /** Barre fixée en haut au scroll (avec fond flouté). Sinon absolute (défaut). */
+  fixed?: boolean;
+  /** Masque le switch de thème dans le menu mobile (ex. landing en light forcé). */
+  hideThemeToggle?: boolean;
+  /** Force le chrome (fond de barre au scroll) en clair, quel que soit le thème global (landing light-only). */
+  forceLight?: boolean;
 }
 
 const homeIcon = (
@@ -28,11 +35,21 @@ const homeIcon = (
   </svg>
 );
 
-export default function Header({ onExpertClick, hideLogo = false, sidebarWidth = "220px", activeTab, onTabChange, isAdmin, showProfile }: HeaderProps) {
+export default function Header({ onExpertClick, hideLogo = false, sidebarWidth = "220px", activeTab, onTabChange, isAdmin, showProfile, fixed = false, hideThemeToggle = false, forceLight = false }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showWebtv, setShowWebtv] = useState(false);
   const { selected: currentGeneration } = useGeneration();
+  const { theme } = useTheme();
+  // Barre fixe : transparente en haut, fond opaque une fois scrollé (apparition douce).
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    if (!fixed) return;
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [fixed]);
   const reportUrl = `/dashboard/rapport?clientId=${currentGeneration.id}`;
   const tabs = tabsForRole(!!isAdmin);
   const iconTabs = tabs.filter((t) => t.iconOnly);
@@ -42,7 +59,8 @@ export default function Header({ onExpertClick, hideLogo = false, sidebarWidth =
     <>
       <header
         data-header
-        className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-6 py-5 md:px-8 md:py-6"
+        className={`${fixed ? "fixed z-40 transition-colors duration-300" : "absolute z-10"} top-0 left-0 right-0 flex items-center justify-between px-6 py-5 md:px-8 md:py-6`}
+        style={fixed ? { backgroundColor: scrolled ? (forceLight || theme === "light" ? "#ffffff" : "#0e041b") : "transparent" } : undefined}
       >
         {hideLogo && <style>{`@media (min-width: 1024px) { [data-header] { left: ${sidebarWidth} !important; } [data-header] [data-logo] { display: none; } }`}</style>}
         <div className="flex flex-1 items-center">
@@ -161,7 +179,7 @@ export default function Header({ onExpertClick, hideLogo = false, sidebarWidth =
             </a>
           )}
           {!isAdmin && <CreditBadge onExhaustedClick={onExpertClick} />}
-          <ProfileMenu />
+          <ProfileMenu hideThemeToggle={hideThemeToggle} />
           {!isAdmin && (onExpertClick ? (
             <Button variant="tertiary" onClick={onExpertClick}>
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -199,6 +217,7 @@ export default function Header({ onExpertClick, hideLogo = false, sidebarWidth =
           onExpertClick={onExpertClick}
           activeTab={activeTab}
           onTabChange={onTabChange}
+          hideThemeToggle={hideThemeToggle}
         />
       )}
 

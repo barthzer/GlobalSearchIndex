@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Outfit, Instrument_Serif, Manrope, Space_Grotesk } from "next/font/google";
+import { Hanken_Grotesk, Instrument_Serif, Manrope, Space_Grotesk } from "next/font/google";
 import ThemeProvider from "@/components/ThemeProvider";
 import AccountProvider from "@/components/AccountProvider";
 import CreditProvider from "@/components/CreditProvider";
 import GenerationProvider from "@/components/GenerationProvider";
 import "./globals.css";
 
-const outfit = Outfit({
+const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-outfit",
   subsets: ["latin"],
 });
@@ -46,9 +46,15 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      data-theme="dark"
-      className={`${outfit.variable} ${instrumentSerif.variable} ${manrope.variable} ${spaceGrotesk.variable}`}
+      data-theme="light"
+      className={`${hankenGrotesk.variable} ${instrumentSerif.variable} ${manrope.variable} ${spaceGrotesk.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* Pose la classe `js` avant le paint : les blocs [data-reveal] ne sont masqués
+            que si le JS est actif (pas de flash, contenu visible pour crawlers/JS off). */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js');" }} />
+      </head>
       <body className="min-h-[100dvh] antialiased">
         <ThemeProvider>
           <AccountProvider>

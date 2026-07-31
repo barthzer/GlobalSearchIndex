@@ -128,7 +128,7 @@ export function SEOSemantiqueVisual() {
         <rect x="111.33" y="115.5" width="36.17" height="2" rx="1" fill="currentColor" fillOpacity="0.2" />
         {/* Right - Donut chart */}
         <rect x="162.5" y="20" width="154.5" height="150" rx="8" fill="currentColor" fillOpacity="0.12" />
-        <text x="169" y="33" fill="currentColor" fillOpacity="0.8" fontSize="10" fontFamily="Outfit">Ranking</text>
+        <text x="169" y="33" fill="currentColor" fillOpacity="0.8" fontSize="10" style={{ fontFamily: "var(--font-outfit)" }}>Ranking</text>
         {/* Donut segments */}
         <circle cx="240" cy="91" r="40" stroke="#A24D8F" strokeWidth="12" strokeDasharray="80 172" transform="rotate(-90 240 91)" />
         <circle cx="240" cy="91" r="40" stroke="#922C7B" strokeWidth="12" strokeDasharray="60 192" strokeDashoffset="-80" transform="rotate(-90 240 91)" />

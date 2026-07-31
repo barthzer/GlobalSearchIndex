@@ -12,11 +12,16 @@ type AccountType = "user" | "admin";
 
 export interface Account {
   type: AccountType;
-  name: string;
+  name: string; // nom complet affiché (dérivé de firstName + lastName) — sert aux initiales avatar
   email: string;
   avatar?: string; // absent → avatar dégradé + initiale (pas de photo demandée au client)
   id?: string;
   role?: AuthUser["role"];
+  // Champs lead (capturés à l'onboarding, éditables dans les paramètres du compte, sauf email).
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  phone?: string;
 }
 
 const accounts: Account[] = [
