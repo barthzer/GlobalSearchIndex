@@ -660,8 +660,8 @@ export default function LandingPage() {
             />
             {/* Desktop : photo + dégradé + cartes flottantes */}
             <img
-              src="/LandingPage/hommeregardantsonordinateur.jpg"
-              alt="Un dirigeant consulte l'analyse de visibilité de son entreprise"
+              src="/LandingPage/femme souriante.jpg"
+              alt="Une dirigeante consulte l'analyse de visibilité de son entreprise"
               className="hidden aspect-[16/10] w-full object-cover sm:block"
             />
             {/* Dégradé gauche → droite : 0% → 60% noir (desktop) */}
