@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import RealScoreArc from "@/components/RealScoreArc";
 import RealGeoScoreCard, { type PlatformBreakdown } from "@/components/RealGeoScoreCard";
 import CitationsSection from "@/components/CitationsSection";
-import { readabilityDisplay, citationsDisplay, type ScoreDisplay } from "@/lib/scores";
+import { readabilityDisplay, citationsDisplay, aiCrawlerAccess, type ScoreDisplay } from "@/lib/scores";
 import {
   fetchReport,
   fetchReportVisibility,
@@ -233,6 +233,7 @@ export default function ReportTokenPage() {
         <section className="mt-4 flex flex-col gap-4">
           <RealGeoScoreCard
             display={readabilityDisplay(scores)}
+            crawlerAccess={aiCrawlerAccess(scores)}
             platformBreakdown={
               (
                 scores.find((s) => s.scoreType === "geo_citations")?.rawData as

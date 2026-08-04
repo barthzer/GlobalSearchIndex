@@ -6,6 +6,7 @@ import {
   anyProcessing,
   readabilityDisplay,
   citationsDisplay,
+  aiCrawlerAccess,
   type ProjectScore,
   type ScoreDisplay,
 } from "@/lib/scores";
@@ -120,6 +121,7 @@ export default function AnalyseTab({
       <div className="mb-4">
         <RealGeoScoreCard
           display={readabilityDisplay(scores)}
+          crawlerAccess={aiCrawlerAccess(scores)}
           platformBreakdown={
             (
               byType("geo_citations")?.rawData as

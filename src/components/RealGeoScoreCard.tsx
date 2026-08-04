@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ScoreDisplay } from "@/lib/scores";
+import type { ScoreDisplay, AiCrawlerAccess } from "@/lib/scores";
 import { bandLabel } from "@/lib/scoreLabel";
 import ScoreInfoModal from "./ScoreInfoModal";
 import InsightNote from "./InsightNote";
@@ -44,6 +44,7 @@ export type PlatformBreakdown = Record<string, { pages: number; citations: numbe
 export default function RealGeoScoreCard({
   display,
   platformBreakdown,
+  crawlerAccess = null,
   unavailable = false,
   delay = 0,
 }: {
@@ -51,6 +52,10 @@ export default function RealGeoScoreCard({
   display: ScoreDisplay;
   /** Détail par moteur — geo_citations.details.platform_breakdown, ou null si non mesuré. */
   platformBreakdown: PlatformBreakdown | null;
+  /** Accès des bots IA (geo_citability.complementary). allBlocked → caveat critique :
+   *  le score note la structure, pas l'accès ; un 100 avec tous les bots bloqués reste
+   *  incitable. null = non mesuré. */
+  crawlerAccess?: AiCrawlerAccess | null;
   /** true → geo_citations momentanément indisponible (panne Ahrefs) : le par-moteur
    *  affiche une note transitoire au lieu de 6 « Non audité » trompeurs (« cité nulle part »). */
   unavailable?: boolean;
@@ -119,6 +124,46 @@ export default function RealGeoScoreCard({
             </svg>
           </button>
         </div>
+
+        {/* Caveat crawlers IA : le score note la structure, PAS l'accès des bots.
+            allBlocked → rouge (site incitable malgré un bon score) ; blocage partiel
+            → ambre. Contextualise un 100 trompeur quand les IA ne peuvent pas crawler. */}
+        {crawlerAccess && crawlerAccess.blocked.length > 0 && (
+          <div className="px-5 pt-4 md:px-6">
+            <div
+              className={`flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 ${
+                crawlerAccess.allBlocked
+                  ? "border-red-400/30 bg-red-500/[0.07]"
+                  : "border-amber-400/30 bg-amber-500/[0.07]"
+              }`}
+            >
+              <svg
+                className={`mt-0.5 h-4 w-4 shrink-0 ${crawlerAccess.allBlocked ? "text-red-400" : "text-amber-500"}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+              </svg>
+              <p className="text-[12px] font-light leading-relaxed text-text-secondary">
+                {crawlerAccess.allBlocked ? (
+                  <>
+                    <span className="font-medium text-text-primary">
+                      Robots d&apos;IA bloqués — site non citable en l&apos;état.
+                    </span>{" "}
+                    Le score mesure la structure du contenu, mais votre site interdit
+                    l&apos;accès à tous les moteurs d&apos;IA ({crawlerAccess.blocked.join(", ")}).
+                    Sans accès, aucun ne peut vous citer malgré un contenu bien structuré.
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium text-text-primary">Accès IA partiel.</span>{" "}
+                    Certains robots d&apos;IA sont bloqués ({crawlerAccess.blocked.join(", ")}),
+                    ce qui limite votre citabilité réelle.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col items-center gap-5 p-5 md:flex-row md:items-center md:gap-8 md:p-6">
           {/* Arc score + interprétation */}

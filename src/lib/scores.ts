@@ -113,6 +113,43 @@ export function readabilityDisplay(
   };
 }
 
+// Accès des crawlers IA — lu dans geo_citability.complementary (ai_crawlers_*).
+// Sert au caveat de citabilité : le score geo_citability note la STRUCTURE du
+// contenu (réponse directe, schema, FAQ…), PAS l'accès des bots. Un site peut donc
+// marquer 100 tout en bloquant GPTBot/ClaudeBot/PerplexityBot → incitable en
+// pratique. On surface cette incohérence côté carte. null = donnée non mesurée.
+export interface AiCrawlerAccess {
+  blocked: string[];
+  allowed: string[];
+  /** true → tous les bots connus sont bloqués (aucun autorisé) : incitable. */
+  allBlocked: boolean;
+}
+export function aiCrawlerAccess(
+  scores: { scoreType: string; rawData: Record<string, unknown> | null }[],
+): AiCrawlerAccess | null {
+  const raw = scores.find((s) => s.scoreType === "geo_citability")?.rawData as
+    | {
+        complementary?: {
+          ai_crawlers_blocked?: unknown;
+          ai_crawlers_allowed?: unknown;
+        };
+      }
+    | null
+    | undefined;
+  const comp = raw?.complementary;
+  if (!comp) return null;
+  const toStr = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  const blocked = toStr(comp.ai_crawlers_blocked);
+  const allowed = toStr(comp.ai_crawlers_allowed);
+  if (blocked.length === 0 && allowed.length === 0) return null;
+  return {
+    blocked,
+    allowed,
+    allBlocked: blocked.length > 0 && allowed.length === 0,
+  };
+}
+
 // Display « Citations » (arc droit) : le score geo_citations résolu (avec son
 // geoContext), ou un état neutre « en attente » si absent/locked. Jamais 0/100,
 // jamais de crash. Absent = projet sans cascade geo (déblocage sémantique requis)
