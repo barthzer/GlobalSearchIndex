@@ -114,15 +114,18 @@ function doRefresh(): Promise<string> {
 // prospect (/public/analysis). Aucun id de projet en clair : le token porte le
 // scope. La réponse de request-code est TOUJOURS neutre (anti-énumération).
 
-export async function requestPublicCode(email: string, url: string): Promise<void> {
+export async function requestPublicCode(email: string, url?: string): Promise<void> {
   // Best-effort neutre : un échec réseau ne révèle rien et ne bloque pas l'UI
   // (le prospect saisit son code ou le renvoie). Le serveur ne lance aucune
   // analyse ici — il enregistre la demande et envoie le code.
+  // `url` OMISE (connexion de retour) → le serveur réutilise l'url stockée du
+  // prospect. Fournie (nouvelle analyse) → elle est envoyée.
+  const body = url != null && url.trim() ? { email, url } : { email };
   try {
     await fetch(`${API_BASE}/public/request-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, url }),
+      body: JSON.stringify(body),
     });
   } catch {
     /* réseau : on reste neutre */

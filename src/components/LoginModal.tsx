@@ -8,7 +8,12 @@ import Button from "./Button";
 import OtpInput from "./OtpInput";
 import { useAccount } from "./AccountProvider";
 import { validateProEmail } from "@/lib/proEmail";
-import { requestOtp } from "@/lib/api";
+import {
+  requestPublicCode,
+  verifyPublicCode,
+  setProspectSession,
+  clearProspectSession,
+} from "@/lib/api";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -26,7 +31,7 @@ const RESEND_COOLDOWN = 30; // secondes
 // contournement client : pas de code de démo qui ouvre l'espace à tous.
 
 export default function LoginModal({ onClose, initialView = "client" }: LoginModalProps) {
-  const { loginWithCredentials, loginWithOtp } = useAccount();
+  const { loginWithCredentials, loginAsProspect } = useAccount();
   const router = useRouter();
   const [view, setView] = useState<"client" | "admin" | "verify">(initialView);
   const [email, setEmail] = useState("");
@@ -53,10 +58,11 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
     router.push("/dashboard");
   }
 
-  // Connexion par code : on demande un code et on passe TOUJOURS à la saisie, que
-  // l'email corresponde à un compte ou non. La neutralité (anti-énumération) est
-  // garantie serveur (request-code renvoie le même 200) ; le front ne révèle donc
-  // jamais « cet email n'existe pas ». Best-effort : un échec réseau ne bloque pas.
+  // Connexion PROSPECT (retour) : le client saisit l'email de son analyse gratuite
+  // → code OTP → on retrouve SON analyse (POST /public/request-code sans url : le
+  // serveur réutilise l'url stockée). On passe TOUJOURS à la saisie, que l'email
+  // existe ou non. Neutralité (anti-énumération) garantie serveur (200 constant) ;
+  // le front ne révèle jamais « cet email n'existe pas ». Best-effort réseau.
   function handleClientLogin(e: React.FormEvent) {
     e.preventDefault();
     const fmtError = validateProEmail(email);
@@ -64,7 +70,7 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
       setError(fmtError);
       return;
     }
-    void requestOtp(email);
+    void requestPublicCode(email);
     setCode("");
     setCodeError("");
     setVerified(false);
@@ -76,11 +82,22 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
     if (code.length !== CODE_LENGTH || verifying) return;
     setVerifying(true);
     setCodeError("");
-    // Vérification RÉELLE côté serveur (POST /auth/verify-code) : succès → mêmes
-    // tokens que le password, session posée. Échec → on dit pourquoi (code invalide
-    // ou expiré), jamais un vide silencieux ni un faux succès client.
+    // Vérification PROSPECT côté serveur (POST /public/verify-code) : succès → on
+    // pose la session prospect (token + projectId) et on redirige vers son analyse.
+    // Échec → message (code invalide/expiré), jamais un faux succès client.
     try {
-      await loginWithOtp(email, code);
+      const result = await verifyPublicCode(email, code);
+      if (result.status === "cap_reached") {
+        setVerifying(false);
+        setCode("");
+        setCodeError(result.message);
+        return;
+      }
+      // Remplacement atomique de session : clear (purge token + cache de l'ancien
+      // parcours) PUIS set (nouveau token + projectId) — aucun reliquat.
+      clearProspectSession();
+      setProspectSession({ token: result.token, projectId: result.projectId });
+      loginAsProspect({ type: "user", name: email, email });
       setVerified(true);
       setTimeout(goToDashboard, 650);
     } catch (err) {
@@ -94,7 +111,7 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
 
   function resendCode() {
     if (resendIn > 0) return;
-    void requestOtp(email);
+    void requestPublicCode(email);
     setCode("");
     setCodeError("");
     setResendIn(RESEND_COOLDOWN);
