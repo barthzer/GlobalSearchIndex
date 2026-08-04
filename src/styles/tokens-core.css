@@ -1,0 +1,183 @@
+/**
+ * tokens-core.css
+ * ─────────────────────────────────────────────────────────────────────────
+ * Échelles agnostiques au brand : motion, typographie, statuts.
+ * Réutilisable tel quel sur n'importe quel projet.
+ *
+ * Pour customiser le brand (couleurs, fonts, ombres) → tokens-brand.css
+ */
+
+:root {
+  /* ──────────────── Motion ──────────────── */
+  /* Easings standardisés */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Durées normalisées */
+  --motion-instant: 100ms;
+  --motion-fast: 200ms;
+  --motion-base: 300ms;
+  --motion-slow: 600ms;
+  --motion-slowest: 1200ms;
+
+  /* ──────────────── Échelle typographique ──────────────── */
+  --text-xs: 12px;     /* micro labels, badges */
+  --text-sm: 13px;     /* captions, sous-labels */
+  --text-md: 14px;     /* body small */
+  --text-base: 15px;   /* body, boutons */
+  --text-body: 16px;   /* paragraphes par défaut */
+  --text-body-lg: 17px;/* h3 cards */
+  --text-lg: 20px;     /* titres section */
+  --text-xl: 24px;     /* titres page */
+  --text-2xl: 32px;    /* grand chiffres / KPI */
+  --text-display: 60px;/* h1 hero / cover */
+
+  /* ──────────────── Statuts (valeurs neutres standard) ──────────────── */
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+}
+
+/* ──────────────── Animations partagées ──────────────── */
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+.animate-fade-up {
+  animation: fade-up var(--motion-slow) var(--ease-expo) both;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Champ en cours de génération IA : léger halo rose (~8%) qui pulse depuis le bas
+   jusqu'à disparaître (0%), comme une respiration. */
+@keyframes ai-field-glow {
+  0%, 100% { box-shadow: inset 0 -16px 22px -12px rgba(236, 77, 203, 0.10); }
+  50% { box-shadow: inset 0 -16px 22px -12px rgba(236, 77, 203, 0); }
+}
+
+.ai-field-loading {
+  border-color: rgba(236, 77, 203, 0.18) !important;
+  animation: ai-field-glow 1.6s ease-in-out infinite;
+}
+
+/* Pulse dégradé rose en bas de l'encart score en cours de calcul (un peu plus marqué que les inputs) */
+@keyframes score-computing-glow {
+  0%, 100% { box-shadow: inset 0 -22px 28px -12px rgba(236, 77, 203, 0.24); }
+  50% { box-shadow: inset 0 -22px 28px -12px rgba(236, 77, 203, 0.04); }
+}
+.score-computing {
+  border-color: rgba(236, 77, 203, 0.22) !important;
+  animation: score-computing-glow 2.6s ease-in-out infinite;
+}
+
+/* Vibration de validation (modale score sémantique) */
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-7px); }
+  30%, 70% { transform: translateX(7px); }
+}
+.shake-x {
+  animation: shake-x 520ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Curseur de la machine à écrire (H1 landing). */
+.typewriter-caret {
+  display: inline-block;
+  width: 5px;
+  height: 0.92em;
+  margin-left: 4px;
+  vertical-align: -0.08em;
+  background: currentColor;
+  animation: caret-blink 1s step-end infinite;
+}
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Carrousel infini (marquee) — la piste contient 2 copies, -50% boucle sans couture. */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none !important; }
+}
+
+/* ──────────────── Scrollbar custom ──────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
+}
+
+/* ──────────────── Reduced motion ──────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ──────────────── Date input theme adaption ──────────────── */
+input[type="date"] {
+  color-scheme: var(--color-scheme);
+}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7) sepia(0.3) hue-rotate(220deg);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}

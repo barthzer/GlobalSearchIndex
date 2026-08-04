@@ -1,0 +1,58 @@
+"use client";
+
+import Link from "next/link";
+
+type Variant = "primary" | "secondary" | "tertiary";
+
+interface ButtonProps {
+  variant?: Variant;
+  children: React.ReactNode;
+  href?: string;
+  type?: "button" | "submit";
+  className?: string;
+  fullWidth?: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
+}
+
+const base =
+  "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 active:scale-[0.97] whitespace-nowrap";
+
+const variants: Record<Variant, string> = {
+  primary:
+    "bg-gradient-to-r from-accent-purple via-accent-pink via-[47%] to-accent-pink-light text-white px-6 py-3 text-sm hover:brightness-110 hover:-translate-y-px",
+  secondary:
+    "bg-text-primary text-bg-primary px-6 py-3 text-sm hover:opacity-90 hover:-translate-y-px",
+  tertiary:
+    "bg-bg-card border border-border-subtle text-text-primary px-6 py-3 text-sm hover:bg-bg-card-hover hover:border-border-badge hover:-translate-y-px",
+};
+
+export default function Button({
+  variant = "primary",
+  children,
+  href,
+  type = "button",
+  className = "",
+  fullWidth = false,
+  onClick,
+  disabled = false,
+}: ButtonProps) {
+  const classes = `${base} ${variants[variant]} ${fullWidth ? "w-full" : ""} ${
+    disabled ? "cursor-not-allowed opacity-50 active:scale-100" : ""
+  } ${className}`;
+  const style = { transitionTimingFunction: "var(--ease-out)" };
+
+  if (href) {
+    return (
+      <Link href={href} className={classes} style={style}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <button type={type} className={classes} style={style} onClick={onClick} disabled={disabled}>
+      {children}
+    </button>
+  );
+}
