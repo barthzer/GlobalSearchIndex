@@ -17,11 +17,6 @@ interface PageSpeedRaw {
   mobile?: { categories?: PsCategory[]; metrics?: PsMetric[] } | null;
 }
 
-function catColor(score: number): string {
-  if (score < 50) return "text-red-400";
-  if (score < 90) return "text-amber-400";
-  return "text-emerald-400";
-}
 function metricColor(status: string): string {
   if (status === "poor" || status === "danger") return "text-red-400";
   if (status === "average" || status === "warning") return "text-amber-400";
@@ -30,6 +25,43 @@ function metricColor(status: string): string {
 function fmt(value: number, unit: string): string {
   const n = value.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
   return unit === "s" ? `${n} s` : unit === "ms" ? `${n} ms` : `${n}${unit}`;
+}
+
+// Jauge circulaire au style de la maquette Barth (arc coloré + score au centre).
+// Couleur = bandes Lighthouse standard (rouge <50, ambre 50-89, vert >=90).
+function Gauge({ label, score }: { label: string; score: number }) {
+  const r = 32;
+  const c = 2 * Math.PI * r;
+  const color = score >= 90 ? "#22c55e" : score >= 50 ? "#f59e0b" : "#ef4444";
+  const offset = c - (Math.min(Math.max(score, 0), 100) / 100) * c;
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative h-[84px] w-[84px]">
+        <svg viewBox="0 0 84 84" className="h-[84px] w-[84px] -rotate-90">
+          <circle cx="42" cy="42" r={r} fill="none" stroke="var(--card-inner-border)" strokeWidth={6} />
+          <circle
+            cx="42"
+            cy="42"
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth={6}
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={offset}
+            style={{ transition: "stroke-dashoffset 1s var(--ease-in-out)" }}
+          />
+        </svg>
+        <div
+          className="absolute inset-0 flex items-center justify-center text-[20px] font-bold tabular-nums"
+          style={{ color }}
+        >
+          {score}
+        </div>
+      </div>
+      <span className="text-center text-[12px] leading-tight text-text-secondary">{label}</span>
+    </div>
+  );
 }
 
 export default function RealPageSpeed({
@@ -100,20 +132,9 @@ export default function RealPageSpeed({
       </div>
 
       {cats.length > 0 && (
-        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {cats.map((c) => (
-            <div
-              key={c.label}
-              className="flex flex-col items-center rounded-xl border border-border-subtle bg-card-inner-bg py-4"
-            >
-              <span className={`text-2xl font-bold tabular-nums ${catColor(c.score)}`}>
-                {c.score}
-              </span>
-              <span className="text-[11px] text-text-muted">/100</span>
-              <span className="mt-1 text-center text-[11.5px] text-text-secondary">
-                {c.label}
-              </span>
-            </div>
+            <Gauge key={c.label} label={c.label} score={c.score} />
           ))}
         </div>
       )}
