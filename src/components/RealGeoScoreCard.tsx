@@ -125,41 +125,25 @@ export default function RealGeoScoreCard({
           </button>
         </div>
 
-        {/* Caveat crawlers IA : le score note la structure, PAS l'accès des bots.
-            allBlocked → rouge (site incitable malgré un bon score) ; blocage partiel
-            → ambre. Contextualise un 100 trompeur quand les IA ne peuvent pas crawler. */}
-        {crawlerAccess && crawlerAccess.blocked.length > 0 && (
+        {/* Caveat citabilité : présent UNIQUEMENT si des crawlers de RÉPONSE sont
+            bloqués (robots.txt lu). Bloquer l'entraînement (GPTBot…) n'est PAS surfacé
+            (le site reste citable). Ne se déclenche donc que sur un vrai « non citable ». */}
+        {crawlerAccess && (
           <div className="px-5 pt-4 md:px-6">
-            <div
-              className={`flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 ${
-                crawlerAccess.allBlocked
-                  ? "border-red-400/30 bg-red-500/[0.07]"
-                  : "border-amber-400/30 bg-amber-500/[0.07]"
-              }`}
-            >
+            <div className="flex items-start gap-2.5 rounded-xl border border-red-400/30 bg-red-500/[0.07] px-3.5 py-2.5">
               <svg
-                className={`mt-0.5 h-4 w-4 shrink-0 ${crawlerAccess.allBlocked ? "text-red-400" : "text-amber-500"}`}
+                className="mt-0.5 h-4 w-4 shrink-0 text-red-400"
                 fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
               </svg>
               <p className="text-[12px] font-light leading-relaxed text-text-secondary">
-                {crawlerAccess.allBlocked ? (
-                  <>
-                    <span className="font-medium text-text-primary">
-                      Robots d&apos;IA bloqués — site non citable en l&apos;état.
-                    </span>{" "}
-                    Le score mesure la structure du contenu, mais votre site interdit
-                    l&apos;accès à tous les moteurs d&apos;IA ({crawlerAccess.blocked.join(", ")}).
-                    Sans accès, aucun ne peut vous citer malgré un contenu bien structuré.
-                  </>
-                ) : (
-                  <>
-                    <span className="font-medium text-text-primary">Accès IA partiel.</span>{" "}
-                    Certains robots d&apos;IA sont bloqués ({crawlerAccess.blocked.join(", ")}),
-                    ce qui limite votre citabilité réelle.
-                  </>
-                )}
+                <span className="font-medium text-text-primary">
+                  Robots d&apos;IA de réponse bloqués — site non citable par les IA.
+                </span>{" "}
+                Votre site interdit l&apos;accès aux moteurs qui citent des sources
+                ({crawlerAccess.answerBlocked.join(", ")}) : ils ne peuvent pas vous
+                citer, même avec un contenu bien structuré.
               </p>
             </div>
           </div>

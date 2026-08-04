@@ -113,27 +113,47 @@ export function readabilityDisplay(
   };
 }
 
-// Accès des crawlers IA (geo_citability.complementary.ai_crawlers_*).
+// Accès des crawlers IA (geo_citability.complementary). Contrat SEO Engine à deux
+// familles (livré + vérifié prod 2026-08-04, cf. TICKET-SEO-ENGINE-…-geo-acces-crawler).
 export interface AiCrawlerAccess {
-  blocked: string[];
-  allowed: string[];
-  /** true → tous les bots connus sont bloqués (aucun autorisé) : incitable. */
-  allBlocked: boolean;
+  /**
+   * Crawlers de RÉPONSE bloqués (OAI-SearchBot, ChatGPT-User, PerplexityBot).
+   * Non vide → site RÉELLEMENT non citable par les IA. On NE surface PAS le blocage
+   * des crawlers d'ENTRAÎNEMENT (GPTBot, ClaudeBot, Google-Extended, Bytespider) :
+   * c'est un choix éditorial sur l'usage du contenu, le site reste citable.
+   */
+  answerBlocked: string[];
 }
 
-// ⛔ DÉSACTIVÉ (2026-08-04) : la donnée ai_crawlers_blocked de SEO Engine est un
-// FAUX POSITIF. Leur détection cherchait la sous-chaîne « disallow: / », contenue
-// dans « disallow: /wp-admin/ » → quasiment tout WordPress était classé « bloque
-// tous les bots IA ». kytom autorise en réalité tous les bots ; son score de 100
-// était juste. Un caveat faux qui contredit le score affiché à côté est plus
-// coûteux qu'aucun caveat. Retour au null systématique (aucun caveat) jusqu'au vrai
-// parser robots.txt de SEO Engine + la mesure de la réalité, après quoi on décidera
-// de l'intégration au score (cf. TICKET-SEO-ENGINE-2026-08-04-geo-acces-crawler).
-// La logique d'extraction reste dans l'historique git pour réactivation.
+// Ne renvoie un caveat QUE pour un blocage RÉELLEMENT pénalisant :
+//  1. status === 'checked' : le robots.txt a été lu. unknown (erreur réseau/403) =
+//     non vérifié ≠ tous autorisés ; no_robots (404) = site ouvert. Dans ces deux
+//     cas, aucune conclusion (absence de mesure n'est pas une mesure à zéro — même
+//     doctrine que le score GEO).
+//  2. answer_crawlers_blocked non vide : seuls les crawlers de RÉPONSE bloqués
+//     rendent le site non citable. L'ancien ai_crawlers_blocked (qui mélangeait les
+//     familles) N'EST PLUS lu : il faux-flaggait les sites bloquant l'entraînement.
 export function aiCrawlerAccess(
-  _scores: { scoreType: string; rawData: Record<string, unknown> | null }[],
+  scores: { scoreType: string; rawData: Record<string, unknown> | null }[],
 ): AiCrawlerAccess | null {
-  return null;
+  const comp = (
+    scores.find((s) => s.scoreType === "geo_citability")?.rawData as
+      | {
+          complementary?: {
+            ai_crawlers_status?: unknown;
+            answer_crawlers_blocked?: unknown;
+          };
+        }
+      | null
+      | undefined
+  )?.complementary;
+  if (!comp) return null;
+  if (comp.ai_crawlers_status !== "checked") return null;
+  const answerBlocked = Array.isArray(comp.answer_crawlers_blocked)
+    ? comp.answer_crawlers_blocked.filter((x): x is string => typeof x === "string")
+    : [];
+  if (answerBlocked.length === 0) return null;
+  return { answerBlocked };
 }
 
 // Display « Citations » (arc droit) : le score geo_citations résolu (avec son
