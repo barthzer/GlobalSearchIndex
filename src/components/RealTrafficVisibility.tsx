@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { TrafficChart } from "./PageSpeedCard";
 import InsightNote from "./InsightNote";
-import type { ProjectScore } from "@/lib/scores";
+import { fetchProjectScores, type ProjectScore } from "@/lib/scores";
 
 interface TrafficPoint {
   date: string;
@@ -71,14 +71,17 @@ function Msg({ children }: { children: React.ReactNode }) {
 
 export default function RealTrafficVisibility({
   projectId,
-  score,
+  score: scoreProp,
 }: {
   projectId: string;
-  /** Score geo_citations (porte traffic_curve MONDE, Ahrefs). */
-  score: ProjectScore | null;
+  /** Score geo_citations (traffic_curve MONDE). Optionnel : self-fetch si absent
+   *  (utilisé tel quel dans la Vue d'ensemble, sans scores parents). */
+  score?: ProjectScore | null;
 }) {
   const [tab, setTab] = useState<TabKey>("visibility");
   const [vis, setVis] = useState<{ visibility_history: VisibilityPoint[]; positions_history: PositionsPoint[] } | null | "error">(null);
+  const [selfScore, setSelfScore] = useState<ProjectScore | null>(null);
+  const score = scoreProp ?? selfScore;
 
   // Visibilité Haloscan — endpoint authentifié, best-effort (comme /report).
   useEffect(() => {
@@ -91,6 +94,18 @@ export default function RealTrafficVisibility({
       active = false;
     };
   }, [projectId]);
+
+  // Self-fetch du score geo_citations si le parent ne le passe pas (Vue d'ensemble).
+  useEffect(() => {
+    if (scoreProp !== undefined) return;
+    let active = true;
+    fetchProjectScores(projectId)
+      .then((s) => active && setSelfScore(s.find((x) => x.scoreType === "geo_citations") ?? null))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [projectId, scoreProp]);
 
   // ── Onglet Trafic mensuel (org_traffic MONDE) ────────────────────────────
   function TrafficPanel() {

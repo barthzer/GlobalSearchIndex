@@ -13,9 +13,9 @@ import AWILogo from "@/components/AWILogo";
 import GenerationsSidebar from "@/components/GenerationsSidebar";
 import ProcessingBanner from "@/components/ProcessingBanner";
 import TutorialModal, { tourSeen } from "@/components/TutorialModal";
-import PageSpeedCard, { TrafficCard } from "@/components/PageSpeedCard";
+import RealTrafficVisibility from "@/components/RealTrafficVisibility";
+import RealCoverageCard from "@/components/RealCoverageCard";
 import ProjectionView from "@/components/ProjectionView";
-import { CoverageSection } from "@/components/ConcurrenceView";
 import ConcurrenceTab from "@/components/concurrence/ConcurrenceTab";
 import { useAccount } from "@/components/AccountProvider";
 import { useGeneration } from "@/components/GenerationProvider";
@@ -65,7 +65,7 @@ export default function DashboardPage() {
   // l'auth + la liste de projets, mais AUCUN corps d'analyse (scores, GEO, autorité,
   // PageSpeed, trafic, notoriété, recos) — tout est encore factice. Tant qu'un onglet
   // n'est pas ici, on affiche un état explicite, jamais un chiffre inventé. M3+ les ajoute.
-  const WIRED_TABS: TabKey[] = ["analyse", "notoriete", "concurrence", "projection", "recommandations"]; // M3 : analyse ; M7 : notoriété ; M8 : projection ; recos réelles (RealRecommendations)
+  const WIRED_TABS: TabKey[] = ["home", "analyse", "notoriete", "concurrence", "projection", "recommandations"]; // home = Vue d'ensemble câblée (assemblage de briques réelles, design Barth 424-501)
   const tabWired = WIRED_TABS.includes(activeTabSafe);
 
   const [shareOpen, setShareOpen] = useState(false);
@@ -333,14 +333,18 @@ export default function DashboardPage() {
               <NotWiredNotice label="La vue d'ensemble Maison (synthèse et trafic mensuel)" />
             ) : activeTabSafe === "home" ? (
             <>
-              {/* Trafic mensuel / Indice de visibilité */}
-              <div className="animate-fade-up mb-4 rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]" style={{ animationDelay: "300ms" }}>
-                <TrafficCard />
+              {/* Trafic mensuel / Indice de visibilité — CÂBLÉ (2 sous-onglets réels). */}
+              <div className="animate-fade-up mb-4" style={{ animationDelay: "300ms" }}>
+                <RealTrafficVisibility projectId={currentGeneration.id} />
               </div>
 
-              {/* Couverture top 10 */}
+              {/* Couverture top 10 — CÂBLÉE (buildConcurrenceData réel, pas le mock). */}
               <div className="animate-fade-up mb-4" style={{ animationDelay: "380ms" }}>
-                <CoverageSection />
+                <RealCoverageCard
+                  projectId={currentGeneration.id}
+                  clientName={currentGeneration.name}
+                  clientInitial={currentGeneration.initial}
+                />
               </div>
 
               {/* Recommandations + sidebar */}
@@ -352,7 +356,7 @@ export default function DashboardPage() {
                   <RealRecommendations
                     projectId={currentGeneration.id}
                     preview
-                    onSeeAll={() => setShowSEOEngine(true)}
+                    onSeeAll={() => setActiveTab("recommandations")}
                   />
                 </div>
 
