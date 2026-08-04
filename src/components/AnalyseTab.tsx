@@ -16,7 +16,7 @@ import RealRecommendations from "./RealRecommendations";
 import NotWiredNotice from "./NotWiredNotice";
 import RealGeoScoreCard, { type PlatformBreakdown } from "./RealGeoScoreCard";
 import CitationsSection from "./CitationsSection";
-import RealTrafficCard from "./RealTrafficCard";
+import RealTrafficVisibility from "./RealTrafficVisibility";
 import RealNotorieteInsights from "./RealNotorieteInsights";
 
 // Les 4 scores de l'analyse, rendus depuis le display SERVEUR (M3). Les autres
@@ -194,12 +194,14 @@ export default function AnalyseTab({
         />
       </div>
 
-      {/* Trafic mensuel — courbe org_traffic (MONDE) portée par geo_citations.
-          Entre PageSpeed et Recommandations (position maquette). STATUS-aware :
-          jamais un vide silencieux (locked → « après déblocage », processing →
-          « en cours », completed → courbe ou état honnête). */}
+      {/* Trafic / Indice de visibilité — DEUX sous-onglets (maquette Barth). Trafic
+          mensuel (org_traffic MONDE, attend Ahrefs) + Indice de visibilité (Haloscan,
+          réel, portable maintenant). Entre PageSpeed et Notoriété. */}
       <div className="mb-6">
-        <RealTrafficCard score={byType("geo_citations") ?? null} />
+        <RealTrafficVisibility
+          projectId={projectId}
+          score={byType("geo_citations") ?? null}
+        />
       </div>
 
       {/* Notoriété & autorité média — FUSIONNÉE dans l'Analyse (ligne 553 de Barth,
