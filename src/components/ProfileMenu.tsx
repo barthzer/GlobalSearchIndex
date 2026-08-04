@@ -22,7 +22,7 @@ function ThemeIcon({ theme }: { theme: "dark" | "light" }) {
 }
 
 export default function ProfileMenu({ dropUp = false, hideThemeToggle = false }: { dropUp?: boolean; hideThemeToggle?: boolean }) {
-  const { account, accounts, switchAccount, login, logout, isLoggedIn } = useAccount();
+  const { account, logout, isLoggedIn } = useAccount();
   const { theme, toggle } = useTheme();
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -92,35 +92,8 @@ export default function ProfileMenu({ dropUp = false, hideThemeToggle = false }:
           </div>
         </div>
 
-        {/* Switch accounts */}
-        <div className="p-2">
-          <p className="px-2 pb-1 pt-1 text-[10px] font-medium uppercase tracking-[0.8px] text-text-muted">
-            Changer de compte
-          </p>
-          {accounts
-            .filter((a) => a.type !== account?.type)
-            .map((a) => (
-              <button
-                key={a.type}
-                onClick={() => {
-                  switchAccount(a.type);
-                  setOpen(false);
-                }}
-                className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-card-inner-bg"
-              >
-                <AccountAvatar name={a.name} avatar={a.avatar} size={32} className="shrink-0" />
-                <div className="min-w-0 text-left">
-                  <p className="truncate text-sm text-text-primary">{a.name}</p>
-                  <p className="truncate text-[11px] text-text-muted">
-                    {a.type === "admin" ? "Administrateur" : "Client"}
-                  </p>
-                </div>
-              </button>
-            ))}
-        </div>
-
         {/* Settings + logout */}
-        <div className="border-t border-border-subtle p-2">
+        <div className="p-2">
           {/* Thème jour/nuit */}
           {!hideThemeToggle && (
             <button

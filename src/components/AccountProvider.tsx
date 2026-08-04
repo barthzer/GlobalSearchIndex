@@ -29,10 +29,10 @@ export interface Account {
   isProspect?: boolean;
 }
 
-const accounts: Account[] = [
-  { type: "user", name: "Jean Dupont", email: "jean@uplifygroup.com" },
-  { type: "admin", name: "Admin AWI", email: "admin@awi.fr", avatar: "/barth-staging/consultant2.png" },
-];
+// Aucune identité factice : la session courante vient soit d'un JWT réel
+// (toAccount), soit d'un token prospect. Pas de « changement de compte » en prod
+// (une maquette Barth exposait Jean Dupont + Admin AWI ici — supprimé).
+const accounts: Account[] = [];
 
 const STORAGE_KEY = "gsi:account:v1";
 

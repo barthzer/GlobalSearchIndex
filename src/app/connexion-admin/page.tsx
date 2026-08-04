@@ -16,28 +16,30 @@ const inputClass =
   "h-12 w-full rounded-xl border bg-input-bg px-4 text-[14px] font-light text-text-primary placeholder:text-text-input outline-none transition-colors duration-200";
 
 export default function AdminLoginPage() {
-  const { accounts, login } = useAccount();
+  const { loginWithCredentials } = useAccount();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleAdminLogin(e: React.FormEvent) {
+  async function handleAdminLogin(e: React.FormEvent) {
     e.preventDefault();
-    const admin = accounts.find(
-      (a) => a.type === "admin" && a.email.toLowerCase() === email.trim().toLowerCase(),
-    );
-    if (!admin) {
+    if (!email.trim() || !password.trim()) {
+      setError("Renseignez votre email et votre mot de passe.");
+      return;
+    }
+    // Connexion RÉELLE (POST /auth/login) : le serveur vérifie le mot de passe et
+    // émet les JWT. Le rôle admin vient de la BDD (toAccount), jamais du client.
+    setSubmitting(true);
+    try {
+      await loginWithCredentials(email.trim(), password);
+      router.push("/dashboard");
+    } catch {
       setError("Identifiants administrateur invalides.");
-      return;
+    } finally {
+      setSubmitting(false);
     }
-    if (!password.trim()) {
-      setError("Veuillez entrer votre mot de passe.");
-      return;
-    }
-    // TODO(backend): vérifier le mot de passe côté serveur. En mock, l'email admin suffit.
-    login("admin");
-    router.push("/dashboard");
   }
 
   return (
@@ -91,8 +93,8 @@ export default function AdminLoginPage() {
               />
               {error && <p className="mt-1.5 text-[12px] font-light text-red-400">{error}</p>}
             </div>
-            <Button variant="primary" fullWidth type="submit">
-              Se connecter
+            <Button variant="primary" fullWidth type="submit" disabled={submitting}>
+              {submitting ? "Connexion…" : "Se connecter"}
             </Button>
           </form>
 
