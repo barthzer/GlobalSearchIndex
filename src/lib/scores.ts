@@ -113,41 +113,27 @@ export function readabilityDisplay(
   };
 }
 
-// Accès des crawlers IA — lu dans geo_citability.complementary (ai_crawlers_*).
-// Sert au caveat de citabilité : le score geo_citability note la STRUCTURE du
-// contenu (réponse directe, schema, FAQ…), PAS l'accès des bots. Un site peut donc
-// marquer 100 tout en bloquant GPTBot/ClaudeBot/PerplexityBot → incitable en
-// pratique. On surface cette incohérence côté carte. null = donnée non mesurée.
+// Accès des crawlers IA (geo_citability.complementary.ai_crawlers_*).
 export interface AiCrawlerAccess {
   blocked: string[];
   allowed: string[];
   /** true → tous les bots connus sont bloqués (aucun autorisé) : incitable. */
   allBlocked: boolean;
 }
+
+// ⛔ DÉSACTIVÉ (2026-08-04) : la donnée ai_crawlers_blocked de SEO Engine est un
+// FAUX POSITIF. Leur détection cherchait la sous-chaîne « disallow: / », contenue
+// dans « disallow: /wp-admin/ » → quasiment tout WordPress était classé « bloque
+// tous les bots IA ». kytom autorise en réalité tous les bots ; son score de 100
+// était juste. Un caveat faux qui contredit le score affiché à côté est plus
+// coûteux qu'aucun caveat. Retour au null systématique (aucun caveat) jusqu'au vrai
+// parser robots.txt de SEO Engine + la mesure de la réalité, après quoi on décidera
+// de l'intégration au score (cf. TICKET-SEO-ENGINE-2026-08-04-geo-acces-crawler).
+// La logique d'extraction reste dans l'historique git pour réactivation.
 export function aiCrawlerAccess(
-  scores: { scoreType: string; rawData: Record<string, unknown> | null }[],
+  _scores: { scoreType: string; rawData: Record<string, unknown> | null }[],
 ): AiCrawlerAccess | null {
-  const raw = scores.find((s) => s.scoreType === "geo_citability")?.rawData as
-    | {
-        complementary?: {
-          ai_crawlers_blocked?: unknown;
-          ai_crawlers_allowed?: unknown;
-        };
-      }
-    | null
-    | undefined;
-  const comp = raw?.complementary;
-  if (!comp) return null;
-  const toStr = (v: unknown): string[] =>
-    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
-  const blocked = toStr(comp.ai_crawlers_blocked);
-  const allowed = toStr(comp.ai_crawlers_allowed);
-  if (blocked.length === 0 && allowed.length === 0) return null;
-  return {
-    blocked,
-    allowed,
-    allBlocked: blocked.length > 0 && allowed.length === 0,
-  };
+  return null;
 }
 
 // Display « Citations » (arc droit) : le score geo_citations résolu (avec son
