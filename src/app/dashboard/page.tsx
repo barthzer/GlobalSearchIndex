@@ -392,6 +392,7 @@ export default function DashboardPage() {
             ) : activeTabSafe === "analyse" ? (
             <AnalyseTab
               projectId={currentGeneration.id}
+              clientName={currentGeneration.name}
               onExpertClick={() => setShowExpert(true)}
             />
             ) : activeTabSafe === "projection" ? (

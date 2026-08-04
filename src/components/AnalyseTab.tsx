@@ -17,6 +17,7 @@ import NotWiredNotice from "./NotWiredNotice";
 import RealGeoScoreCard, { type PlatformBreakdown } from "./RealGeoScoreCard";
 import CitationsSection from "./CitationsSection";
 import RealTrafficCard from "./RealTrafficCard";
+import RealNotorieteInsights from "./RealNotorieteInsights";
 
 // Les 4 scores de l'analyse, rendus depuis le display SERVEUR (M3). Les autres
 // blocs (PageSpeed, trafic, notoriété, recos) restent explicitement « non câblés »
@@ -38,9 +39,11 @@ const ARC_SCORES: {
 
 export default function AnalyseTab({
   projectId,
+  clientName,
   onExpertClick,
 }: {
   projectId: string;
+  clientName?: string;
   onExpertClick?: () => void;
 }) {
   const [scores, setScores] = useState<ProjectScore[] | null>(null);
@@ -197,6 +200,17 @@ export default function AnalyseTab({
           « en cours », completed → courbe ou état honnête). */}
       <div className="mb-6">
         <RealTrafficCard score={byType("geo_citations") ?? null} />
+      </div>
+
+      {/* Notoriété & autorité média — FUSIONNÉE dans l'Analyse (ligne 553 de Barth,
+          client + admin). Le prospect voit enfin la donnée qu'on possède : autorité
+          composite /100 (serveur), backlinks, grands médias, benchmark. */}
+      <div className="mb-6">
+        <RealNotorieteInsights
+          projectId={projectId}
+          clientName={clientName ?? "Vous"}
+          onUnlockClick={onExpertClick}
+        />
       </div>
 
       {/* Recommandations (M4) — la donnée existe, l'endpoint est câblé. */}
