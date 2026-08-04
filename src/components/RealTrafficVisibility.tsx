@@ -137,7 +137,7 @@ export default function RealTrafficVisibility({
         />
         <InsightNote className="mt-3">
           L&apos;<span className="font-medium text-text-primary">indice de visibilité</span> reflète la part de clics
-          potentiels captée sur vos mots-clés suivis (source Haloscan). Le tableau détaille vos positions top 3 à 50.
+          potentiels captée sur l&apos;ensemble de vos mots-clés suivis. Le tableau détaille vos positions top 3 à 50.
         </InsightNote>
       </>
     );
