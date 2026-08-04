@@ -36,6 +36,7 @@ export default function RealScoreArc({
   badges,
   delay = 0,
   unlockable = false,
+  unlockCtaLabel = "Calculer mon score sémantique",
   processing = false,
   projectId,
 }: {
@@ -48,8 +49,10 @@ export default function RealScoreArc({
   badges?: ReactNode;
   /** Délai d'animation d'entrée (étagement de la grille). */
   delay?: number;
-  /** Sémantique VERROUILLÉ : affiche la carte de déblocage (au lieu du non-scorable). */
+  /** Sémantique OU Autorité VERROUILLÉ : affiche la carte de déblocage (au lieu du non-scorable). */
   unlockable?: boolean;
+  /** Libellé du CTA de déblocage (Sémantique vs Autorité relative). */
+  unlockCtaLabel?: string;
   /** Score EN COURS de calcul : affiche « en cours », jamais « non calculable ». */
   processing?: boolean;
   /** Requis pour ouvrir le vrai SemanticUnlockModal. */
@@ -100,10 +103,6 @@ export default function RealScoreArc({
       <span className="text-text-primary/80">{icon}</span>
       <span className="text-[length:var(--text-body-lg)] font-medium text-text-heading">
         {label}
-        {/* Régime absolu : le chiffre est un BAS, pas un /100 comparable. */}
-        {display.absolute && (
-          <span className="ml-1.5 text-[12px] font-normal text-text-muted">(absolu)</span>
-        )}
       </span>
       {(badges || infoButton) && (
         <div className="ml-auto flex items-center gap-2">
@@ -163,7 +162,7 @@ export default function RealScoreArc({
                 </svg>
               </div>
               <Button variant="primary" className="relative mt-1" onClick={() => setShowUnlock(true)}>
-                Calculer mon score sémantique
+                {unlockCtaLabel}
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                 </svg>

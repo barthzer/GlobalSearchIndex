@@ -162,8 +162,18 @@ export default function AnalyseTab({
               display={display}
               info={scoreInfos[key]}
               delay={420 + i * 120}
-              // Sémantique verrouillé → carte de déblocage (au lieu du non-scorable).
-              unlockable={type === "semantic" && sc?.status === "locked"}
+              // Verrouillé → carte de déblocage. Sémantique : status locked.
+              // Autorité : régime absolu (display.absolute) → le /100 relatif se
+              // débloque avec les concurrents (même panel que la Sémantique).
+              unlockable={
+                (type === "semantic" && sc?.status === "locked") ||
+                (type === "authority" && display.absolute)
+              }
+              unlockCtaLabel={
+                type === "authority"
+                  ? "Débloquer le score relatif"
+                  : "Calculer mon score sémantique"
+              }
               processing={sc?.status === "processing"}
               projectId={projectId}
             />
