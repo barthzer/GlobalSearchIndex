@@ -27,10 +27,16 @@ export default function RealNotorieteInsights({
   projectId,
   clientName,
   onUnlockClick,
+  refreshTick,
 }: {
   projectId: string;
   clientName: string;
   onUnlockClick?: () => void;
+  /** Signal de refetch piloté par le parent (AnalyseTab). Incrémenté à chaque
+   *  tick de polling → le benchmark cascadé côté serveur (POST /semantic →
+   *  cascadeNotorieteBenchmark) apparaît sans reload manuel (POST=repoll).
+   *  Optionnel : NotorieteTab (admin) ne le passe pas → comportement inchangé. */
+  refreshTick?: number;
 }) {
   const [scores, setScores] = useState<ProjectScore[] | null>(null);
 
@@ -42,7 +48,8 @@ export default function RealNotorieteInsights({
     return () => {
       active = false;
     };
-  }, [projectId]);
+    // refreshTick : le parent nous demande de re-lire (déblocage / polling en cours).
+  }, [projectId, refreshTick]);
 
   if (scores == null) {
     return (

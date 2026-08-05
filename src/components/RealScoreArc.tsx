@@ -39,6 +39,7 @@ export default function RealScoreArc({
   unlockCtaLabel = "Calculer mon score sémantique",
   processing = false,
   projectId,
+  onUnlocked,
 }: {
   label: string;
   icon: ReactNode;
@@ -57,6 +58,8 @@ export default function RealScoreArc({
   processing?: boolean;
   /** Requis pour ouvrir le vrai SemanticUnlockModal. */
   projectId?: string;
+  /** Appelé après un déblocage réussi → le parent recharge les scores (POST=repoll). */
+  onUnlocked?: () => void;
 }) {
   const [visible, setVisible] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -130,6 +133,9 @@ export default function RealScoreArc({
             onSubmit={() => {
               setShowUnlock(false);
               setComputing(true);
+              // Recharge parent : semantic/geo passent en processing + benchmark
+              // notoriété cascadé apparaît sans reload manuel (POST=repoll).
+              onUnlocked?.();
             }}
           />
         )}

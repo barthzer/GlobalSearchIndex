@@ -76,6 +76,7 @@ export default function RealGeoScoreCard({
   unavailable = false,
   delay = 0,
   projectId,
+  onUnlocked,
   onExpertClick,
 }: {
   /** Display du score geo_citations (porte geoContext.layout). */
@@ -91,6 +92,8 @@ export default function RealGeoScoreCard({
   delay?: number;
   /** Requis pour le CTA de déblocage (layout 'lock'). */
   projectId?: string;
+  /** Appelé après un déblocage réussi → le parent recharge les scores (POST=repoll). */
+  onUnlocked?: () => void;
   /** CTA expert (layout 'statement'). */
   onExpertClick?: () => void;
 }) {
@@ -152,7 +155,7 @@ export default function RealGeoScoreCard({
           </svg>
           <p className="text-[12px] font-light leading-relaxed text-text-secondary">
             <span className="font-medium text-text-primary">
-              Robots d&apos;IA de réponse bloqués — site non citable par les IA.
+              Robots d&apos;IA de réponse bloqués : site non citable par les IA.
             </span>{" "}
             Votre site interdit l&apos;accès aux moteurs qui citent des sources
             ({crawlerAccess.answerBlocked.join(", ")}) : ils ne peuvent pas vous
@@ -177,7 +180,10 @@ export default function RealGeoScoreCard({
         <SemanticUnlockModal
           projectId={projectId}
           onClose={() => setShowUnlock(false)}
-          onSubmit={() => setShowUnlock(false)}
+          onSubmit={() => {
+            setShowUnlock(false);
+            onUnlocked?.();
+          }}
         />
       )}
 

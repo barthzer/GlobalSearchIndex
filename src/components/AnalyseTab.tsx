@@ -47,6 +47,13 @@ export default function AnalyseTab({
 }) {
   const [scores, setScores] = useState<ProjectScore[] | null>(null);
   const [error, setError] = useState(false);
+  // Bump manuel (déblocage) → recharge immédiate + relance le polling.
+  const [reloadCounter, setReloadCounter] = useState(0);
+  // Signal de refetch pour les blocs enfants qui ont leur propre fetch
+  // (RealNotorieteInsights) : incrémenté à chaque tick, pour que le benchmark
+  // cascadé côté serveur (POST /semantic → cascadeNotorieteBenchmark) apparaisse
+  // sans reload manuel (invariant POST=repoll).
+  const [pollTick, setPollTick] = useState(0);
 
   useEffect(() => {
     if (!projectId) return;
@@ -58,6 +65,7 @@ export default function AnalyseTab({
         if (!active) return;
         setScores(s);
         setError(false);
+        setPollTick((t) => t + 1);
         // Polling tant qu'un score se calcule (l'écran dit que ça travaille).
         if (anyProcessing(s)) timer = setTimeout(load, 3000);
       } catch {
@@ -71,11 +79,16 @@ export default function AnalyseTab({
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [projectId]);
+  }, [projectId, reloadCounter]);
+
+  // Après un déblocage (popup sémantique / benchmark / GEO), on recharge tout de
+  // suite : semantic + geo_citations passent en processing → bannière + polling
+  // démarrent immédiatement, et le benchmark notoriété suit via pollTick.
+  const handleUnlocked = () => setReloadCounter((c) => c + 1);
 
   if (error) {
     return (
-      <NotWiredNotice label="Impossible de charger les scores de ce projet — réessayez." />
+      <NotWiredNotice label="Impossible de charger les scores de ce projet, réessayez." />
     );
   }
 
@@ -109,7 +122,7 @@ export default function AnalyseTab({
       {processing && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-accent-pink/20 bg-accent-pink/[0.05] px-4 py-2.5 text-[13px] text-text-secondary">
           <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-pink/30 border-t-accent-pink" />
-          Analyse en cours — les scores s&apos;actualisent automatiquement.
+          Analyse en cours. Les scores s&apos;actualisent automatiquement.
         </div>
       )}
 
@@ -124,6 +137,7 @@ export default function AnalyseTab({
           status={byType("geo_citations")?.status ?? null}
           crawlerAccess={aiCrawlerAccess(scores)}
           projectId={projectId}
+          onUnlocked={handleUnlocked}
           onExpertClick={onExpertClick}
           platformBreakdown={
             (
@@ -179,6 +193,7 @@ export default function AnalyseTab({
               }
               processing={sc?.status === "processing"}
               projectId={projectId}
+              onUnlocked={handleUnlocked}
             />
           );
         })}
@@ -216,6 +231,7 @@ export default function AnalyseTab({
           projectId={projectId}
           clientName={clientName ?? "Vous"}
           onUnlockClick={onExpertClick}
+          refreshTick={pollTick}
         />
       </div>
 
