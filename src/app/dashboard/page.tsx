@@ -70,6 +70,7 @@ export default function DashboardPage() {
 
   const [shareOpen, setShareOpen] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState(false);
 
   // Tutoriel d'accueil — affiché une seule fois pour le client (jamais pour l'admin).
   const [showTour, setShowTour] = useState(false);
@@ -95,10 +96,12 @@ export default function DashboardPage() {
   async function handleDownloadReport() {
     if (pdfBusy) return;
     setPdfBusy(true);
+    setPdfError(false);
     try {
       await exportProjectPdf(currentGeneration.id, currentGeneration.name);
     } catch {
-      /* échec best-effort : le bouton se réactive, le commercial réessaie */
+      // Ne plus avaler l'échec en silence (bouton « mort ») : on le SIGNALE.
+      setPdfError(true);
     } finally {
       setPdfBusy(false);
     }
@@ -249,6 +252,11 @@ export default function DashboardPage() {
                         <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                       </svg>
                     </IconAction>
+                    {pdfError && (
+                      <span className="whitespace-nowrap text-[11px] font-medium text-red-500">
+                        Échec de l&apos;export. Réessayez.
+                      </span>
+                    )}
                   </div>
                 )}
 
