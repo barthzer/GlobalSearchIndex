@@ -91,7 +91,7 @@ function GeoCompositeCard() {
 
       <div className="px-5 pb-5 md:px-6 md:pb-6">
         <p className="rounded-xl border border-border-subtle bg-card-inner-bg px-4 py-2.5 text-[12px] font-light leading-relaxed text-text-secondary">
-          <span className="font-medium text-text-primary">Position concurrentielle {position} — vous êtes cité {citedCount} fois.</span>{" "}
+          <span className="font-medium text-text-primary">Position concurrentielle {position}, vous êtes cité {citedCount} fois.</span>{" "}
           Bon volume de citations, mais loin des leaders du panel : le levier est l&apos;autorité relative, pas la structure (déjà à {technique}).
         </p>
       </div>
@@ -131,7 +131,7 @@ function GeoStatementCard() {
             </svg>
           </span>
           <div>
-            <h3 className="text-[17px] font-semibold leading-snug text-text-heading">Vos concurrents sont cités par les IA — pas vous.</h3>
+            <h3 className="text-[17px] font-semibold leading-snug text-text-heading">Vos concurrents sont cités par les IA. Pas vous.</h3>
             <p className="mt-1.5 text-[13px] font-light leading-relaxed text-text-secondary">
               Site techniquement prêt (<span className="font-medium text-text-primary">Technique 100</span> · structure, accès, formats).
               Le levier n&apos;est pas la structure : c&apos;est l&apos;autorité et les citations.
@@ -194,25 +194,25 @@ export default function GeoCompositePreviewPage() {
     <main data-theme="light" className="min-h-screen bg-bg-primary px-4 py-10 md:py-14">
       <div className="mx-auto flex max-w-4xl flex-col gap-12">
         <header className="text-center">
-          <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-accent-pink">Maquette interne — données mockées</p>
-          <h1 className="mt-2 text-2xl font-medium tracking-tight text-text-primary md:text-3xl">GEO composite — les 3 états</h1>
+          <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-accent-pink">Maquette interne, données mockées</p>
+          <h1 className="mt-2 text-2xl font-medium tracking-tight text-text-primary md:text-3xl">GEO composite : les 3 états</h1>
           <p className="mt-2 text-[14px] font-light text-text-muted">Modèle autorité. Chiffres du payload réel (van-it août : composite 51).</p>
         </header>
 
-        <Section label="1. Avant déblocage — VERROUILLÉ (pattern autorité, tout derrière le verrou)">
+        <Section label="1. Avant déblocage : VERROUILLÉ (pattern autorité, tout derrière le verrou)">
           <RealScoreArc label="Visibilité GEO" icon={geoIcon} display={LOCKED} info={scoreInfos.autorite} delay={0} unlockable projectId="preview" unlockCtaLabel="Débloquer mon score GEO" />
         </Section>
 
-        <Section label="2. Après déblocage — COMPLETED (composite + 2 sous-composantes à côté)">
+        <Section label="2. Après déblocage : COMPLETED (composite + 2 sous-composantes à côté)">
           <GeoCompositeCard />
         </Section>
 
-        <Section label="3. Après déblocage — concurrents cités, pas vous (constat en tête)">
+        <Section label="3. Après déblocage : concurrents cités, pas vous (constat en tête)">
           <GeoStatementCard />
         </Section>
 
         {/* Contexte : la carte au milieu des autres piliers */}
-        <Section label="Contexte — la carte COMPLETED au milieu des autres piliers de l'onglet Analyse">
+        <Section label="Contexte : la carte COMPLETED au milieu des autres piliers de l'onglet Analyse">
           <div className="flex flex-col gap-4">
             <GeoCompositeCard />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
