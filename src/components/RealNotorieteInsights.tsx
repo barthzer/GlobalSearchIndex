@@ -74,6 +74,14 @@ export default function RealNotorieteInsights({
   const bl = backlinksView(raw);
   const media = mediaView(raw);
   const bench = benchmarkView(raw);
+  // Benchmark EN COURS : déblocage validé (sémantique en processing → la cascade
+  // benchmark tourne côté serveur) mais pas encore débloqué. On montre « en cours »
+  // au lieu du verrou (Alexis : tout doit tourner à la validation, pas de reclic).
+  const benchmarkProcessing =
+    !bench.unlocked &&
+    (scores ?? []).some(
+      (s) => s.scoreType === "semantic" && s.status === "processing",
+    );
 
   // Benchmark de Barth (prospect) attend SA forme de ligne. Verrouillé (Comundi) →
   // rows vides + unlocked=false ; l'affichage débloqué complet suivra le contrat
@@ -139,6 +147,7 @@ export default function RealNotorieteInsights({
           rows={barthRows}
           clientName={clientName}
           unlocked={bench.unlocked}
+          processing={benchmarkProcessing}
           onUnlockClick={onUnlockClick ?? (() => {})}
           rank={bench.rank}
           total={bench.total}

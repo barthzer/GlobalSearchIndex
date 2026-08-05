@@ -13,6 +13,9 @@ interface Props {
   rank: number;
   total: number;
   rankHint: string;
+  /** true → benchmark en cours de calcul (déblocage validé, cascade serveur) :
+   *  on montre « en cours » au lieu du verrou (Alexis : tout tourne à la validation). */
+  processing?: boolean;
 }
 
 function PositionBlock({ rank, total, hint }: { rank: number; total: number; hint: string }) {
@@ -52,12 +55,38 @@ export default function BenchmarkSection({
   rank,
   total,
   rankHint,
+  processing = false,
 }: Props) {
   if (unlocked) {
     return (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-5 lg:items-start">
         <PositionBlock rank={rank} total={total} hint={rankHint} />
         <CompetitorsTable rows={rows} clientName={clientName} />
+      </div>
+    );
+  }
+
+  // Déblocage validé, cascade benchmark en cours côté serveur → « en cours »
+  // (jamais le verrou, sinon l'écran a l'air figé et on reclique).
+  if (processing) {
+    return (
+      <div
+        className="relative overflow-hidden rounded-2xl border border-border-subtle backdrop-blur-[6px]"
+        style={{
+          background:
+            "linear-gradient(180deg, var(--bg-card) 0%, rgba(238,86,206,0.18) 100%)",
+        }}
+      >
+        <div className="flex flex-col items-center px-6 py-12 text-center">
+          <span className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-accent-pink/30 border-t-accent-pink" />
+          <h3 className="mb-2 text-[length:var(--text-body-lg)] font-semibold text-text-primary">
+            Benchmark concurrents en cours de calcul
+          </h3>
+          <p className="max-w-md text-[length:var(--text-body)] font-light leading-relaxed text-text-secondary">
+            Nous comparons votre couverture média à celle de vos concurrents sur 12 mois.
+            Le résultat s&apos;affiche automatiquement.
+          </p>
+        </div>
       </div>
     );
   }
