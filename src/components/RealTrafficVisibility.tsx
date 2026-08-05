@@ -136,7 +136,7 @@ export default function RealTrafficVisibility({
     const hist = vis.visibility_history ?? [];
     const positions = vis.positions_history ?? [];
     if (hist.length < 2)
-      return <Msg>Historique de visibilité pas encore disponible pour ce domaine (une analyse sémantique alimente cet indice).</Msg>;
+      return <Msg>Historique de visibilité pas encore disponible pour ce domaine.</Msg>;
     const rows = [
       { label: "Top 3", data: positions.map((p) => p.top3 ?? 0) },
       { label: "Top 10", data: positions.map((p) => p.top10 ?? 0) },
