@@ -85,6 +85,19 @@ export interface NotorieteRaw {
     articles_count?: number | null;
     top_pills?: string[] | null;
   } | null;
+  // Plan éditorial (marronniers du secteur) — présent si SEO Engine l'a calculé.
+  // Prospect-facing (il est dans le PDF partagé) → affiché à l'écran en parité.
+  editorial_plan?: {
+    marronniers_subtitle?: string | null;
+    slots?: Array<{
+      month: string;
+      tag: string;
+      title: string;
+      description: string;
+      media_label: string;
+      media_subtitle?: string | null;
+    }> | null;
+  } | null;
   // Benchmark relatif : présent seulement si des concurrents ont été saisis.
   // 🔴 Le serveur (contrat @gsi/shared NotorieteBenchmark) stocke `competitors` +
   // `rank_hint`. On garde `rows`/`hint` en tolérance (données legacy / reconstruction

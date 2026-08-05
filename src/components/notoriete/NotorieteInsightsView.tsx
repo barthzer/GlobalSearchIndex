@@ -45,6 +45,10 @@ export default function NotorieteInsightsView({
   const bl = backlinksView(raw);
   const media = mediaView(raw);
   const bench = benchmarkView(raw);
+  // Plan éditorial (marronniers) — prospect-facing (présent dans le PDF partagé) :
+  // affiché à l'écran en PARITÉ. Subtitle DYNAMIQUE (jamais un secteur en dur).
+  const editorial = raw?.editorial_plan ?? null;
+  const editorialSlots = editorial?.slots ?? [];
 
   // Benchmark de Barth attend SA forme de ligne. Verrouillé → rows vides.
   const barthRows: BarthCompetitorRow[] = bench.rows.map((r) => ({
@@ -117,6 +121,52 @@ export default function NotorieteInsightsView({
           rankHint={bench.rankHint}
         />
       </div>
+
+      {/* Plan éditorial recommandé (marronniers) — parité écran = PDF. Media en
+          texte (robuste à tout titre), subtitle DYNAMIQUE depuis le secteur mesuré. */}
+      {editorialSlots.length > 0 && (
+        <section className="mt-8">
+          <h3 className="text-xl font-medium tracking-tight text-text-primary">
+            Plan éditorial recommandé
+          </h3>
+          {editorial?.marronniers_subtitle && (
+            <p className="mt-1.5 max-w-[720px] text-[length:var(--text-body)] font-light leading-relaxed text-text-secondary">
+              {editorial.marronniers_subtitle}
+            </p>
+          )}
+          <div className="mt-5 flex flex-col gap-4">
+            {editorialSlots.map((slot, i) => (
+              <article
+                key={i}
+                className="grid grid-cols-1 gap-3 rounded-2xl border border-border-subtle bg-bg-card p-5 md:grid-cols-[150px_minmax(0,1fr)_150px] md:items-center md:gap-5"
+              >
+                <div className="flex flex-col gap-2">
+                  <div className="text-[15px] font-medium leading-none text-text-primary">
+                    {slot.month}
+                  </div>
+                  <span className="inline-flex w-fit items-center rounded-full bg-accent-pink/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-pink">
+                    {slot.tag}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <h4 className="mb-1.5 text-[length:var(--text-body-lg)] font-medium leading-snug tracking-tight text-text-primary">
+                    {slot.title}
+                  </h4>
+                  <p className="text-[13px] font-light leading-relaxed text-text-secondary">
+                    {slot.description}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-0.5 md:items-end md:text-right">
+                  <span className="text-[13px] font-semibold text-text-primary">{slot.media_label}</span>
+                  {slot.media_subtitle && (
+                    <span className="text-[11px] font-light text-text-muted">{slot.media_subtitle}</span>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
