@@ -1,13 +1,16 @@
 "use client";
 
 import ExpertCtaBanner from "@/components/ExpertCtaBanner";
+import RealScoreArc from "@/components/RealScoreArc";
+import { scoreInfos, scoreIcons } from "@/app/dashboard/rapport/score-infos";
+import type { ScoreDisplay } from "@/lib/scores";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAQUETTE (données mockées, aucun backend) — nouveau design GEO « modèle autorité ».
-// Cas concurrents_cites_pas_vous (≈2/3 des panels COMEX, cas d'origine) :
-// le CADRAGE URGENCE est la carte (en tête), la technique descend en sous-ligne,
-// ExpertCtaBanner en pied. Le chiffre technique ne s'affiche JAMAIS seul ni en tête.
-// À valider à l'écran avant le câblage réel (qui attend le contrat SEO Engine).
+// MAQUETTE (données mockées, aucun backend) — nouveau design GEO « modèle autorité »,
+// V2 intégrée dans le layout de l'onglet Analyse (la carte GEO AU MILIEU des autres).
+// Cas où les concurrents sont cités par les IA et pas le prospect (le plus fréquent).
+// Langage 100 % Barth : accent-pink (pas de rouge étranger), ExpertCtaBanner,
+// cartes/tokens existants. Aucun libellé de frame (urgence/…) visible à l'écran.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const geoIcon = (
@@ -16,7 +19,6 @@ const geoIcon = (
   </svg>
 );
 
-// Données mockées : le prospect (Vous 0) face à ses concurrents cités par moteur.
 const ROWS = [
   { name: "ChatGPT", logo: "/barth-staging/chatgpt.png", competitor: "Roadsurfer", cited: 12 },
   { name: "Perplexity", logo: "/barth-staging/perplexity.png", competitor: "We-van", cited: 8 },
@@ -25,35 +27,38 @@ const ROWS = [
 ];
 const MAX = Math.max(...ROWS.map((r) => r.cited));
 
-function UrgencyCard() {
+// Carte GEO — état « concurrents cités, pas vous ». Le constat EN TÊTE (langage
+// accent-pink de Barth, comme la carte 'opportunité'), la technique en sous-ligne.
+function GeoStatementCard() {
   return (
     <div className="overflow-hidden rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]">
-      {/* Header */}
       <div className="flex w-full items-center gap-2 px-5 pt-5 md:px-6 md:pt-6">
         <span className="text-text-primary/80">{geoIcon}</span>
         <span className="text-[length:var(--text-body-lg)] font-medium text-text-heading">Visibilité GEO</span>
       </div>
 
-      {/* CADRAGE URGENCE = en tête (pas un chiffre) */}
+      {/* Constat en tête — tokens accent-pink de Barth (bordure/fond doux, icône pink) */}
       <div className="px-5 pt-4 md:px-6">
-        <div className="flex items-start gap-3 rounded-xl border border-red-400/30 bg-red-500/[0.07] px-4 py-3.5">
-          <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-          </svg>
+        <div className="flex items-start gap-3 rounded-2xl border border-accent-pink/20 bg-accent-pink/[0.06] px-5 py-4">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-pink/10 text-accent-pink">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.183.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            </svg>
+          </span>
           <div>
-            <p className="text-[17px] font-semibold leading-snug text-text-primary">
+            <h3 className="text-[17px] font-semibold leading-snug text-text-heading">
               Vos concurrents sont cités par les IA — pas vous.
-            </p>
-            {/* Technique en SOUS-LIGNE, reframée : le 100 n'est pas le problème */}
+            </h3>
             <p className="mt-1.5 text-[13px] font-light leading-relaxed text-text-secondary">
               Site techniquement prêt (<span className="font-medium text-text-primary">Technique 100</span> · structure,
-              accès, formats). Le problème n&apos;est pas la structure : c&apos;est l&apos;autorité et les citations.
+              accès, formats). Le levier n&apos;est pas la structure : c&apos;est l&apos;autorité et les citations.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Par-moteur nominatif : le contraste « Concurrent N · Vous 0 » */}
+      {/* Par-moteur nominatif — « Concurrent N · Vous 0 » (contraste sobre, sans rouge) */}
       <div className="px-5 pt-5 md:px-6">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-[12px] font-medium uppercase tracking-wide text-text-muted">Par moteur d&apos;IA</span>
@@ -72,11 +77,11 @@ function UrgencyCard() {
                     <span className="text-text-secondary">{r.competitor} </span>
                     <span className="font-semibold text-text-primary">{r.cited}</span>
                     <span className="text-text-muted"> · Vous </span>
-                    <span className="font-semibold text-red-400">0</span>
+                    <span className="font-semibold text-text-secondary">0</span>
                   </span>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-                  <div className="h-full rounded-full bg-accent-pink/70" style={{ width: `${(r.cited / MAX) * 100}%` }} />
+                  <div className="h-full rounded-full bg-accent-pink" style={{ width: `${(r.cited / MAX) * 100}%` }} />
                 </div>
               </div>
             </div>
@@ -84,12 +89,11 @@ function UrgencyCard() {
         </div>
       </div>
 
-      {/* ExpertCtaBanner : le CTA qui convertit le diagnostic en RDV */}
       <div className="p-5 md:p-6">
         <ExpertCtaBanner
           onExpertClick={() => {}}
-          title="Vos concurrents captent la visibilité IA"
-          body="Votre site est prêt techniquement : le levier, c'est l'autorité. Un expert AWI vous montre comment être cité à votre tour."
+          title="Vos concurrents récoltent les citations. Pas vous."
+          body="Votre site est fait pour être repris par les IA, mais ce sont vos concurrents qui décrochent les citations. Un expert AWI identifie pourquoi et comment renverser l'écart."
           cta="Parler à un expert"
         />
       </div>
@@ -97,23 +101,33 @@ function UrgencyCard() {
   );
 }
 
+// Displays mockés pour les cartes voisines (langage réel RealScoreArc).
+function arc(value: number): ScoreDisplay {
+  const band = value < 50 ? "critical" : value < 75 ? "medium" : "good";
+  return { type: "seo", scorable: true, value, absolute: false, neutralArc: false, tone: "ok", band, label: null, message: null, caption: "Score sur 100" };
+}
+const LOCKED: ScoreDisplay = { type: "semantic", scorable: false, value: null, absolute: false, neutralArc: false, tone: "muted", band: null, label: null, message: "Débloquez l'analyse concurrentielle.", caption: "En attente" };
+
 export default function GeoCompositePreviewPage() {
   return (
-    <main data-theme="light" className="min-h-screen bg-bg-primary px-4 py-10 md:py-16">
-      <div className="mx-auto flex max-w-3xl flex-col gap-8">
-        <header className="text-center">
-          <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-accent-pink">
-            Maquette interne — données mockées
-          </p>
-          <h1 className="mt-2 text-2xl font-medium tracking-tight text-text-primary md:text-3xl">
-            GEO — cas « concurrents cités, pas vous » (URGENCE)
-          </h1>
-          <p className="mt-2 text-[14px] font-light text-text-muted">
-            Nouveau modèle « autorité » : le cadrage urgence en tête, la technique en sous-ligne,
-            jamais le chiffre technique seul. À valider avant câblage.
-          </p>
+    <main data-theme="light" className="min-h-screen bg-bg-primary px-4 py-10 md:py-14">
+      <div className="mx-auto flex max-w-5xl flex-col">
+        <header className="mb-8 text-center">
+          <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-accent-pink">Maquette interne — données mockées</p>
+          <h1 className="mt-2 text-2xl font-medium tracking-tight text-text-primary md:text-3xl">Onglet Analyse — carte GEO (constat) au milieu des autres</h1>
         </header>
-        <UrgencyCard />
+
+        {/* Encart GEO (pleine largeur, comme dans l'onglet Analyse) */}
+        <div className="mb-4">
+          <GeoStatementCard />
+        </div>
+
+        {/* Grille des 3 autres piliers — vrais composants RealScoreArc, displays mockés */}
+        <section className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <RealScoreArc label="SEO Technique" icon={scoreIcons.technique} display={arc(76)} info={scoreInfos.technique} delay={0} />
+          <RealScoreArc label="SEO Sémantique" icon={scoreIcons.semantique} display={LOCKED} info={scoreInfos.semantique} delay={120} unlockable projectId="preview" />
+          <RealScoreArc label="Autorité" icon={scoreIcons.autorite} display={arc(56)} info={scoreInfos.autorite} delay={240} />
+        </section>
       </div>
     </main>
   );
