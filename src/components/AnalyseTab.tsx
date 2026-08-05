@@ -138,7 +138,6 @@ export default function AnalyseTab({
           crawlerAccess={aiCrawlerAccess(scores)}
           projectId={projectId}
           onUnlocked={handleUnlocked}
-          onExpertClick={onExpertClick}
           platformBreakdown={
             (
               byType("geo_citations")?.rawData as

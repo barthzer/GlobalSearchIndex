@@ -233,17 +233,6 @@ export default function ReportTokenPage() {
             display={citationsDisplay(scores)}
             status={scores.find((s) => s.scoreType === "geo_citations")?.status ?? null}
             crawlerAccess={aiCrawlerAccess(scores)}
-            onExpertClick={() => {
-              // Surface prospect en lecture seule (pas de nav interne) : le CTA
-              // ouvre un mail vers AWI, prérempli avec le domaine analysé.
-              const subject = encodeURIComponent(
-                `Analyse de positionnement — ${project.companyName || project.domain}`,
-              );
-              const body = encodeURIComponent(
-                `Bonjour,\n\nJe souhaite échanger avec un expert AWI sur l'analyse de ${project.domain}.`,
-              );
-              window.location.href = `mailto:contact@awi.fr?subject=${subject}&body=${body}`;
-            }}
             platformBreakdown={
               (
                 scores.find((s) => s.scoreType === "geo_citations")?.rawData as

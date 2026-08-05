@@ -5,7 +5,6 @@ import type { GeoCitationsDisplay, AiCrawlerAccess } from "@/lib/scores";
 import { bandLabel } from "@/lib/scoreLabel";
 import ScoreInfoModal from "./ScoreInfoModal";
 import InsightNote from "./InsightNote";
-import ExpertCtaBanner from "./ExpertCtaBanner";
 import SemanticUnlockModal from "./SemanticUnlockModal";
 import { CompetitorBreakdownList } from "./PilierIA";
 import { scoreInfos } from "@/app/dashboard/rapport/score-infos";
@@ -77,7 +76,6 @@ export default function RealGeoScoreCard({
   delay = 0,
   projectId,
   onUnlocked,
-  onExpertClick,
 }: {
   /** Display du score geo_citations (porte geoContext.layout). */
   display: GeoCitationsDisplay;
@@ -94,8 +92,6 @@ export default function RealGeoScoreCard({
   projectId?: string;
   /** Appelé après un déblocage réussi → le parent recharge les scores (POST=repoll). */
   onUnlocked?: () => void;
-  /** CTA expert (layout 'statement'). */
-  onExpertClick?: () => void;
 }) {
   const [visible, setVisible] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -253,7 +249,6 @@ export default function RealGeoScoreCard({
             frame={ctx?.frame ?? null}
             breakdown={breakdown}
             userPages={ctx?.userPages ?? 0}
-            onExpertClick={onExpertClick}
           />
         )}
 
@@ -454,7 +449,6 @@ function StatementBody({
   frame,
   breakdown,
   userPages,
-  onExpertClick,
 }: {
   label: string | null;
   message: string | null;
@@ -462,7 +456,6 @@ function StatementBody({
   frame: "opportunite" | "urgence" | "technique" | "locked" | null;
   breakdown: NonNullable<GeoCitationsDisplay["geoContext"]>["competitorBreakdown"] | null;
   userPages: number;
-  onExpertClick?: () => void;
 }) {
   // Cadrage 'urgence' / 'opportunite' → accent rose (langage Barth). 'technique'
   // → neutre (mesure non concluante, pas un argument commercial).
@@ -499,20 +492,8 @@ function StatementBody({
 
       {/* Détail nominatif vs concurrents (si le panel le fournit). */}
       {breakdown && (
-        <div className="px-5 pt-4 md:px-6">
+        <div className="px-5 pt-4 pb-1 md:px-6">
           <CompetitorBreakdownList breakdown={breakdown} userPages={userPages} />
-        </div>
-      )}
-
-      {/* CTA expert — uniquement en cadrage commercial (urgence/opportunité). */}
-      {isCommercial && onExpertClick && (
-        <div className="p-5 md:p-6">
-          <ExpertCtaBanner
-            onExpertClick={onExpertClick}
-            title="Vos concurrents récoltent les citations. Pas vous."
-            body="Votre site est fait pour être repris par les IA, mais ce sont vos concurrents qui décrochent les citations. Un expert AWI identifie pourquoi et comment renverser l'écart."
-            cta="Parler à un expert"
-          />
         </div>
       )}
     </>
