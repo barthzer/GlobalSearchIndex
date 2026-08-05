@@ -95,7 +95,6 @@ export default function RealGeoScoreCard({
 }) {
   const [visible, setVisible] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
-  const [showAll, setShowAll] = useState(false);
   const [showUnlock, setShowUnlock] = useState(false);
 
   useEffect(() => {
@@ -235,8 +234,6 @@ export default function RealGeoScoreCard({
             platformBreakdown={platformBreakdown}
             unavailable={unavailable}
             breakdown={breakdown}
-            showAll={showAll}
-            setShowAll={setShowAll}
           />
         )}
 
@@ -249,6 +246,8 @@ export default function RealGeoScoreCard({
             frame={ctx?.frame ?? null}
             breakdown={breakdown}
             userPages={ctx?.userPages ?? 0}
+            platformBreakdown={platformBreakdown}
+            unavailable={unavailable}
           />
         )}
 
@@ -264,6 +263,85 @@ export default function RealGeoScoreCard({
   );
 }
 
+// ── Section « Par moteur d'IA » (pictos + citations·pages) — partagée entre les
+// layouts 'composite' et 'statement'. En statement (prospect non cité), les
+// moteurs affichent 0 : c'est le sens même de « vos concurrents cités, pas vous ».
+function PlatformBreakdownSection({
+  platformBreakdown,
+  unavailable,
+}: {
+  platformBreakdown: PlatformBreakdown | null;
+  unavailable: boolean;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const rows = PLATFORMS.map((p) => {
+    const stat = platformBreakdown ? platformBreakdown[p.key] : undefined;
+    return { name: p.name, logo: p.logo, citations: stat ? stat.citations : null, pages: stat ? stat.pages : null };
+  });
+  const maxCitations = Math.max(1, ...rows.map((r) => r.citations ?? 0));
+  const TOP_N = 4;
+  const visibleRows = showAll ? rows : rows.slice(0, TOP_N);
+  const hiddenCount = rows.length - TOP_N;
+
+  return (
+    <div className="flex flex-col gap-3 px-5 pb-2 pt-4 md:px-6">
+      <div className="flex items-center justify-between">
+        <span className="text-[12px] font-medium uppercase tracking-wide text-text-muted">Par moteur d&apos;IA</span>
+        <span className="text-[11px] font-light text-text-muted">Citations · Pages</span>
+      </div>
+      {unavailable && (
+        <p className="text-[12px] font-light leading-relaxed text-text-secondary">
+          Mesure des citations par moteur momentanément indisponible. Réessayez dans quelques minutes.
+        </p>
+      )}
+      {!unavailable &&
+        visibleRows.map((m) => {
+          const audited = m.citations !== null;
+          const barPct = audited ? (m.citations! / maxCitations) * 100 : 0;
+          return (
+            <div key={m.name} className="flex items-center gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-subtle bg-card-inner-bg">
+                <img src={m.logo} alt={m.name} className="h-full w-full object-contain p-1" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="truncate text-[13px] font-medium text-text-primary">{m.name}</span>
+                  {audited ? (
+                    <span className="shrink-0 text-[12px] text-text-secondary">
+                      <span className="font-semibold text-text-primary">{m.citations}</span>
+                      <span className="text-text-muted"> · {m.pages}</span>
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-[11px] font-light text-text-muted">Non audité</span>
+                  )}
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                  {audited && <div className="h-full rounded-full bg-accent-pink" style={{ width: `${barPct}%` }} />}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      {!unavailable && hiddenCount > 0 && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          className="mt-1 flex items-center justify-center gap-1.5 self-start rounded-full border border-border-subtle bg-card-inner-bg px-3 py-1.5 text-[12px] font-medium text-text-secondary transition-all duration-200 hover:border-white/10 hover:bg-white/[0.06] hover:text-text-primary active:scale-[0.97]"
+          style={{ transitionTimingFunction: "var(--ease-out)" }}
+        >
+          {showAll ? "Voir moins" : `Voir les ${hiddenCount} autres moteurs`}
+          <svg
+            className="h-3.5 w-3.5 transition-transform duration-200"
+            style={{ transform: showAll ? "rotate(180deg)" : "none" }}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Corps du layout 'composite' ─────────────────────────────────────────────
 function CompositeBody({
   ctx,
@@ -274,8 +352,6 @@ function CompositeBody({
   platformBreakdown,
   unavailable,
   breakdown,
-  showAll,
-  setShowAll,
 }: {
   ctx: NonNullable<GeoCitationsDisplay["geoContext"]>;
   band: "critical" | "medium" | "good" | null;
@@ -285,8 +361,6 @@ function CompositeBody({
   platformBreakdown: PlatformBreakdown | null;
   unavailable: boolean;
   breakdown: NonNullable<GeoCitationsDisplay["geoContext"]>["competitorBreakdown"] | null;
-  showAll: boolean;
-  setShowAll: (fn: (v: boolean) => boolean) => void;
 }) {
   const composite = ctx.composite;
   const col = band ? BAND_GRADIENT[band] : NEUTRAL;
@@ -294,15 +368,6 @@ function CompositeBody({
     composite != null
       ? circumference - (Math.min(Math.max(composite, 0), 100) / 100) * circumference
       : circumference;
-
-  const rows = PLATFORMS.map((p) => {
-    const stat = platformBreakdown ? platformBreakdown[p.key] : undefined;
-    return { name: p.name, logo: p.logo, citations: stat ? stat.citations : null, pages: stat ? stat.pages : null };
-  });
-  const maxCitations = Math.max(1, ...rows.map((r) => r.citations ?? 0));
-  const TOP_N = 4;
-  const visibleRows = showAll ? rows : rows.slice(0, TOP_N);
-  const hiddenCount = rows.length - TOP_N;
 
   const citedSubtitle =
     ctx.userCitations != null && ctx.userCitations > 0
@@ -382,61 +447,7 @@ function CompositeBody({
       )}
 
       {/* Détail par moteur d'IA — citations réelles du prospect. */}
-      <div className="flex flex-col gap-3 px-5 pb-2 pt-4 md:px-6">
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] font-medium uppercase tracking-wide text-text-muted">Par moteur d&apos;IA</span>
-          <span className="text-[11px] font-light text-text-muted">Citations · Pages</span>
-        </div>
-        {unavailable && (
-          <p className="text-[12px] font-light leading-relaxed text-text-secondary">
-            Mesure des citations par moteur momentanément indisponible. Réessayez dans quelques minutes.
-          </p>
-        )}
-        {!unavailable &&
-          visibleRows.map((m) => {
-            const audited = m.citations !== null;
-            const barPct = audited ? (m.citations! / maxCitations) * 100 : 0;
-            return (
-              <div key={m.name} className="flex items-center gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-subtle bg-card-inner-bg">
-                  <img src={m.logo} alt={m.name} className="h-full w-full object-contain p-1" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center justify-between gap-2">
-                    <span className="truncate text-[13px] font-medium text-text-primary">{m.name}</span>
-                    {audited ? (
-                      <span className="shrink-0 text-[12px] text-text-secondary">
-                        <span className="font-semibold text-text-primary">{m.citations}</span>
-                        <span className="text-text-muted"> · {m.pages}</span>
-                      </span>
-                    ) : (
-                      <span className="shrink-0 text-[11px] font-light text-text-muted">Non audité</span>
-                    )}
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-                    {audited && <div className="h-full rounded-full bg-accent-pink" style={{ width: `${barPct}%` }} />}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        {!unavailable && hiddenCount > 0 && (
-          <button
-            onClick={() => setShowAll((v) => !v)}
-            className="mt-1 flex items-center justify-center gap-1.5 self-start rounded-full border border-border-subtle bg-card-inner-bg px-3 py-1.5 text-[12px] font-medium text-text-secondary transition-all duration-200 hover:border-white/10 hover:bg-white/[0.06] hover:text-text-primary active:scale-[0.97]"
-            style={{ transitionTimingFunction: "var(--ease-out)" }}
-          >
-            {showAll ? "Voir moins" : `Voir les ${hiddenCount} autres moteurs`}
-            <svg
-              className="h-3.5 w-3.5 transition-transform duration-200"
-              style={{ transform: showAll ? "rotate(180deg)" : "none" }}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-            >
-              <path d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-            </svg>
-          </button>
-        )}
-      </div>
+      <PlatformBreakdownSection platformBreakdown={platformBreakdown} unavailable={unavailable} />
     </>
   );
 }
@@ -449,6 +460,8 @@ function StatementBody({
   frame,
   breakdown,
   userPages,
+  platformBreakdown,
+  unavailable,
 }: {
   label: string | null;
   message: string | null;
@@ -456,6 +469,8 @@ function StatementBody({
   frame: "opportunite" | "urgence" | "technique" | "locked" | null;
   breakdown: NonNullable<GeoCitationsDisplay["geoContext"]>["competitorBreakdown"] | null;
   userPages: number;
+  platformBreakdown: PlatformBreakdown | null;
+  unavailable: boolean;
 }) {
   // Cadrage 'urgence' / 'opportunite' → accent rose (langage Barth). 'technique'
   // → neutre (mesure non concluante, pas un argument commercial).
@@ -496,6 +511,9 @@ function StatementBody({
           <CompetitorBreakdownList breakdown={breakdown} userPages={userPages} />
         </div>
       )}
+
+      {/* Par moteur d'IA (pictos) — le prospect à 0 partout renforce « pas vous ». */}
+      <PlatformBreakdownSection platformBreakdown={platformBreakdown} unavailable={unavailable} />
     </>
   );
 }

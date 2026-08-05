@@ -43,7 +43,7 @@ export default function RealRecommendations({
       <section>
         <Heading />
         <p className="text-[13px] text-text-muted">
-          Impossible de charger les recommandations — réessayez.
+          Impossible de charger les recommandations. Réessayez.
         </p>
       </section>
     );
@@ -66,7 +66,7 @@ export default function RealRecommendations({
       <section>
         <Heading />
         <div className="rounded-2xl border border-border-subtle bg-bg-card p-6 text-[13px] leading-relaxed text-text-muted">
-          Recommandations non disponibles pour ce projet — elles sont générées
+          Recommandations non disponibles pour ce projet. Elles sont générées
           automatiquement dès que les scores principaux sont calculés.
         </div>
       </section>
