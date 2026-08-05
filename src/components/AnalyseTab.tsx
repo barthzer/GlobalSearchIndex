@@ -154,7 +154,12 @@ export default function AnalyseTab({
 
       <section className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {ARC_SCORES.map(({ type, label, key }, i) => {
-          const sc = byType(type);
+          // UNIFICATION AUTORITÉ (décision B, Alexis/Kevin 2026-08-05) : le pilier
+          // « Autorité » affiche LE COMPOSITE média (score notoriete), plus le BAS
+          // relatif BABBAR. Un seul chiffre autorité partout (écran/report/PDF/benchmark).
+          // La carte, sa place et son bouton info restent : seule la SOURCE change.
+          const sourceType = type === "authority" ? "notoriete" : type;
+          const sc = byType(sourceType);
           // Score absent → arc « non disponible » (jamais un arc qui disparaît).
           const display: ScoreDisplay = sc
             ? sc.display
@@ -178,18 +183,12 @@ export default function AnalyseTab({
               display={display}
               info={scoreInfos[key]}
               delay={420 + i * 120}
-              // Verrouillé → carte de déblocage. Sémantique : status locked.
-              // Autorité : régime absolu (display.absolute) → le /100 relatif se
-              // débloque avec les concurrents (même panel que la Sémantique).
-              unlockable={
-                (type === "semantic" && sc?.status === "locked") ||
-                (type === "authority" && display.absolute)
-              }
-              unlockCtaLabel={
-                type === "authority"
-                  ? "Débloquer le score relatif"
-                  : "Calculer mon score sémantique"
-              }
+              // Verrouillé → carte de déblocage (sémantique : status locked). Le
+              // composite autorité n'a PAS de verrou-concurrents (il se calcule des
+              // composantes notoriété) : son seul cas dégradé est 'insufficient'
+              // (carte « Données insuffisantes » honnête, gérée par le display).
+              unlockable={type === "semantic" && sc?.status === "locked"}
+              unlockCtaLabel="Calculer mon score sémantique"
               processing={sc?.status === "processing"}
               projectId={projectId}
               onUnlocked={handleUnlocked}

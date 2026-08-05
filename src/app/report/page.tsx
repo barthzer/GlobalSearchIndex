@@ -206,7 +206,10 @@ export default function ReportTokenPage() {
         {/* Scores — rendus depuis les blocs display serveur (mêmes que le PDF) */}
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {SCORES.map(({ type, label, icon: d }) => {
-            const sc = scores.find((s) => s.scoreType === type);
+            // UNIFICATION AUTORITÉ : le pilier « Autorité » lit le composite média
+            // (score notoriete), même chiffre que dashboard/PDF (parité écran=PDF=prospect).
+            const sourceType = type === "authority" ? "notoriete" : type;
+            const sc = scores.find((s) => s.scoreType === sourceType);
             const display: ScoreDisplay = sc
               ? sc.display
               : {
