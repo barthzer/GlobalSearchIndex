@@ -13,6 +13,9 @@ interface Props {
   rank: number;
   total: number;
   rankHint: string;
+  /** true → surface prospect read-only : l'état verrouillé n'affiche PAS le bouton
+   *  d'action (le prospect regarde, il ne débloque rien). */
+  readOnly?: boolean;
   /** true → benchmark en cours de calcul (déblocage validé, cascade serveur) :
    *  on montre « en cours » au lieu du verrou (Alexis : tout tourne à la validation). */
   processing?: boolean;
@@ -56,6 +59,7 @@ export default function BenchmarkSection({
   total,
   rankHint,
   processing = false,
+  readOnly = false,
 }: Props) {
   if (unlocked) {
     return (
@@ -114,21 +118,25 @@ export default function BenchmarkSection({
         <h3 className="mb-2 text-[length:var(--text-body-lg)] font-semibold text-text-primary">
           Benchmark concurrents verrouillé
         </h3>
-        <p className="mb-6 max-w-md text-[length:var(--text-body)] font-light leading-relaxed text-text-secondary">
-          Renseignez vos concurrents pour comparer votre couverture média et débloquer
-          l&apos;analyse benchmark sur 12 mois.
+        <p className={`max-w-md text-[length:var(--text-body)] font-light leading-relaxed text-text-secondary ${readOnly ? "" : "mb-6"}`}>
+          {readOnly
+            ? "Le benchmark média sur 12 mois se débloque en renseignant les concurrents lors de l'analyse."
+            : "Renseignez vos concurrents pour comparer votre couverture média et débloquer l'analyse benchmark sur 12 mois."}
         </p>
 
-        <button
-          onClick={onUnlockClick}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-accent-purple via-accent-pink via-[47%] to-accent-pink-light px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
-          style={{ transitionTimingFunction: "var(--ease-out)" }}
-        >
-          Débloquer mes concurrents
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-        </button>
+        {/* Read-only (prospect) : aucun bouton d'action, il regarde seulement. */}
+        {!readOnly && (
+          <button
+            onClick={onUnlockClick}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-accent-purple via-accent-pink via-[47%] to-accent-pink-light px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
+            style={{ transitionTimingFunction: "var(--ease-out)" }}
+          >
+            Débloquer mes concurrents
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );

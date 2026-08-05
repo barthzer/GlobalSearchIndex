@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import RealScoreArc from "@/components/RealScoreArc";
 import RealGeoScoreCard, { type PlatformBreakdown } from "@/components/RealGeoScoreCard";
+import NotorieteInsightsView from "@/components/notoriete/NotorieteInsightsView";
+import { type NotorieteRaw } from "@/lib/notoriete";
 import { citationsDisplay, aiCrawlerAccess, type ScoreDisplay } from "@/lib/scores";
 import {
   fetchReport,
@@ -252,6 +254,29 @@ export default function ReportTokenPage() {
             }
           />
         </section>
+
+        {/* Notoriété & autorité média — MÊME source que le dashboard (parité
+            écran=report=PDF), read-only strict : aucun bouton d'action côté prospect.
+            Le benchmark suit son état (débloqué → table ; sinon verrou sans bouton). */}
+        {(() => {
+          const noto = scores.find((s) => s.scoreType === "notoriete");
+          if (!noto) return null;
+          const composite = noto.display?.scorable ? (noto.display.value ?? null) : null;
+          return (
+            <section className="mt-10">
+              <h2 className="mb-5 text-xl font-medium tracking-tight text-text-primary">
+                Notoriété &amp; autorité média
+              </h2>
+              <NotorieteInsightsView
+                raw={(noto.rawData ?? null) as NotorieteRaw | null}
+                composite={composite}
+                compositeMessage={noto.display?.message ?? null}
+                clientName={project.companyName || project.domain}
+                readOnly
+              />
+            </section>
+          );
+        })()}
 
         {/* Visibilité (même contenu que la vue actuelle, design Barth) */}
         {vis && (vis.visibility_history?.length > 0 || vis.positions_history?.length > 0) && (

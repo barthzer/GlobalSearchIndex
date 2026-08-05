@@ -15,7 +15,9 @@ export interface ReportScore {
     | "geo_citability"
     | "geo_citations"
     | "authority"
-    | "semantic";
+    | "notoriete"
+    | "semantic"
+    | "visibility";
   scoreValue: number | null;
   rawData: Record<string, unknown> | null;
   display: ScoreDisplay;
