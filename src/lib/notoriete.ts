@@ -86,9 +86,14 @@ export interface NotorieteRaw {
     top_pills?: string[] | null;
   } | null;
   // Benchmark relatif : présent seulement si des concurrents ont été saisis.
+  // 🔴 Le serveur (contrat @gsi/shared NotorieteBenchmark) stocke `competitors` +
+  // `rank_hint`. On garde `rows`/`hint` en tolérance (données legacy / reconstruction
+  // /tmp du 04/08 qui avait introduit le mismatch → benchmark jamais débloqué).
   benchmark?: {
     rank?: number | null;
     total?: number | null;
+    competitors?: CompetitorRow[] | null;
+    rank_hint?: string | null;
     rows?: CompetitorRow[] | null;
     hint?: string | null;
   } | null;
@@ -122,14 +127,19 @@ export function mediaView(raw: NotorieteRaw | null | undefined): MajorMediaData 
  */
 export function benchmarkView(raw: NotorieteRaw | null | undefined): BenchmarkView {
   const bench = raw?.benchmark ?? null;
-  const rows = Array.isArray(bench?.rows) ? bench!.rows! : [];
+  // Contrat serveur = `competitors` ; `rows` = tolérance legacy (mismatch 04/08).
+  const rows = Array.isArray(bench?.competitors)
+    ? bench!.competitors!
+    : Array.isArray(bench?.rows)
+      ? bench!.rows!
+      : [];
   const unlocked = bench != null && rows.length > 0;
   return {
     unlocked,
     rows,
     rank: bench?.rank ?? 0,
     total: bench?.total ?? 0,
-    rankHint: bench?.hint ?? "",
+    rankHint: bench?.rank_hint ?? bench?.hint ?? "",
     compositeMode: true,
     compositeReady: unlocked,
     compositePending: false,

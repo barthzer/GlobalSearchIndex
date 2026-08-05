@@ -181,14 +181,9 @@ export default function ConcurrenceTab({
 
   return (
     <div className="animate-fade-up flex flex-col gap-6 pb-4">
-      <ShareOfVoiceDonut data={data} />
-
-      {insight && (
-        <div className="rounded-2xl border border-accent-pink/20 bg-accent-pink/[0.05] p-5 text-[13.5px] leading-relaxed text-text-secondary">
-          {insight}
-        </div>
-      )}
-
+      {/* Ordre demandé (Alexis) : la Couverture (heatmap) d'abord, son interprétation
+          JUSTE EN DESSOUS ; puis la part de clics (donut) avec SON interprétation
+          dessous. Chaque interprétation sous son visuel, sections inversées. */}
       <section>
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="mr-2 text-[length:var(--text-body-lg)] font-medium text-text-heading">
@@ -211,13 +206,22 @@ export default function ConcurrenceTab({
         </div>
 
         {/* Chaque viz gère son propre état « pas assez de données » (jamais un
-            bloc qui disparaît). Sur matière insuffisante, l'insight ci-dessus
-            l'explique déjà. */}
+            bloc qui disparaît). */}
         {view === "heatmap" && <CoverageHeatmap data={data} />}
         {view === "bars" && <CoverageBars data={data} />}
         {view === "radar" && <CoverageRadar data={data} />}
         {view === "bump" && <CoverageBump data={data} />}
+
+        {/* Interprétation de la couverture — SOUS la heatmap qu'elle décrit. */}
+        {insight && (
+          <div className="mt-4 rounded-2xl border border-accent-pink/20 bg-accent-pink/[0.05] p-5 text-[13.5px] leading-relaxed text-text-secondary">
+            {insight}
+          </div>
+        )}
       </section>
+
+      {/* Part de clics estimés (donut) — porte sa propre interprétation en dessous. */}
+      <ShareOfVoiceDonut data={data} />
 
       {!insufficient && (
         <section>

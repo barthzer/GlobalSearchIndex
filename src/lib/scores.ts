@@ -46,6 +46,9 @@ export interface GeoContext {
   // Chiffre composite en tête (= round(0.4·technique + 0.6·citations)). Non-null
   // UNIQUEMENT en layout 'composite'. null ≠ 0.
   composite?: number | null;
+  // true → composite DÉGRADÉ calculé côté GSI (concurrents_cites_pas_vous, 0 citation
+  // mesurée). La carte affiche le constat « pas vous » au-dessus de l'arc.
+  degraded?: boolean;
   // Sous-composante « Technique » (0-100). En 'composite' : reçue du contrat.
   // En 'statement' : valeur du score geo_citability (jamais en tête).
   subTechnique?: number | null;

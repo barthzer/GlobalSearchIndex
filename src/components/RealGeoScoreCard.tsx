@@ -234,6 +234,8 @@ export default function RealGeoScoreCard({
             platformBreakdown={platformBreakdown}
             unavailable={unavailable}
             breakdown={breakdown}
+            label={display.label}
+            message={display.message}
           />
         )}
 
@@ -352,6 +354,8 @@ function CompositeBody({
   platformBreakdown,
   unavailable,
   breakdown,
+  label,
+  message,
 }: {
   ctx: NonNullable<GeoCitationsDisplay["geoContext"]>;
   band: "critical" | "medium" | "good" | null;
@@ -361,6 +365,8 @@ function CompositeBody({
   platformBreakdown: PlatformBreakdown | null;
   unavailable: boolean;
   breakdown: NonNullable<GeoCitationsDisplay["geoContext"]>["competitorBreakdown"] | null;
+  label: string | null;
+  message: string | null;
 }) {
   const composite = ctx.composite;
   const col = band ? BAND_GRADIENT[band] : NEUTRAL;
@@ -369,13 +375,36 @@ function CompositeBody({
       ? circumference - (Math.min(Math.max(composite, 0), 100) / 100) * circumference
       : circumference;
 
+  // Composite DÉGRADÉ (0 citation) → sous-titre honnête « cité nulle part ».
   const citedSubtitle =
     ctx.userCitations != null && ctx.userCitations > 0
       ? `vous êtes cité ${ctx.userCitations} fois`
-      : "citations relatives au panel";
+      : ctx.degraded
+        ? "cité nulle part"
+        : "citations relatives au panel";
 
   return (
     <>
+      {/* Composite DÉGRADÉ (concurrents_cites_pas_vous) : le constat « pas vous »
+          reste en tête, l'arc rouge + les 2 boîtes suivent (unification kytom↔biowork). */}
+      {ctx.degraded && (
+        <div className="px-5 pt-4 md:px-6">
+          <div className="flex items-start gap-3 rounded-2xl border border-accent-pink/20 bg-accent-pink/[0.06] px-5 py-4">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-pink/10 text-accent-pink">
+              {eyeIcon}
+            </span>
+            <div>
+              <h3 className="text-[17px] font-semibold leading-snug text-text-heading">
+                {label ?? "Vos concurrents sont cités, pas vous"}
+              </h3>
+              {message && (
+                <p className="mt-1.5 text-[13px] font-light leading-relaxed text-text-secondary">{message}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col items-center gap-6 p-5 md:flex-row md:items-center md:gap-8 md:p-6">
         {/* Composite en tête */}
         <div className="flex shrink-0 flex-col items-center gap-2.5">
