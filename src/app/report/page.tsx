@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import RealScoreArc from "@/components/RealScoreArc";
 import RealGeoScoreCard, { type PlatformBreakdown } from "@/components/RealGeoScoreCard";
-import CitationsSection from "@/components/CitationsSection";
-import { readabilityDisplay, citationsDisplay, aiCrawlerAccess, type ScoreDisplay } from "@/lib/scores";
+import { citationsDisplay, aiCrawlerAccess, type ScoreDisplay } from "@/lib/scores";
 import {
   fetchReport,
   fetchReportVisibility,
@@ -226,14 +225,25 @@ export default function ReportTokenPage() {
           })}
         </section>
 
-        {/* Pilier IA — MÊME layout que le dashboard (écran=PDF=prospect) : encart GEO
-            (Lisibilité + par-moteur réel) + section Citations (vs concurrents). Displays
-            résolus serveur (audience prospect). Lecture seule : pas de projectId → carte
-            verrouillée informative sans bouton d'action. */}
+        {/* Pilier IA — MÊME carte que le dashboard (écran=PDF=prospect) : modèle
+            composite, 3 layouts décidés serveur (audience prospect). Lecture seule :
+            pas de projectId → le verrou reste informatif, sans bouton de déblocage. */}
         <section className="mt-4 flex flex-col gap-4">
           <RealGeoScoreCard
-            display={readabilityDisplay(scores)}
+            display={citationsDisplay(scores)}
+            status={scores.find((s) => s.scoreType === "geo_citations")?.status ?? null}
             crawlerAccess={aiCrawlerAccess(scores)}
+            onExpertClick={() => {
+              // Surface prospect en lecture seule (pas de nav interne) : le CTA
+              // ouvre un mail vers AWI, prérempli avec le domaine analysé.
+              const subject = encodeURIComponent(
+                `Analyse de positionnement — ${project.companyName || project.domain}`,
+              );
+              const body = encodeURIComponent(
+                `Bonjour,\n\nJe souhaite échanger avec un expert AWI sur l'analyse de ${project.domain}.`,
+              );
+              window.location.href = `mailto:contact@awi.fr?subject=${subject}&body=${body}`;
+            }}
             platformBreakdown={
               (
                 scores.find((s) => s.scoreType === "geo_citations")?.rawData as
@@ -248,20 +258,6 @@ export default function ReportTokenPage() {
                   | null
               )?.geo_status === "unavailable"
             }
-          />
-          <CitationsSection
-            geoCitations={citationsDisplay(scores)}
-            onExpertClick={() => {
-              // Surface prospect en lecture seule (pas de nav interne) : le CTA
-              // ouvre un mail vers AWI, prérempli avec le domaine analysé.
-              const subject = encodeURIComponent(
-                `Analyse de positionnement — ${project.companyName || project.domain}`,
-              );
-              const body = encodeURIComponent(
-                `Bonjour,\n\nJe souhaite échanger avec un expert AWI sur l'analyse de ${project.domain}.`,
-              );
-              window.location.href = `mailto:contact@awi.fr?subject=${subject}&body=${body}`;
-            }}
           />
         </section>
 

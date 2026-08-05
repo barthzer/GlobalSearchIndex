@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   fetchProjectScores,
   anyProcessing,
-  readabilityDisplay,
   citationsDisplay,
   aiCrawlerAccess,
   type ProjectScore,
@@ -16,7 +15,6 @@ import RealPageSpeed from "./RealPageSpeed";
 import RealRecommendations from "./RealRecommendations";
 import NotWiredNotice from "./NotWiredNotice";
 import RealGeoScoreCard, { type PlatformBreakdown } from "./RealGeoScoreCard";
-import CitationsSection from "./CitationsSection";
 import RealTrafficVisibility from "./RealTrafficVisibility";
 import RealNotorieteInsights from "./RealNotorieteInsights";
 
@@ -115,13 +113,18 @@ export default function AnalyseTab({
         </div>
       )}
 
-      {/* Encart GEO (design Barth) — arc Lisibilité (geo_citability) + détail par
-          moteur d'IA depuis le platform_breakdown RÉEL de geo_citations. Au-dessus
-          des arcs, comme la maquette. */}
+      {/* Carte GEO (modèle composite, pattern autorité) — UNE carte, 3 layouts
+          décidés SERVEUR (display.geoContext.layout de geo_citations) : verrou /
+          composite / constat. La technique (geo_citability) n'a plus d'arc propre :
+          elle devient une sous-composante (composite) ou une sous-ligne (constat),
+          jamais seule ni en tête. */}
       <div className="mb-4">
         <RealGeoScoreCard
-          display={readabilityDisplay(scores)}
+          display={citationsDisplay(scores)}
+          status={byType("geo_citations")?.status ?? null}
           crawlerAccess={aiCrawlerAccess(scores)}
+          projectId={projectId}
+          onExpertClick={onExpertClick}
           platformBreakdown={
             (
               byType("geo_citations")?.rawData as
@@ -180,17 +183,6 @@ export default function AnalyseTab({
           );
         })}
       </section>
-
-      {/* Citations par les IA — mesure RELATIVE au panel (vs concurrents). Complète
-          l'encart GEO (par-moteur) : dernier bloc du haut de l'Analyse. Verrouillé →
-          appel à débloquer l'analyse concurrentielle. */}
-      <div className="mb-6">
-        <CitationsSection
-          geoCitations={citationsDisplay(scores)}
-          projectId={projectId}
-          onExpertClick={onExpertClick}
-        />
-      </div>
 
       {/* PageSpeed — toujours affiché : les vraies données, ou « non disponible »
           explicite (crawl dégradé). Jamais un bloc qui disparaît en silence. */}

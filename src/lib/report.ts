@@ -19,6 +19,9 @@ export interface ReportScore {
   scoreValue: number | null;
   rawData: Record<string, unknown> | null;
   display: ScoreDisplay;
+  // Statut pipeline (présent dans le payload via `...s`) — disambigue loader/verrou
+  // dans la carte GEO composite.
+  status?: string;
 }
 
 export interface ReportReco {

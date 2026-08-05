@@ -37,9 +37,29 @@ export interface CompetitorBreakdownEntry {
 }
 
 export interface GeoContext {
+  // Layout décidé SERVEUR (modèle composite) : la carte le LIT et rend, elle ne
+  // route rien (invariant « 56 vs 12 »). Toujours présent depuis le serveur ;
+  // optionnel côté type pour tolérer les maquettes mockées (repli 'lock').
+  //  'lock' → verrou pré-déblocage · 'composite' → score consolidé (chiffre +
+  //  2 sous-composantes) · 'statement' → constat qualitatif, technique en sous-ligne.
+  layout?: "lock" | "composite" | "statement";
+  // Chiffre composite en tête (= round(0.4·technique + 0.6·citations)). Non-null
+  // UNIQUEMENT en layout 'composite'. null ≠ 0.
+  composite?: number | null;
+  // Sous-composante « Technique » (0-100). En 'composite' : reçue du contrat.
+  // En 'statement' : valeur du score geo_citability (jamais en tête).
+  subTechnique?: number | null;
+  // Sous-composante « Position concurrentielle » (= geo_score relatif 0-99, PAS
+  // un compte). Non-null uniquement en 'composite'.
+  subCitations?: number | null;
+  // Date de mesure (ISO8601). La carte la formate (« Mesuré le … »). null si absente.
+  measuredAt?: string | null;
   userPages: number;
+  // Citations brutes du prospect (« cité N fois »). Distinct de subCitations (rang).
+  userCitations?: number | null;
   medianPanelPages: number;
   leaderPages: number;
+  ratioVsMedian?: number | null;
   // Cadre narratif du bandeau d'écart. null → pas d'argumentaire (neutre/technique).
   // 'locked' → pré-déblocage : appel à débloquer l'analyse concurrentielle.
   frame: "opportunite" | "urgence" | "technique" | "locked" | null;
