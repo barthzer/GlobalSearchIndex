@@ -95,6 +95,7 @@ export interface NotorieteRaw {
       title: string;
       description: string;
       media_label: string;
+      media_target?: string | null;
       media_subtitle?: string | null;
     }> | null;
   } | null;

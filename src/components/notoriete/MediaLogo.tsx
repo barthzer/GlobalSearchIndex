@@ -15,7 +15,7 @@ const logoMap: Record<string, LogoMeta> = {
 };
 
 interface Props {
-  mediaLogo: keyof typeof logoMap;
+  mediaLogo: string;
   className?: string;
   height?: number;
   // Si true (défaut), le logo est transformé en mono-color via mask et utilise currentColor
@@ -23,6 +23,9 @@ interface Props {
   themed?: boolean;
   // Si défini, force la couleur du logo (utilise mask + cette couleur). Override `themed` mode.
   color?: string;
+  // Nom du média affiché EN TEXTE quand aucun logo SVG n'existe (ex. JDN, Les Echos) —
+  // reproduit le comportement de l'ancien GSI (tous les médias visibles, logo ou nom).
+  fallbackLabel?: string;
 }
 
 export default function MediaLogo({
@@ -31,9 +34,18 @@ export default function MediaLogo({
   height = 22,
   themed = true,
   color,
+  fallbackLabel,
 }: Props) {
   const logo = logoMap[mediaLogo];
-  if (!logo) return null;
+  if (!logo) {
+    // Pas de logo SVG → nom en texte (jamais un média invisible).
+    if (!fallbackLabel) return null;
+    return (
+      <span className={`text-[13px] font-semibold text-text-primary ${className}`}>
+        {fallbackLabel}
+      </span>
+    );
+  }
 
   const width = Math.round(height * logo.ratio);
 

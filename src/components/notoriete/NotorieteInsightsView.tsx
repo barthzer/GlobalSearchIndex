@@ -17,6 +17,7 @@ import AuthorityGauge from "./AuthorityGauge";
 import BacklinksCard from "./BacklinksCard";
 import MajorMediaCard from "./MajorMediaCard";
 import BenchmarkSection from "./BenchmarkSection";
+import MediaLogo from "./MediaLogo";
 import type { CompetitorRow as BarthCompetitorRow } from "./data";
 
 export default function NotorieteInsightsView({
@@ -156,8 +157,14 @@ export default function NotorieteInsightsView({
                     {slot.description}
                   </p>
                 </div>
-                <div className="flex flex-col gap-0.5 md:items-end md:text-right">
-                  <span className="text-[13px] font-semibold text-text-primary">{slot.media_label}</span>
+                <div className="flex flex-col gap-1 md:items-end md:text-right">
+                  {/* Logo SVG du média quand dispo (figaro/bfm/lepoint/latribune),
+                      sinon le nom en texte (jdn, lesechos…) — comme l'ancien GSI. */}
+                  <MediaLogo
+                    mediaLogo={slot.media_target ?? ""}
+                    fallbackLabel={slot.media_label}
+                    height={16}
+                  />
                   {slot.media_subtitle && (
                     <span className="text-[11px] font-light text-text-muted">{slot.media_subtitle}</span>
                   )}
