@@ -365,6 +365,7 @@ export default function DashboardPage() {
                     projectId={currentGeneration.id}
                     preview
                     onSeeAll={() => setActiveTab("recommandations")}
+                    onExpertClick={() => setShowExpert(true)}
                   />
                 </div>
 

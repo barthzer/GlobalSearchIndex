@@ -235,7 +235,7 @@ export default function AnalyseTab({
 
       {/* Recommandations (M4) — la donnée existe, l'endpoint est câblé. */}
       <div className="mt-8">
-        <RealRecommendations projectId={projectId} />
+        <RealRecommendations projectId={projectId} onExpertClick={onExpertClick} />
       </div>
     </>
   );
