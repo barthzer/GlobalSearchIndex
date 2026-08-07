@@ -17,9 +17,6 @@ import {
 
 interface LoginModalProps {
   onClose: () => void;
-  /** Vue d'ouverture. Défaut "client" (OTP) = comportement maquette inchangé.
-   *  La route interne /login passe "admin" pour ouvrir directement email + mot de passe. */
-  initialView?: "client" | "admin";
 }
 
 const inputClass =
@@ -29,13 +26,15 @@ const CODE_LENGTH = 6;
 const RESEND_COOLDOWN = 30; // secondes
 // La connexion par code est vérifiée CÔTÉ SERVEUR (POST /auth/verify-code). Aucun
 // contournement client : pas de code de démo qui ouvre l'espace à tous.
+// La connexion interne (commercial + admin, email + mot de passe) NE vit PLUS ici :
+// elle est sur la route dédiée /connexion-admin (alignement maquette Barth, la porte
+// admin ne parasite plus le parcours prospect).
 
-export default function LoginModal({ onClose, initialView = "client" }: LoginModalProps) {
-  const { loginWithCredentials, loginAsProspect } = useAccount();
+export default function LoginModal({ onClose }: LoginModalProps) {
+  const { loginAsProspect } = useAccount();
   const router = useRouter();
-  const [view, setView] = useState<"client" | "admin" | "verify">(initialView);
+  const [view, setView] = useState<"client" | "verify">("client");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   // ─── Étape de vérification par code (OTP) ───
@@ -125,30 +124,6 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
     setCodeError("");
     setVerifying(false);
     setVerified(false);
-  }
-
-  // Admin : vrai compte (email + mot de passe). Mock = email admin connu + mot de passe non vide.
-  // Connexion interne réelle (commercial + admin) : email + mot de passe → POST /auth/login.
-  // Le rôle renvoyé par l'API pilote isAdmin ; le libellé « admin » de la vue est conservé.
-  async function handleAdminLogin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setError("Email et mot de passe requis.");
-      return;
-    }
-    setError("");
-    try {
-      await loginWithCredentials(email.trim(), password);
-      goToDashboard();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Connexion impossible.");
-    }
-  }
-
-  function switchView(next: "client" | "admin") {
-    setView(next);
-    setError("");
-    setPassword("");
   }
 
   return (
@@ -288,7 +263,7 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
                   <Link href="/conditions" className="text-text-secondary underline underline-offset-2 transition-colors hover:text-text-primary">conditions d&apos;utilisation</Link>.
                 </p>
               </>
-            ) : view === "client" ? (
+            ) : (
               <>
                 {/* Header */}
                 <div className="relative mb-6 flex flex-col items-center text-center">
@@ -324,69 +299,6 @@ export default function LoginModal({ onClose, initialView = "client" }: LoginMod
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                     </svg>
                   </Button>
-                </form>
-
-                <div className="my-5 h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-
-                <button
-                  type="button"
-                  onClick={() => switchView("admin")}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-border-subtle bg-card-inner-bg py-3 text-[13px] font-medium text-text-secondary transition-all duration-200 hover:border-border-badge hover:text-text-primary active:scale-[0.98]"
-                  style={{ transitionTimingFunction: "var(--ease-out)" }}
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
-                  </svg>
-                  Connexion administrateur
-                </button>
-              </>
-            ) : (
-              <>
-                {/* Header admin */}
-                <div className="relative mb-6 flex flex-col items-center text-center">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.06] bg-gradient-to-br from-[#6817F8]/15 to-[#EE56CE]/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
-                    <svg className="h-5 w-5 text-[#EE56CE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-[22px] font-medium tracking-[-0.4px] text-text-primary">Connexion administrateur</h2>
-                  <p className="mt-2 text-[14px] font-extralight leading-relaxed text-text-secondary">
-                    Accès réservé à l&apos;équipe AWI.
-                  </p>
-                </div>
-
-                <form onSubmit={handleAdminLogin} className="flex flex-col gap-3">
-                  <input
-                    type="email"
-                    autoFocus
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); if (error) setError(""); }}
-                    placeholder="Email"
-                    className={`${inputClass} ${error ? "border-red-400/60" : "border-border-subtle focus:border-accent-pink/40"}`}
-                  />
-                  <div>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); if (error) setError(""); }}
-                      placeholder="Mot de passe"
-                      className={`${inputClass} ${error ? "border-red-400/60" : "border-border-subtle focus:border-accent-pink/40"}`}
-                    />
-                    {error && <p className="mt-1.5 text-[12px] font-light text-red-400">{error}</p>}
-                  </div>
-                  <Button variant="primary" fullWidth type="submit">
-                    Se connecter
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={() => switchView("client")}
-                    className="mt-0.5 text-[13px] font-light text-text-muted transition-colors duration-200 hover:text-text-primary"
-                  >
-                    Retour
-                  </button>
                 </form>
               </>
             )}
