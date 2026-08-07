@@ -40,10 +40,13 @@ export default function AnalyseTab({
   projectId,
   clientName,
   onExpertClick,
+  onSeeAllRecos,
 }: {
   projectId: string;
   clientName?: string;
   onExpertClick?: () => void;
+  /** CTA « voir tout » de l'aperçu recos → bascule vers l'onglet Recommandations. */
+  onSeeAllRecos?: () => void;
 }) {
   const [scores, setScores] = useState<ProjectScore[] | null>(null);
   const [error, setError] = useState(false);
@@ -233,9 +236,11 @@ export default function AnalyseTab({
         />
       </div>
 
-      {/* Recommandations (M4) — la donnée existe, l'endpoint est câblé. */}
+      {/* Recommandations — aperçu 3 recos + fondu + CTA « voir tout » vers l'onglet
+          Recommandations (rendu validé Alexis 2026-08-07 : sur Analyse on ne montre
+          que les 3 premières, le plan complet est sur l'onglet dédié). */}
       <div className="mt-8">
-        <RealRecommendations projectId={projectId} onExpertClick={onExpertClick} />
+        <RealRecommendations projectId={projectId} preview onSeeAll={onSeeAllRecos} />
       </div>
     </>
   );

@@ -365,7 +365,6 @@ export default function DashboardPage() {
                     projectId={currentGeneration.id}
                     preview
                     onSeeAll={() => setActiveTab("recommandations")}
-                    onExpertClick={() => setShowExpert(true)}
                   />
                 </div>
 
@@ -407,6 +406,7 @@ export default function DashboardPage() {
               projectId={currentGeneration.id}
               clientName={currentGeneration.name}
               onExpertClick={() => setShowExpert(true)}
+              onSeeAllRecos={() => setActiveTab("recommandations")}
             />
             ) : activeTabSafe === "projection" ? (
               <ProjectionView projectId={currentGeneration.id} />

@@ -120,6 +120,47 @@ export function isCoverageDataInsufficient(data: ConcurrenceData): boolean {
   return data.positions.flat().filter((p) => p !== null).length <= 1;
 }
 
+// Classement global de la marque principale = 50 % couverture top 10 + 50 % part de
+// voix (trafic estimé). Repris à l'identique de la maquette Barth (bloc « Classement
+// global »), branché sur nos données réelles.
+export function computeRanking(data: ConcurrenceData): {
+  rank: number;
+  total: number;
+  leaderName: string;
+  isLeader: boolean;
+} {
+  const { brands, keywords, positions } = data;
+  const traffic = trafficByBrand(positions, keywords);
+  const totalTraffic = traffic.reduce((s, t) => s + t, 0) || 1;
+  const scores = brands.map((_, bIdx) => {
+    const cov = coverageRate(positions.map((row) => row[bIdx]));
+    const sov = (traffic[bIdx] / totalTraffic) * 100;
+    return cov * 0.5 + sov * 0.5;
+  });
+  const order = brands
+    .map((b, i) => ({ id: b.id, name: b.name, score: scores[i] }))
+    .sort((a, b) => b.score - a.score);
+  const mainRank = order.findIndex((o) => o.id === "main") + 1;
+  const leader = order[0];
+  return {
+    rank: mainRank,
+    total: brands.length,
+    leaderName: leader?.name ?? "",
+    isLeader: leader?.id === "main",
+  };
+}
+
+// Phrase de synthèse globale (couverture top 10 + part de voix réunies). Prospect-safe.
+export function globalInsight(data: ConcurrenceData): string {
+  const { brands } = data;
+  const { rank, total, leaderName, isLeader } = computeRanking(data);
+  const you = brands.find((b) => b.id === "main")?.name ?? "Votre marque";
+  if (isLeader) {
+    return `${you} se classe 1ʳᵉ sur ${total} en combinant couverture top 10 et part de voix. Maintenez l'avance en consolidant les mots-clés à fort volume où vous êtes déjà bien positionné.`;
+  }
+  return `Sur l'ensemble couverture top 10 et part de voix, ${you} se classe ${rank}ᵉ sur ${total}, derrière ${leaderName}. La priorité : gagner des positions sur les mots-clés à fort volume encore hors du top 10.`;
+}
+
 // ── Dérivation depuis le rawData du score sémantique ────────────────────────
 // Le serveur normalise position_source (vendeur) en source_kind (neutre) ;
 // Barth ne lit que source_kind. Absent → null → « — » (dégradation propre).

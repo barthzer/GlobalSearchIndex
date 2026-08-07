@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { fetchRecommendations, type RecoContent } from "@/lib/recos";
 import RealRecommendationCard from "./RealRecommendationCard";
-import { useAccount } from "./AccountProvider";
-import Button from "./Button";
 
 function Heading() {
   return (
@@ -14,36 +12,89 @@ function Heading() {
   );
 }
 
+// État de chargement : les recos se GÉNÈRENT (après le calcul des scores). On floute
+// des cartes fantômes et on révèle à la complétion (pattern validé Alexis 2026-08-07,
+// même geste que la projection). Prospect-safe : aucun contenu lisible, aucun jargon
+// fournisseur.
+function GeneratingState() {
+  return (
+    <section>
+      <Heading />
+      <div className="relative">
+        <div className="pointer-events-none select-none blur-[6px]" aria-hidden>
+          <div className="flex flex-col gap-3">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-border-subtle bg-bg-card p-4"
+              >
+                <div className="mb-3 flex gap-2">
+                  <div className="h-5 w-24 rounded-full bg-border-subtle" />
+                  <div className="h-5 w-20 rounded-full bg-border-subtle" />
+                </div>
+                <div className="mb-2 h-4 w-2/3 rounded bg-border-subtle" />
+                <div className="h-3 w-1/2 rounded bg-border-subtle/70" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex items-center gap-2.5 rounded-full border border-border-subtle bg-bg-card/85 px-4 py-2 text-[13px] text-text-secondary backdrop-blur-md">
+            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-pink/30 border-t-accent-pink" />
+            Vos recommandations stratégiques se préparent.
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const POLL_MS = 4000;
+const POLL_CAP = 20; // ~80 s : au-delà, on affiche l'état « non disponibles » honnête.
+
 export default function RealRecommendations({
   projectId,
   preview = false,
   onSeeAll,
-  onExpertClick,
 }: {
   projectId: string;
-  /** Aperçu Home : 3 recos + fondu + bouton « voir toutes » (design maquette). */
+  /** Aperçu (onglet Analyse / Home) : 3 recos + fondu + CTA « voir tout ». */
   preview?: boolean;
+  /** Cible du CTA « voir tout » (bascule vers l'onglet Recommandations). */
   onSeeAll?: () => void;
-  /** CTA de déblocage du teaser prospect (funnel gratuit) → ExpertModal. */
-  onExpertClick?: () => void;
 }) {
-  // undefined = chargement, null = pas de recos, sinon le contenu.
-  const [content, setContent] = useState<RecoContent | null | undefined>(undefined);
+  // undefined = chargement initial ; sinon le contenu (liste éventuellement vide).
+  const [content, setContent] = useState<RecoContent | undefined>(undefined);
   const [error, setError] = useState(false);
-  // Funnel prospect gratuit : les recos sont FLOUTÉES (teaser conversion, P3a
-  // 2026-08-07). Le déblocage passe par le rendez-vous expert (fin du funnel),
-  // JAMAIS en self-serve. Le commercial voit tout en clair (isProspect=false).
-  const { isProspect } = useAccount();
+  // Tentatives de poll tant que les recos sont vides (génération en cours).
+  const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
     let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    async function load(n: number) {
+      try {
+        const c = await fetchRecommendations(projectId);
+        if (!active) return;
+        setContent(c);
+        setError(false);
+        // Vides + sous le plafond → la génération est encore en cours : on relit le
+        // stocké (jamais de recalcul serveur) jusqu'à apparition ou plafond atteint.
+        if (c.recommendations.length === 0 && n < POLL_CAP) {
+          setAttempts(n + 1);
+          timer = setTimeout(() => load(n + 1), POLL_MS);
+        }
+      } catch {
+        if (active) setError(true);
+      }
+    }
     setContent(undefined);
     setError(false);
-    fetchRecommendations(projectId)
-      .then((c) => active && setContent(c))
-      .catch(() => active && setError(true));
+    setAttempts(0);
+    load(0);
     return () => {
       active = false;
+      if (timer) clearTimeout(timer);
     };
   }, [projectId]);
 
@@ -57,20 +108,14 @@ export default function RealRecommendations({
       </section>
     );
   }
-  if (content === undefined) {
-    return (
-      <section>
-        <Heading />
-        <div className="flex flex-col gap-3">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl border border-border-subtle bg-bg-card" />
-          ))}
-        </div>
-      </section>
-    );
-  }
-  // Pas de recos → on le DIT (jamais un vide silencieux).
-  if (content === null || content.recommendations.length === 0) {
+
+  const isEmpty = !content || content.recommendations.length === 0;
+
+  // Flou de chargement (les deux surfaces) tant que les recos se génèrent.
+  if (isEmpty && attempts < POLL_CAP) return <GeneratingState />;
+
+  // Génération terminée sans recos → on le DIT (jamais un vide silencieux).
+  if (!content || isEmpty) {
     return (
       <section>
         <Heading />
@@ -82,67 +127,8 @@ export default function RealRecommendations({
     );
   }
 
-  // ── Teaser prospect (funnel gratuit) : nombre + badges NETS, contenu FLOUTÉ,
-  //    overlay CTA « Parler à un expert » (pattern ProjectionView). Le prospect voit
-  //    qu'il y a de la matière et son urgence, jamais le plan. Déblocage = RDV expert.
-  if (isProspect) {
-    const total = content.recommendations.length;
-    const highPriority = content.recommendations.filter((r) => r.impact === "Fort").length;
-    // Quelques cartes floutées pour donner du volume visuel (jamais lisibles).
-    const teaser = content.recommendations.slice(0, 5);
-    return (
-      <section>
-        <Heading />
-        {/* Résumé NET : le prospect voit le volume + l'urgence, pas le contenu. */}
-        <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <span className="inline-flex items-center rounded-full border border-border-subtle bg-bg-card px-3 py-1 text-[13px] font-medium text-text-primary">
-            {total} recommandation{total > 1 ? "s" : ""}
-          </span>
-          {highPriority > 0 && (
-            <span className="inline-flex items-center rounded-full border border-red-500/25 bg-red-500/10 px-3 py-1 text-[13px] font-medium text-red-500">
-              {highPriority} priorité élevée
-            </span>
-          )}
-        </div>
-
-        <div className="relative">
-          {/* Contenu FLOUTÉ, non lisible et non cliquable. */}
-          <div className="pointer-events-none select-none blur-[6px]" aria-hidden>
-            <div className="flex flex-col gap-3">
-              {teaser.map((r, i) => (
-                <RealRecommendationCard key={i} rec={r} index={i} delay={0} />
-              ))}
-            </div>
-          </div>
-
-          {/* Overlay CTA — carte centrée, langage Barth (zéro tiret cadratin). */}
-          <div className="absolute inset-0 flex items-center justify-center px-4">
-            <div className="flex max-w-md flex-col items-center rounded-2xl border border-border-subtle bg-bg-overlay/85 px-8 py-8 text-center shadow-xl backdrop-blur-xl">
-              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-accent-pink/15 bg-accent-pink/10 text-accent-pink">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-                </svg>
-              </div>
-              <h3 className="text-[16px] font-semibold text-text-heading">
-                Votre plan d&apos;action est prêt
-              </h3>
-              <p className="mt-1.5 text-[13px] font-light leading-relaxed text-text-secondary">
-                Un expert AWI vous présente ces {total} recommandations priorisées et vous aide à les
-                transformer en gains de visibilité concrets.
-              </p>
-              {onExpertClick && (
-                <Button variant="primary" className="mt-5" onClick={onExpertClick}>
-                  Parler à un expert
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  const shown = preview ? content.recommendations.slice(0, 3) : content.recommendations;
+  const recos = content.recommendations;
+  const shown = preview ? recos.slice(0, 3) : recos;
 
   return (
     <section>
@@ -154,7 +140,7 @@ export default function RealRecommendations({
           ))}
         </div>
         {/* Aperçu : fondu bas comme la maquette. */}
-        {preview && content.recommendations.length > shown.length && (
+        {preview && recos.length > shown.length && (
           <div
             className="pointer-events-none absolute bottom-0 left-0 right-0 h-40"
             style={{ background: "linear-gradient(to bottom, transparent 0%, var(--bg-primary) 100%)" }}
