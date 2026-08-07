@@ -86,7 +86,8 @@ export interface ProjectScore {
     | "authority"
     | "semantic"
     | "page_speed"
-    | "notoriete";
+    | "notoriete"
+    | "visibility";
   scoreValue: number | null;
   // 'locked' = score non encore déclenché (sémantique/geo_citations avant déblocage).
   status: "locked" | "pending" | "processing" | "completed" | "error";

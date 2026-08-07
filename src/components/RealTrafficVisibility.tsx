@@ -69,6 +69,17 @@ function Msg({ children }: { children: React.ReactNode }) {
   return <p className="py-8 text-center text-[13px] font-light leading-relaxed text-text-secondary">{children}</p>;
 }
 
+// État « en cours de calcul » : un cercle qui tourne + un texte rassurant (le score
+// arrive). Remplace les messages qui faisaient penser à un bug (retour Alexis 2026-08-07).
+function Loading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-10">
+      <span className="h-7 w-7 animate-spin rounded-full border-2 border-accent-pink/30 border-t-accent-pink" />
+      <p className="text-[13px] font-light leading-relaxed text-text-secondary">{children}</p>
+    </div>
+  );
+}
+
 export default function RealTrafficVisibility({
   projectId,
   score: scoreProp,
@@ -81,29 +92,67 @@ export default function RealTrafficVisibility({
   const [tab, setTab] = useState<TabKey>("visibility");
   const [vis, setVis] = useState<{ visibility_history: VisibilityPoint[]; positions_history: PositionsPoint[] } | null | "error">(null);
   const [selfScore, setSelfScore] = useState<ProjectScore | null>(null);
+  // Statut du score visibility (pour distinguer « en cours » d'un vrai « terminé sans
+  // données »). 'unknown' tant qu'on n'a pas encore lu les scores.
+  const [visStatus, setVisStatus] = useState<string | null | "unknown">("unknown");
+  // Poll actif → on montre un spinner (Haloscan/Ahrefs calculent), jamais un message
+  // d'erreur transitoire.
+  const [polling, setPolling] = useState(true);
   const score = scoreProp ?? selfScore;
 
-  // Visibilité Haloscan — endpoint authentifié, best-effort (comme /report).
+  // Fetch groupé (statuts des scores + données de visibilité) avec POLLING tant que
+  // la visibilité (Haloscan) ou le trafic (Ahrefs) sont en cours de calcul. Un échec
+  // HTTP transitoire ne bascule PAS en erreur : le poll retente (spinner). Cap de
+  // sécurité pour ne pas poller à l'infini (retour Alexis 2026-08-07).
   useEffect(() => {
     let active = true;
-    apiFetch(`/projects/${projectId}/visibility`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => active && setVis(d))
-      .catch(() => active && setVis("error"));
-    return () => {
-      active = false;
-    };
-  }, [projectId]);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 20; // ~80 s
 
-  // Self-fetch du score geo_citations si le parent ne le passe pas (Vue d'ensemble).
-  useEffect(() => {
-    if (scoreProp !== undefined) return;
-    let active = true;
-    fetchProjectScores(projectId)
-      .then((s) => active && setSelfScore(s.find((x) => x.scoreType === "geo_citations") ?? null))
-      .catch(() => {});
+    async function tick() {
+      attempts += 1;
+      let vStatus: string | null = null;
+      let geoInProgress = false;
+      // 1. Statuts des scores (visibility + geo_citations).
+      try {
+        const all = await fetchProjectScores(projectId);
+        if (!active) return;
+        const v = all.find((x) => x.scoreType === "visibility") ?? null;
+        const geo = all.find((x) => x.scoreType === "geo_citations") ?? null;
+        vStatus = v?.status ?? null;
+        setVisStatus(vStatus);
+        if (scoreProp === undefined) setSelfScore(geo);
+        geoInProgress = geo?.status === "processing" || geo?.status === "pending";
+      } catch {
+        /* réseau : on retentera au prochain tick */
+      }
+      // 2. Données de visibilité (best-effort : un échec ne fait pas « error »).
+      try {
+        const r = await apiFetch(`/projects/${projectId}/visibility`);
+        if (!active) return;
+        if (r.ok) setVis(await r.json());
+      } catch {
+        /* transitoire : le poll retente */
+      }
+      // 3. Re-poll tant qu'un calcul est en cours (visibility absente/processing OU
+      //    trafic geo en cours), sous le cap.
+      const visInProgress =
+        vStatus === "processing" || vStatus === "pending" || vStatus == null;
+      if (active && (visInProgress || geoInProgress) && attempts < MAX_ATTEMPTS) {
+        timer = setTimeout(tick, 4000);
+      } else if (active) {
+        setPolling(false);
+      }
+    }
+
+    setVis(null);
+    setVisStatus("unknown");
+    setPolling(true);
+    tick();
     return () => {
       active = false;
+      if (timer) clearTimeout(timer);
     };
   }, [projectId, scoreProp]);
 
@@ -113,7 +162,9 @@ export default function RealTrafficVisibility({
     const raw = score?.rawData ?? null;
     if (status == null || status === "locked")
       return <Msg>La courbe de trafic organique (monde) est collectée avec l&apos;analyse concurrentielle. Débloquez-la pour la visualiser.</Msg>;
-    if (status === "processing" || status === "pending") return <Msg>Courbe de trafic (monde) en cours de collecte…</Msg>;
+    // En cours de collecte → un cercle qui tourne (le score arrive), jamais un message alarmant.
+    if (status === "processing" || status === "pending")
+      return <Loading>Collecte de la courbe de trafic en cours…</Loading>;
     if (status === "error") return <Msg>La courbe de trafic (monde) n&apos;a pas pu être collectée.</Msg>;
     const curve = (raw?.traffic_curve ?? null) as TrafficPoint[] | null;
     if (curve == null) return <Msg>La courbe de trafic (monde) n&apos;a pas pu être mesurée pour ce domaine.</Msg>;
@@ -131,12 +182,26 @@ export default function RealTrafficVisibility({
 
   // ── Onglet Indice de visibilité (Haloscan) ───────────────────────────────
   function VisibilityPanel() {
-    if (vis === null) return <div className="h-40 animate-pulse rounded-xl bg-white/[0.04]" />;
-    if (vis === "error") return <Msg>L&apos;indice de visibilité n&apos;a pas pu être chargé. Réessayez.</Msg>;
-    const hist = vis.visibility_history ?? [];
-    const positions = vis.positions_history ?? [];
-    if (hist.length < 2)
+    const hist = vis && vis !== "error" ? (vis.visibility_history ?? []) : [];
+    const positions = vis && vis !== "error" ? (vis.positions_history ?? []) : [];
+    // Pas (encore) de courbe : distinguer « en cours » d'un vrai « terminé sans données ».
+    if (hist.length < 2) {
+      // Haloscan calcule (ou premier chargement) → un cercle qui tourne, jamais un
+      // message qui laisse penser à un bug.
+      if (
+        polling ||
+        visStatus === "unknown" ||
+        visStatus === "processing" ||
+        visStatus === "pending" ||
+        visStatus == null
+      )
+        return <Loading>Calcul de votre indice de visibilité en cours…</Loading>;
+      // Vrai échec terminal (score en erreur).
+      if (visStatus === "error")
+        return <Msg>L&apos;indice de visibilité n&apos;a pas pu être chargé. Réessayez.</Msg>;
+      // Terminé (completed) mais pas assez d'historique pour ce domaine.
       return <Msg>Historique de visibilité pas encore disponible pour ce domaine.</Msg>;
+    }
     const rows = [
       { label: "Top 3", data: positions.map((p) => p.top3 ?? 0) },
       { label: "Top 10", data: positions.map((p) => p.top10 ?? 0) },
