@@ -113,10 +113,25 @@ export default function ConcurrenceTab({
 
   const semantic = scores.find((s) => s.scoreType === "semantic");
 
-  // Verrouillé : le sémantique n'est pas calculé (pas de concurrents/mots-clés
-  // saisis). Prospect ET commercial passent par le MÊME formulaire de déblocage
-  // (SemanticUnlockModal). Côté prospect, les appels du modal sont interceptés
-  // vers /public/* (token prospect) — le composant est identique.
+  // EN COURS : concurrents + mots-clés déjà saisis, le sémantique calcule (Haloscan).
+  // On montre un cercle qui tourne, JAMAIS « non débloquée » (qui ferait re-saisir).
+  // Le polling ci-dessus (anyProcessing → re-load 3s) fait arriver les tableaux seuls.
+  if (semantic && (semantic.status === "processing" || semantic.status === "pending")) {
+    return (
+      <div className="animate-fade-up mx-auto flex max-w-2xl flex-col items-center gap-4 rounded-2xl border border-border-subtle bg-bg-card p-12 text-center">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-accent-pink/30 border-t-accent-pink" />
+        <h2 className="text-lg font-medium text-text-primary">Analyse concurrentielle en cours…</h2>
+        <p className="max-w-md text-[14px] leading-relaxed text-text-muted">
+          Nous comparons votre visibilité SERP à celle de vos concurrents sur vos mots-clés.
+          Le résultat s&apos;affiche automatiquement, inutile de recharger.
+        </p>
+      </div>
+    );
+  }
+
+  // Verrouillé (jamais lancé) OU erreur : le sémantique n'est pas calculé. Prospect ET
+  // commercial passent par le MÊME formulaire de déblocage (SemanticUnlockModal). Côté
+  // prospect, les appels du modal sont interceptés vers /public/* (token prospect).
   if (!semantic || semantic.status !== "completed") {
     return (
       <>
