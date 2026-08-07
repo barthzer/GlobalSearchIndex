@@ -27,6 +27,7 @@ export default function NotorieteInsightsView({
   clientName,
   benchmarkProcessing = false,
   readOnly = false,
+  showEditorial = true,
   onUnlockClick,
 }: {
   /** raw_data du score notoriété (source des cards + benchmark). */
@@ -40,6 +41,9 @@ export default function NotorieteInsightsView({
   benchmarkProcessing?: boolean;
   /** true → surface prospect : AUCUN bouton d'action (read-only strict). */
   readOnly?: boolean;
+  /** Plan éditorial (marronniers). false → masqué (dashboard interne, retour Alexis
+   *  2026-08-07 : vue synthétique). Gardé dans les livrables prospect (/report + PDF). */
+  showEditorial?: boolean;
   /** CTA de déblocage benchmark (dashboard interne uniquement). */
   onUnlockClick?: () => void;
 }) {
@@ -123,9 +127,10 @@ export default function NotorieteInsightsView({
         />
       </div>
 
-      {/* Plan éditorial recommandé (marronniers) — parité écran = PDF. Media en
-          texte (robuste à tout titre), subtitle DYNAMIQUE depuis le secteur mesuré. */}
-      {editorialSlots.length > 0 && (
+      {/* Plan éditorial recommandé (marronniers). Masqué sur le dashboard interne
+          (showEditorial=false, retour Alexis) ; gardé dans les livrables prospect
+          (/report + PDF). Media en texte, subtitle dynamique depuis le secteur mesuré. */}
+      {showEditorial && editorialSlots.length > 0 && (
         <section className="mt-8">
           <h3 className="text-xl font-medium tracking-tight text-text-primary">
             Plan éditorial recommandé

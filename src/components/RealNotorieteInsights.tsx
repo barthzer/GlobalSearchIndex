@@ -76,6 +76,7 @@ export default function RealNotorieteInsights({
       compositeMessage={noto.display?.message ?? null}
       clientName={clientName}
       benchmarkProcessing={benchmarkProcessing}
+      showEditorial={false}
       onUnlockClick={onUnlockClick}
     />
   );
