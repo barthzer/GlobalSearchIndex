@@ -246,6 +246,9 @@ const PROSPECT_POST_ROUTES: { re: RegExp; to: string }[] = [
   { re: /^\/projects\/[^/]+\/semantic\/brand-check$/, to: "/public/semantic/brand-check" },
   { re: /^\/projects\/[^/]+\/competitor-size$/, to: "/public/competitor-size" },
   { re: /^\/projects\/[^/]+\/semantic$/, to: "/public/semantic" },
+  // Export PDF + partage du rapport du prospect (projectId scopé au token serveur).
+  { re: /^\/projects\/[^/]+\/export-pdf$/, to: "/public/export-pdf" },
+  { re: /^\/projects\/[^/]+\/share$/, to: "/public/share" },
 ];
 
 // Route un appel « commercial » (GET /projects…, /projects/:id/scores, recos ;
