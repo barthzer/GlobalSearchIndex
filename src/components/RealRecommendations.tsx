@@ -12,10 +12,32 @@ function Heading() {
   );
 }
 
+// Silhouette d'une carte de reco (calquée sur RealRecommendationCard : pastille
+// numéro + badges + titre + encart action). Barres neutres, jamais de faux contenu :
+// c'est un gabarit visuel destiné à être flouté, pas une reco inventée.
+function CardSkeleton({ titleWidth }: { titleWidth: string }) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-border-subtle bg-bg-card p-4">
+      <div className="mt-0.5 h-8 w-8 shrink-0 rounded-lg border border-border-subtle bg-border-subtle/40" />
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="h-5 w-24 rounded-full bg-border-subtle" />
+          <div className="h-5 w-20 rounded-full bg-border-subtle/70" />
+        </div>
+        <div className="h-4 rounded bg-border-subtle" style={{ width: titleWidth }} />
+        <div className="mt-1 rounded-lg border border-card-inner-border bg-card-inner-bg px-3.5 py-2.5">
+          <div className="mb-2 h-2.5 w-24 rounded bg-accent-pink/30" />
+          <div className="h-3 w-2/3 rounded bg-border-subtle/70" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // État de chargement : les recos se GÉNÈRENT (après le calcul des scores). On floute
-// des cartes fantômes et on révèle à la complétion (pattern validé Alexis 2026-08-07,
+// des cartes silhouettes et on révèle à la complétion (rendu validé Alexis 2026-08-07,
 // même geste que la projection). Prospect-safe : aucun contenu lisible, aucun jargon
-// fournisseur.
+// fournisseur. Titre net, cartes floutées, spinner + message centrés par-dessus.
 function GeneratingState() {
   return (
     <section>
@@ -23,25 +45,20 @@ function GeneratingState() {
       <div className="relative">
         <div className="pointer-events-none select-none blur-[6px]" aria-hidden>
           <div className="flex flex-col gap-3">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-border-subtle bg-bg-card p-4"
-              >
-                <div className="mb-3 flex gap-2">
-                  <div className="h-5 w-24 rounded-full bg-border-subtle" />
-                  <div className="h-5 w-20 rounded-full bg-border-subtle" />
-                </div>
-                <div className="mb-2 h-4 w-2/3 rounded bg-border-subtle" />
-                <div className="h-3 w-1/2 rounded bg-border-subtle/70" />
-              </div>
-            ))}
+            <CardSkeleton titleWidth="75%" />
+            <CardSkeleton titleWidth="60%" />
+            <CardSkeleton titleWidth="70%" />
           </div>
         </div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex items-center gap-2.5 rounded-full border border-border-subtle bg-bg-card/85 px-4 py-2 text-[13px] text-text-secondary backdrop-blur-md">
-            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-pink/30 border-t-accent-pink" />
-            Vos recommandations stratégiques se préparent.
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
+          <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-accent-pink/25 border-t-accent-pink" />
+          <div>
+            <p className="text-[15px] font-semibold text-text-heading">
+              Vos recommandations sont en cours d&apos;élaboration.
+            </p>
+            <p className="mt-1 text-[13.5px] font-light leading-relaxed text-text-secondary">
+              Elles apparaîtront lorsque tous les scores seront finalisés.
+            </p>
           </div>
         </div>
       </div>
