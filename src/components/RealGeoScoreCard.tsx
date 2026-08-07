@@ -375,14 +375,6 @@ function CompositeBody({
       ? circumference - (Math.min(Math.max(composite, 0), 100) / 100) * circumference
       : circumference;
 
-  // Composite DÉGRADÉ (0 citation) → sous-titre honnête « cité nulle part ».
-  const citedSubtitle =
-    ctx.userCitations != null && ctx.userCitations > 0
-      ? `vous êtes cité ${ctx.userCitations} fois`
-      : ctx.degraded
-        ? "cité nulle part"
-        : "citations relatives au panel";
-
   return (
     <>
       {/* Composite DÉGRADÉ (concurrents_cites_pas_vous) : le constat « pas vous »
@@ -449,22 +441,27 @@ function CompositeBody({
           <span className="text-[12px] font-medium text-text-secondary">Score GEO</span>
         </div>
 
-        {/* Les 2 sous-composantes À CÔTÉ */}
-        <div className="grid w-full flex-1 grid-cols-2 gap-3 md:border-l md:border-border-subtle md:pl-8">
-          <div className="rounded-xl border border-border-subtle bg-card-inner-bg px-4 py-3">
-            <div className="text-[22px] font-bold tabular-nums text-text-primary">
-              {ctx.subTechnique ?? "—"}
-            </div>
-            <div className="mt-0.5 text-[12px] font-medium text-text-secondary">Technique</div>
-            <div className="text-[11px] font-light leading-tight text-text-muted">structure, accès, formats</div>
-          </div>
-          <div className="rounded-xl border border-border-subtle bg-card-inner-bg px-4 py-3">
-            <div className="text-[22px] font-bold tabular-nums text-text-primary">
-              {ctx.subCitations ?? "—"}
-            </div>
-            <div className="mt-0.5 text-[12px] font-medium text-text-secondary">Position concurrentielle</div>
-            <div className="text-[11px] font-light leading-tight text-text-muted">{citedSubtitle}</div>
-          </div>
+        {/* INTERPRÉTATION en langage business (retour COMEX 2026-08-07) : remplace
+            les 2 sous-scores chiffrés. Texte par palier résolu SERVEUR (parité). */}
+        <div className="w-full flex-1 md:border-l md:border-border-subtle md:pl-8">
+          {ctx.interpretation && (
+            <p className="text-[14px] font-light leading-relaxed text-text-secondary">
+              {(() => {
+                // 1ère phrase en gras (accroche), le reste en secondaire.
+                const idx = ctx.interpretation.indexOf(". ");
+                if (idx === -1)
+                  return <span className="font-medium text-text-primary">{ctx.interpretation}</span>;
+                return (
+                  <>
+                    <span className="font-medium text-text-primary">
+                      {ctx.interpretation.slice(0, idx + 1)}
+                    </span>{" "}
+                    {ctx.interpretation.slice(idx + 2)}
+                  </>
+                );
+              })()}
+            </p>
+          )}
         </div>
       </div>
 

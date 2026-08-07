@@ -55,6 +55,9 @@ export interface GeoContext {
   // Sous-composante « Position concurrentielle » (= geo_score relatif 0-99, PAS
   // un compte). Non-null uniquement en 'composite'.
   subCitations?: number | null;
+  // Interprétation du score en langage business (texte par palier, serveur).
+  // Remplace l'affichage des 2 sous-scores chiffrés (retour COMEX 2026-08-07).
+  interpretation?: string | null;
   // Date de mesure (ISO8601). La carte la formate (« Mesuré le … »). null si absente.
   measuredAt?: string | null;
   userPages: number;
