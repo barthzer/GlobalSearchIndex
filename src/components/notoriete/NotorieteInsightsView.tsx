@@ -26,6 +26,7 @@ export default function NotorieteInsightsView({
   compositeMessage,
   clientName,
   benchmarkProcessing = false,
+  authorityProcessing = false,
   readOnly = false,
   showEditorial = true,
   onUnlockClick,
@@ -39,6 +40,9 @@ export default function NotorieteInsightsView({
   clientName: string;
   /** Benchmark en cours de calcul (cascade serveur) → « en cours » au lieu du verrou. */
   benchmarkProcessing?: boolean;
+  /** Notoriété (autorité média) en cours de calcul → spinner au lieu du message
+   *  « indisponible » (retour Kevin 2026-08-07 : montrer que le score arrive). */
+  authorityProcessing?: boolean;
   /** true → surface prospect : AUCUN bouton d'action (read-only strict). */
   readOnly?: boolean;
   /** Plan éditorial (marronniers). false → masqué (dashboard interne, retour Alexis
@@ -89,8 +93,17 @@ export default function NotorieteInsightsView({
       <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {composite != null ? (
           <AuthorityGauge score={composite} delay={0} />
+        ) : authorityProcessing ? (
+          // Notoriété encore en cours de calcul → un cercle qui tourne (le score
+          // arrive), jamais le message « indisponible » qui fait penser à un bug.
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border-subtle bg-bg-card p-6 text-center backdrop-blur-[6px]">
+            <span className="h-7 w-7 animate-spin rounded-full border-2 border-accent-pink/30 border-t-accent-pink" />
+            <span className="text-[13px] font-light text-text-secondary">
+              Calcul de votre autorité média en cours…
+            </span>
+          </div>
         ) : (
-          // Composite non défendable (insufficient) : état honnête, jamais un faux /100.
+          // Terminé mais composite non défendable (insufficient) : état honnête.
           <div className="flex flex-col items-center justify-center rounded-2xl border border-border-subtle bg-bg-card p-6 text-center backdrop-blur-[6px]">
             <span className="text-[length:var(--text-body-lg)] font-medium text-text-heading">
               Autorité média

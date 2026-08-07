@@ -33,11 +33,31 @@ export default function RealNotorieteInsights({
 
   useEffect(() => {
     let active = true;
-    fetchProjectScores(projectId)
-      .then((s) => active && setScores(s))
-      .catch(() => active && setScores([]));
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 20; // ~80 s
+    // POLLING tant que la notoriété calcule (retour Kevin) : la jauge d'autorité
+    // arrive sans reload, on montre un spinner entre-temps (jamais « indisponible »).
+    async function tick() {
+      attempts += 1;
+      try {
+        const s = await fetchProjectScores(projectId);
+        if (!active) return;
+        setScores(s);
+        const noto = s.find((x) => x.scoreType === "notoriete");
+        const inProgress =
+          !noto || noto.status === "processing" || noto.status === "pending";
+        if (active && inProgress && attempts < MAX_ATTEMPTS) {
+          timer = setTimeout(tick, 4000);
+        }
+      } catch {
+        if (active) setScores([]);
+      }
+    }
+    tick();
     return () => {
       active = false;
+      if (timer) clearTimeout(timer);
     };
     // refreshTick : le parent nous demande de re-lire (déblocage / polling en cours).
   }, [projectId, refreshTick]);
@@ -68,6 +88,10 @@ export default function RealNotorieteInsights({
   const benchmarkProcessing = (scores ?? []).some(
     (s) => s.scoreType === "semantic" && s.status === "processing",
   );
+  // Autorité média en cours : la notoriété calcule encore (processing/pending) →
+  // spinner au lieu du message « indisponible » (retour Kevin).
+  const authorityProcessing =
+    noto.status === "processing" || noto.status === "pending";
 
   return (
     <NotorieteInsightsView
@@ -76,6 +100,7 @@ export default function RealNotorieteInsights({
       compositeMessage={noto.display?.message ?? null}
       clientName={clientName}
       benchmarkProcessing={benchmarkProcessing}
+      authorityProcessing={authorityProcessing}
       showEditorial={false}
       onUnlockClick={onUnlockClick}
     />
