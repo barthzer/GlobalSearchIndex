@@ -307,6 +307,25 @@ async function prospectInterception(
     return jsonResponse(await res.json());
   }
 
+  // Indice de visibilité du prospect → endpoint public dédié (score 'visibility'
+  // stocké, scopé au token). Avant, cet appel tombait sur l'API commerciale sans
+  // auth → 401 → « historique pas encore disponible » alors que la donnée existe
+  // (fix 2026-08-10). Lecture seule (invariant de coût, aucun appel SEO Engine).
+  if (/^\/projects\/[^/]+\/visibility$/.test(pathname)) {
+    const res = await fetch(`${API_BASE}/public/visibility`, {
+      headers: { Authorization: `Bearer ${session.token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      return jsonResponse({
+        current_visibility: 0,
+        visibility_history: [],
+        positions_history: [],
+      });
+    }
+    return jsonResponse(await res.json());
+  }
+
   return null; // tout autre chemin : comportement normal
 }
 
