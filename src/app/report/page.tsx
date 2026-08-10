@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import RealScoreArc from "@/components/RealScoreArc";
 import RealGeoScoreCard, { type PlatformBreakdown } from "@/components/RealGeoScoreCard";
 import NotorieteInsightsView from "@/components/notoriete/NotorieteInsightsView";
+import ReportTrafficVisibility, {
+  type ReportTrafficPoint,
+} from "@/components/ReportTrafficVisibility";
 import { type NotorieteRaw } from "@/lib/notoriete";
 import { citationsDisplay, aiCrawlerAccess, type ScoreDisplay } from "@/lib/scores";
 import {
@@ -48,82 +51,6 @@ const IMPACT_STYLE: Record<string, string> = {
   Faible: "text-sky-400 border-sky-400/20 bg-sky-500/10",
 };
 
-const MONTHS_FR = ["", "janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-function monthLabel(m: string): string {
-  const mm = parseInt(m.split("-")[1] ?? "", 10);
-  const yy = m.split("-")[0] ?? "";
-  return `${MONTHS_FR[mm] ?? m} ${yy.slice(2)}`;
-}
-
-function VisibilityMini({ vis }: { vis: ReportVisibility }) {
-  const pts = useMemo(() => vis.visibility_history ?? [], [vis.visibility_history]);
-  const path = useMemo(() => {
-    if (pts.length < 2) return null;
-    const vals = pts.map((p) => p.visibility);
-    const max = Math.max(...vals, 1);
-    const min = Math.min(...vals, 0);
-    const span = max - min || 1;
-    const w = 100;
-    const h = 40;
-    return pts
-      .map((p, i) => {
-        const x = (i / (pts.length - 1)) * w;
-        const y = h - ((p.visibility - min) / span) * h;
-        return `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
-      })
-      .join(" ");
-  }, [pts]);
-
-  if (pts.length === 0) {
-    return (
-      <p className="text-[13px] font-light text-text-muted">
-        Historique de visibilité pas encore disponible pour ce domaine.
-      </p>
-    );
-  }
-  return (
-    <div>
-      {path && (
-        <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="h-24 w-full">
-          <path d={path} fill="none" stroke="var(--accent-pink)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
-        </svg>
-      )}
-      <div className="mt-2 flex justify-between text-[11px] font-light text-text-muted">
-        <span>{monthLabel(pts[0].month)}</span>
-        <span>{monthLabel(pts[pts.length - 1].month)}</span>
-      </div>
-    </div>
-  );
-}
-
-function PositionsMini({ vis }: { vis: ReportVisibility }) {
-  const rows = (vis.positions_history ?? []).slice(-6);
-  if (rows.length === 0) return null;
-  return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full text-[12px]">
-        <thead>
-          <tr className="text-text-muted">
-            <th className="py-1.5 text-left font-medium">Mois</th>
-            <th className="py-1.5 text-right font-medium">Top 3</th>
-            <th className="py-1.5 text-right font-medium">Top 10</th>
-            <th className="py-1.5 text-right font-medium">Top 50</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.month} className="border-t border-border-subtle/50 tabular-nums text-text-secondary">
-              <td className="py-1.5 text-left">{monthLabel(r.month)}</td>
-              <td className="py-1.5 text-right">{r.top3 ?? "n/d"}</td>
-              <td className="py-1.5 text-right">{r.top10 ?? "n/d"}</td>
-              <td className="py-1.5 text-right">{r.top50 ?? "n/d"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 export default function ReportTokenPage() {
   const [data, setData] = useState<ReportPayload | null>(null);
@@ -280,16 +207,35 @@ export default function ReportTokenPage() {
           );
         })()}
 
-        {/* Visibilité (même contenu que la vue actuelle, design Barth) */}
-        {vis && (vis.visibility_history?.length > 0 || vis.positions_history?.length > 0) && (
-          <section className="mt-10 rounded-2xl border border-border-subtle bg-bg-card p-5 md:p-6">
-            <h2 className="mb-4 text-[15px] font-medium text-text-primary">
-              Évolution de votre visibilité
-            </h2>
-            <VisibilityMini vis={vis} />
-            <PositionsMini vis={vis} />
-          </section>
-        )}
+        {/* Trafic mensuel + Indice de visibilité — MÊME chart que le dashboard
+            (TrafficChart VF), parité écran interne (retour Alexis 2026-08-10 : les
+            deux courbes manquaient au lien partagé). Trafic = traffic_curve du
+            geo-score ; visibilité = endpoint /report/:token/visibility. */}
+        {(() => {
+          const traffic =
+            ((
+              scores.find((s) => s.scoreType === "geo_citations")?.rawData as
+                | { traffic_curve?: ReportTrafficPoint[] }
+                | null
+            )?.traffic_curve ?? []) as ReportTrafficPoint[];
+          const hasTraffic = traffic.length >= 2;
+          const hasVisibility =
+            (vis?.visibility_history?.length ?? 0) >= 2 ||
+            (vis?.positions_history?.length ?? 0) >= 2;
+          if (!hasTraffic && !hasVisibility) return null;
+          return (
+            <section className="mt-10">
+              <h2 className="mb-4 text-xl font-medium tracking-tight text-text-primary">
+                Trafic &amp; visibilité
+              </h2>
+              <ReportTrafficVisibility
+                traffic={traffic}
+                visibility={vis?.visibility_history ?? []}
+                positions={vis?.positions_history ?? []}
+              />
+            </section>
+          );
+        })()}
 
         {/* Recommandations — déjà filtrées audience prospect côté serveur */}
         {recos.length > 0 && (
