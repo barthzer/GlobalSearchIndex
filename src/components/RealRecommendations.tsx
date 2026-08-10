@@ -66,8 +66,8 @@ function GeneratingState() {
   );
 }
 
-const POLL_MS = 4000;
-const POLL_CAP = 20; // ~80 s : au-delà, on affiche l'état « non disponibles » honnête.
+const POLL_START_MS = 4000;
+const POLL_MAX_MS = 30000; // backoff doux : la génération LLM peut être longue.
 
 export default function RealRecommendations({
   projectId,
@@ -83,23 +83,25 @@ export default function RealRecommendations({
   // undefined = chargement initial ; sinon le contenu (liste éventuellement vide).
   const [content, setContent] = useState<RecoContent | undefined>(undefined);
   const [error, setError] = useState(false);
-  // Tentatives de poll tant que les recos sont vides (génération en cours).
-  const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    async function load(n: number) {
+    let interval = POLL_START_MS;
+    async function load() {
       try {
         const c = await fetchRecommendations(projectId);
         if (!active) return;
         setContent(c);
         setError(false);
-        // Vides + sous le plafond → la génération est encore en cours : on relit le
-        // stocké (jamais de recalcul serveur) jusqu'à apparition ou plafond atteint.
-        if (c.recommendations.length === 0 && n < POLL_CAP) {
-          setAttempts(n + 1);
-          timer = setTimeout(() => load(n + 1), POLL_MS);
+        // Recos pas encore là → on GARDE le flou et on re-lit le stocké jusqu'à ce
+        // qu'elles apparaissent (demande Alexis : ad vitam tant que rien). La
+        // génération LLM peut être longue ; on n'abandonne JAMAIS sur un « non
+        // disponible » prématuré. Lecture seule (aucun recalcul serveur), backoff
+        // doux pour ne pas marteler l'API.
+        if (c.recommendations.length === 0) {
+          timer = setTimeout(load, interval);
+          interval = Math.min(interval + 3000, POLL_MAX_MS);
         }
       } catch {
         if (active) setError(true);
@@ -107,8 +109,7 @@ export default function RealRecommendations({
     }
     setContent(undefined);
     setError(false);
-    setAttempts(0);
-    load(0);
+    load();
     return () => {
       active = false;
       if (timer) clearTimeout(timer);
@@ -128,21 +129,11 @@ export default function RealRecommendations({
 
   const isEmpty = !content || content.recommendations.length === 0;
 
-  // Flou de chargement (les deux surfaces) tant que les recos se génèrent.
-  if (isEmpty && attempts < POLL_CAP) return <GeneratingState />;
-
-  // Génération terminée sans recos → on le DIT (jamais un vide silencieux).
-  if (!content || isEmpty) {
-    return (
-      <section>
-        <Heading />
-        <div className="rounded-2xl border border-border-subtle bg-bg-card p-6 text-[13px] leading-relaxed text-text-muted">
-          Recommandations non disponibles pour ce projet. Elles sont générées
-          automatiquement dès que les scores principaux sont calculés.
-        </div>
-      </section>
-    );
-  }
+  // Flou de chargement (les deux surfaces) tant que les recos ne sont PAS là :
+  // on tourne ad vitam plutôt que d'afficher un « non disponible » prématuré (la
+  // génération peut être longue — retour Alexis 2026-08-10). Seule une erreur
+  // réseau/serveur sort du flou (état d'erreur ci-dessus).
+  if (isEmpty) return <GeneratingState />;
 
   const recos = content.recommendations;
   const shown = preview ? recos.slice(0, 3) : recos;

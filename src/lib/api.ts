@@ -294,10 +294,17 @@ async function prospectInterception(
     return jsonResponse(scores);
   }
 
-  // Recos : NON incluses en Phase 1 → réponse vide adaptée (jamais un 404 qui
-  // casserait la vue). Le consommateur affiche un état « pas de recos ».
+  // Recos du prospect → endpoint public dédié (scopé au token, même contenu filtré
+  // que l'interne). Avant c'était un stub vide « Phase 1 » : les recos générées
+  // n'apparaissaient JAMAIS côté funnel (fix 2026-08-10). no-store : chaque poll
+  // relit le stocké (jamais de recalcul serveur) jusqu'à ce qu'elles arrivent.
   if (/^\/projects\/[^/]+\/recommendations$/.test(pathname)) {
-    return jsonResponse({ recommendations: [], cta: null });
+    const res = await fetch(`${API_BASE}/public/recommendations`, {
+      headers: { Authorization: `Bearer ${session.token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return jsonResponse({ recommendations: [], cta: null });
+    return jsonResponse(await res.json());
   }
 
   return null; // tout autre chemin : comportement normal
