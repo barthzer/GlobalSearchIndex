@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Button from "./Button";
-import { apiFetch, withBasePath } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 
 interface Props {
   /** Projet à partager : cible du POST /projects/:id/share. */
@@ -13,19 +13,17 @@ interface Props {
 
 /**
  * Partage prospect : le commercial saisit un email, le serveur génère un lien
- * signé (token) et l'envoie par mail. On confirme l'envoi et on affiche le lien
- * `/report/:token` copiable — un prospect ne pouvant pas se connecter à GSI, ce
- * lien est le SEUL accès valable (fini le « copier l'URL du dashboard »).
+ * signé (token) et l'envoie par mail. Le lien complet part UNIQUEMENT par email
+ * (le token n'est jamais exposé au commercial) : le succès ne fait que confirmer
+ * l'envoi, sans champ lien copiable (retrait retour Alexis 2026-08-10).
  */
 export default function ShareModal({ projectId, onClose }: Props) {
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  // Résultat serveur : email confirmé + lien de rapport (construit côté client
-  // depuis le status du partage, cf. plus bas). null tant qu'on n'a pas partagé.
-  const [shared, setShared] = useState<{ email: string; link: string } | null>(null);
-  const [copied, setCopied] = useState(false);
+  // Résultat serveur : email de destination confirmé. null tant qu'on n'a pas partagé.
+  const [shared, setShared] = useState<{ email: string } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -57,27 +55,12 @@ export default function ShareModal({ projectId, onClose }: Props) {
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { email?: string };
       // Le lien /report/:token n'est renvoyé qu'au prospect par email : côté
-      // commercial on confirme l'envoi. On expose une entrée /report préfixée
-      // par le basePath, sans forger de token (le serveur reste la source de vérité).
-      setShared({
-        email: data.email ?? value,
-        link: withBasePath("/report"),
-      });
+      // commercial on confirme simplement l'envoi (aucun lien copiable exposé).
+      setShared({ email: data.email ?? value });
     } catch {
       setError("L'envoi du partage a échoué. Réessayez.");
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function handleCopy() {
-    if (!shared) return;
-    try {
-      await navigator.clipboard.writeText(shared.link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard indisponible : le lien reste sélectionnable manuellement */
     }
   }
 
@@ -134,18 +117,6 @@ export default function ShareModal({ projectId, onClose }: Props) {
                   Un lien d&apos;accès sécurisé a été envoyé à{" "}
                   <span className="font-medium text-text-primary">{shared.email}</span>.
                 </p>
-              </div>
-
-              <div className="mb-4 flex items-center gap-2 rounded-xl border border-border-subtle bg-input-bg px-3 py-2.5">
-                <span className="min-w-0 flex-1 truncate text-[13px] text-text-secondary">{shared.link}</span>
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className="shrink-0 rounded-lg border border-border-subtle bg-bg-card px-3 py-1.5 text-[12px] font-medium text-text-secondary transition-colors duration-150 hover:bg-bg-card-hover hover:text-text-primary"
-                  style={{ transitionTimingFunction: "var(--ease-out)" }}
-                >
-                  {copied ? "Copié" : "Copier"}
-                </button>
               </div>
 
               <Button variant="primary" fullWidth onClick={onClose}>
