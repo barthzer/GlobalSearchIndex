@@ -205,8 +205,35 @@ export default function ReportTokenPage() {
           <p className="mt-2 text-[14px] font-light text-text-muted">{project.domain}</p>
         </section>
 
-        {/* Scores — rendus depuis les blocs display serveur (mêmes que le PDF) */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Pilier IA — EN TÊTE (parité dashboard : le PILIER IA d'abord, retour
+            Alexis 2026-08-10). MÊME carte que le dashboard (écran=PDF=prospect) :
+            modèle composite, 3 layouts décidés serveur (audience prospect). Lecture
+            seule : pas de projectId → le verrou reste informatif, sans bouton. */}
+        <section className="flex flex-col gap-4">
+          <RealGeoScoreCard
+            display={citationsDisplay(scores)}
+            status={scores.find((s) => s.scoreType === "geo_citations")?.status ?? null}
+            crawlerAccess={aiCrawlerAccess(scores)}
+            platformBreakdown={
+              (
+                scores.find((s) => s.scoreType === "geo_citations")?.rawData as
+                  | { details?: { platform_breakdown?: PlatformBreakdown } }
+                  | null
+              )?.details?.platform_breakdown ?? null
+            }
+            unavailable={
+              (
+                scores.find((s) => s.scoreType === "geo_citations")?.rawData as
+                  | { geo_status?: string }
+                  | null
+              )?.geo_status === "unavailable"
+            }
+          />
+        </section>
+
+        {/* Scores — 3 arcs (SEO Tech / Autorité / Sémantique), APRÈS le pilier IA.
+            Rendus depuis les blocs display serveur (mêmes que le PDF). */}
+        <section className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {SCORES.map(({ type, label, icon: d }) => {
             // UNIFICATION AUTORITÉ : le pilier « Autorité » lit le composite média
             // (score notoriete), même chiffre que dashboard/PDF (parité écran=PDF=prospect).
@@ -228,31 +255,6 @@ export default function ReportTokenPage() {
                 };
             return <RealScoreArc key={type} label={label} icon={icon(d)} display={display} />;
           })}
-        </section>
-
-        {/* Pilier IA — MÊME carte que le dashboard (écran=PDF=prospect) : modèle
-            composite, 3 layouts décidés serveur (audience prospect). Lecture seule :
-            pas de projectId → le verrou reste informatif, sans bouton de déblocage. */}
-        <section className="mt-4 flex flex-col gap-4">
-          <RealGeoScoreCard
-            display={citationsDisplay(scores)}
-            status={scores.find((s) => s.scoreType === "geo_citations")?.status ?? null}
-            crawlerAccess={aiCrawlerAccess(scores)}
-            platformBreakdown={
-              (
-                scores.find((s) => s.scoreType === "geo_citations")?.rawData as
-                  | { details?: { platform_breakdown?: PlatformBreakdown } }
-                  | null
-              )?.details?.platform_breakdown ?? null
-            }
-            unavailable={
-              (
-                scores.find((s) => s.scoreType === "geo_citations")?.rawData as
-                  | { geo_status?: string }
-                  | null
-              )?.geo_status === "unavailable"
-            }
-          />
         </section>
 
         {/* Notoriété & autorité média — MÊME source que le dashboard (parité
