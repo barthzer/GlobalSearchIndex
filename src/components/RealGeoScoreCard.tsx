@@ -255,9 +255,11 @@ export default function RealGeoScoreCard({
 
         <div className="px-5 pb-5 md:px-6 md:pb-6">
           <InsightNote>
-            Le score GEO mesure votre visibilité dans les réponses des IA génératives (ChatGPT, Gemini, Perplexity…).{" "}
-            <span className="font-medium text-text-primary">Technique</span> = capacité de votre site à être lu et repris,{" "}
-            <span className="font-medium text-text-primary">Position concurrentielle</span> = vos citations réelles face au panel.
+            Votre score GEO sur 100 combine deux mesures : la{" "}
+            <span className="font-medium text-text-primary">Technique</span> (40 %), la capacité de vos pages à être lues et reprises par les IA, et la{" "}
+            <span className="font-medium text-text-primary">Position concurrentielle</span> (60 %), vos citations réelles face au panel de concurrents.{" "}
+            Par moteur, une <span className="font-medium text-text-primary">citation</span> compte chaque fois qu&apos;une IA cite votre site ; une{" "}
+            <span className="font-medium text-text-primary">page citée</span> est une URL distincte reprise (une même page peut être citée plusieurs fois).
           </InsightNote>
         </div>
       </div>
