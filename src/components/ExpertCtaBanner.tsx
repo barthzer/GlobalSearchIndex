@@ -1,6 +1,7 @@
 "use client";
 
 import Button from "./Button";
+import { asset } from "@/lib/asset";
 
 /**
  * Bannière CTA expert pleine largeur (contenu à gauche, image experts à droite).
@@ -24,14 +25,14 @@ export default function ExpertCtaBanner({
       className={`animate-fade-up relative flex flex-col overflow-hidden rounded-2xl lg:flex-row lg:items-stretch ${className}`}
       style={{
         background:
-          "linear-gradient(180deg, rgba(20,4,18,0.10) 0%, rgba(20,4,18,0.45) 100%), url('/barth-staging/expert-card-bg-wide.jpg') center/cover no-repeat, radial-gradient(120% 80% at 50% 0%, rgba(236,77,203,0.3) 0%, transparent 55%), linear-gradient(160deg, #2b0826 0%, #46103c 100%)",
+          `linear-gradient(180deg, rgba(20,4,18,0.10) 0%, rgba(20,4,18,0.45) 100%), url('${asset("/expert-card-bg-wide.jpg")}') center/cover no-repeat, radial-gradient(120% 80% at 50% 0%, rgba(236,77,203,0.3) 0%, transparent 55%), linear-gradient(160deg, #2b0826 0%, #46103c 100%)`,
       }}
     >
       {/* Contenu — à gauche, 48px de padding vertical & horizontal */}
       <div className="relative z-10 flex flex-1 flex-col justify-center gap-3 px-8 py-8 lg:py-12 lg:pl-12 lg:pr-6">
         <div className="flex items-center gap-2">
           <div className="flex shrink-0 -space-x-2">
-            {["/barth-staging/consultant1.png", "/barth-staging/consultant2.png", "/barth-staging/consultant3.png"].map((src) => (
+            {[asset("/consultant1.png"), asset("/consultant2.png"), asset("/consultant3.png")].map((src) => (
               <img key={src} src={src} alt="Consultant" className="h-8 w-8 rounded-full border-2 border-white object-cover" />
             ))}
           </div>
@@ -53,7 +54,7 @@ export default function ExpertCtaBanner({
         </div>
 
         <div className="flex items-center gap-1.5 text-[12px] text-white/85">
-          <img src="/barth-staging/google.svg" alt="Google" className="h-3.5 w-3.5" />
+          <img src={asset("/google.svg")} alt="Google" className="h-3.5 w-3.5" />
           <span>Noté 5.0 sur 50+ avis</span>
           <span className="flex -space-x-1">
             {[0, 1, 2, 3, 4].map((i) => (
@@ -68,7 +69,7 @@ export default function ExpertCtaBanner({
       {/* Image experts — à droite, padding 48 à droite, collée en bas */}
       <div className="hidden shrink-0 self-stretch lg:flex lg:w-[440px] lg:items-end lg:justify-end lg:pr-12">
         <img
-          src="/barth-staging/expertswidedivcta.png"
+          src={asset("/expertswidedivcta.png")}
           alt=""
           className="pointer-events-none max-h-full w-auto max-w-full object-contain object-bottom"
         />

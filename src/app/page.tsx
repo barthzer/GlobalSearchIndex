@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { asset } from "@/lib/asset";
 import { useRouter } from "next/navigation";
 import { lenisRef } from "@/lib/lenisRef";
 import Header from "@/components/Header";
@@ -25,18 +26,18 @@ const ARC_PATH =
 
 // Logos clients affichés dans le carrousel de confiance.
 const CLIENTS = [
-  { name: "Grand Seiko", src: "/barth-staging/LandingPage/logo-entreprises/Grand_Seiko_Logo.svg" },
-  { name: "Cegedim", src: "/barth-staging/LandingPage/logo-entreprises/cegedim-logo-HD.jpg" },
-  { name: "Pennylane", src: "/barth-staging/LandingPage/logo-entreprises/logo-pennylane.png" },
-  { name: "Cerballiance", src: "/barth-staging/LandingPage/logo-entreprises/cerballiancelogo.png" },
-  { name: "Parnasse", src: "/barth-staging/LandingPage/logo-entreprises/parnasse.png" },
-  { name: "Zefir", src: "/barth-staging/LandingPage/logo-entreprises/zefirlogo.png" },
-  { name: "Avril", src: "/barth-staging/LandingPage/logo-entreprises/avrillogo.jpg" },
-  { name: "Arkéa Financement", src: "/barth-staging/LandingPage/logo-entreprises/logoarkea.jpg" },
+  { name: "Grand Seiko", src: asset("/LandingPage/logo-entreprises/Grand_Seiko_Logo.svg") },
+  { name: "Cegedim", src: asset("/LandingPage/logo-entreprises/cegedim-logo-HD.jpg") },
+  { name: "Pennylane", src: asset("/LandingPage/logo-entreprises/logo-pennylane.png") },
+  { name: "Cerballiance", src: asset("/LandingPage/logo-entreprises/cerballiancelogo.png") },
+  { name: "Parnasse", src: asset("/LandingPage/logo-entreprises/parnasse.png") },
+  { name: "Zefir", src: asset("/LandingPage/logo-entreprises/zefirlogo.png") },
+  { name: "Avril", src: asset("/LandingPage/logo-entreprises/avrillogo.jpg") },
+  { name: "Arkéa Financement", src: asset("/LandingPage/logo-entreprises/logoarkea.jpg") },
 ];
 
 // Logos du badge hero (petites icônes) + données du mini-tableau "Par moteur d'IA".
-const HERO_BADGE_LOGOS = ["/barth-staging/google.svg", "/barth-staging/chatgpt.png", "/barth-staging/gemini.png", "/barth-staging/perplexity.png"];
+const HERO_BADGE_LOGOS = [asset("/google.svg"), asset("/chatgpt.png"), asset("/gemini.png"), asset("/perplexity.png")];
 
 /* Piliers cyclés dans les cartes flottantes du hero (toutes les 2 s).
    La 2ᵉ carte affiche un détail cohérent avec le pilier et son score. */
@@ -64,11 +65,11 @@ const HERO_PILLARS: HeroPillar[] = [
     detailHint: "Citations · Pages",
     type: "engines",
     rows: [
-      { logo: "/barth-staging/chatgpt.png", label: "ChatGPT", cit: 48, pages: 31 },
-      { logo: "/barth-staging/google.svg", label: "Google Mode IA", cit: 42, pages: 27 },
-      { logo: "/barth-staging/gemini.png", label: "Gemini", cit: 35, pages: 22 },
-      { logo: "/barth-staging/perplexity.png", label: "Perplexity", cit: 29, pages: 18 },
-      { logo: "/barth-staging/copilot.svg", label: "Copilot", cit: 19, pages: 12 },
+      { logo: asset("/chatgpt.png"), label: "ChatGPT", cit: 48, pages: 31 },
+      { logo: asset("/google.svg"), label: "Google Mode IA", cit: 42, pages: 27 },
+      { logo: asset("/gemini.png"), label: "Gemini", cit: 35, pages: 22 },
+      { logo: asset("/perplexity.png"), label: "Perplexity", cit: 29, pages: 18 },
+      { logo: asset("/copilot.svg"), label: "Copilot", cit: 19, pages: 12 },
     ],
   },
   {
@@ -131,30 +132,30 @@ const VALUE_CARDS = [
   {
     title: "Visibilité IA (GEO)",
     body: "Obtenez un aperçu de votre visibilité dans les moteurs d'IA : découvrez votre score GEO et comparez la présence de votre marque à celle de vos principaux concurrents.",
-    img: "/barth-staging/LandingPage/visibilitéIA.png",
+    img: asset("/LandingPage/visibilitéIA.png"),
     icon: "M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2Z",
   },
   {
     title: "Comparaison concurrentielle",
     body: "Comparez votre visibilité à celle de vos principaux concurrents : mots-clés, autorité, présence média, netlinking, GEO… Identifiez rapidement vos points forts et vos axes de progression.",
-    img: "/barth-staging/LandingPage/comparaisonConcurrentielle.png",
+    img: asset("/LandingPage/comparaisonConcurrentielle.png"),
     icon: "M18 3.75a.75.75 0 0 0-.75.75v15c0 .414.336.75.75.75h1.5a.75.75 0 0 0 .75-.75v-15a.75.75 0 0 0-.75-.75h-1.5ZM10.5 8.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 .75.75v11.25a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75V8.25ZM3 13.5a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 .75.75v6a.75.75 0 0 1-.75.75h-1.5A.75.75 0 0 1 3 19.5v-6Z",
   },
   {
     title: "Recommandations stratégiques",
     body: "Recevez un ensemble de recommandations adaptées à votre entreprise pour améliorer votre visibilité digitale.",
-    img: "/barth-staging/LandingPage/recommandationsstrategiques.png",
+    img: asset("/LandingPage/recommandationsstrategiques.png"),
     icon: "M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z",
   },
 ];
 
 const BENTO = [
-  { title: "Visibilité IA", desc: "Votre présence dans les réponses des IA : ChatGPT, Google AI Overview, Gemini et Perplexity.", img: "/barth-staging/LandingPage/img-bento-geo.png", featured: true },
-  { title: "Technique", desc: "L'état de santé technique de votre site : indexation, Core Web Vitals, performance et structure des pages.", img: "/barth-staging/LandingPage/img-bento-tech.png", featured: false },
-  { title: "Sémantique", desc: "La pertinence de vos contenus : couverture des intentions de recherche et autorité sur vos thématiques.", img: "/barth-staging/LandingPage/img-bento-semantique.png", featured: false },
-  { title: "Autorité", desc: "Le poids de votre marque : netlinking, popularité, recherche de marque et e-réputation.", img: "/barth-staging/LandingPage/img-bento-autorite.png", featured: false },
-  { title: "Marché", desc: "Votre position face aux concurrents : parts de visibilité, benchmark et opportunités à saisir.", img: "/barth-staging/LandingPage/img-bento-marche.png", featured: false },
-  { title: "Plan d'action", desc: "Ce qu'il faut faire, et dans quel ordre : quick wins, priorités et impact estimé.", img: "/barth-staging/LandingPage/img-bento-plandaction.png", featured: false },
+  { title: "Visibilité IA", desc: "Votre présence dans les réponses des IA : ChatGPT, Google AI Overview, Gemini et Perplexity.", img: asset("/LandingPage/img-bento-geo.png"), featured: true },
+  { title: "Technique", desc: "L'état de santé technique de votre site : indexation, Core Web Vitals, performance et structure des pages.", img: asset("/LandingPage/img-bento-tech.png"), featured: false },
+  { title: "Sémantique", desc: "La pertinence de vos contenus : couverture des intentions de recherche et autorité sur vos thématiques.", img: asset("/LandingPage/img-bento-semantique.png"), featured: false },
+  { title: "Autorité", desc: "Le poids de votre marque : netlinking, popularité, recherche de marque et e-réputation.", img: asset("/LandingPage/img-bento-autorite.png"), featured: false },
+  { title: "Marché", desc: "Votre position face aux concurrents : parts de visibilité, benchmark et opportunités à saisir.", img: asset("/LandingPage/img-bento-marche.png"), featured: false },
+  { title: "Plan d'action", desc: "Ce qu'il faut faire, et dans quel ordre : quick wins, priorités et impact estimé.", img: asset("/LandingPage/img-bento-plandaction.png"), featured: false },
 ];
 
 const DATA_SOURCES: { label: string; icon: React.ReactNode }[] = [
@@ -414,7 +415,7 @@ function BentoCard({ card }: { card: (typeof BENTO)[number] }) {
       >
         {/* Fond vidéo animé */}
         <video autoPlay muted loop playsInline className="pointer-events-none absolute inset-0 h-full w-full object-cover">
-          <source src="/barth-staging/LandingPage/Background_bento_GEO.mp4" type="video/mp4" />
+          <source src={asset("/LandingPage/Background_bento_GEO.mp4")} type="video/mp4" />
         </video>
         <div className="relative z-10 mb-6 flex flex-1 items-center justify-center">
           <img src={card.img} alt="" className="max-h-[210px] w-full object-contain" />
@@ -588,7 +589,7 @@ export default function LandingPage() {
       <main className="relative z-[3] flex flex-1 flex-col">
         {/* ───────── Hero ───────── */}
         <section className="relative flex flex-col items-center overflow-hidden px-6 pt-24 pb-20 text-center md:pt-36 md:pb-28">
-          <img src="/barth-staging/LandingPage/backgroundhero.jpg" alt="" className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[780px] w-full object-cover object-top" />
+          <img src={asset("/LandingPage/backgroundhero.jpg")} alt="" className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[780px] w-full object-cover object-top" />
           <div className="relative z-10 flex w-full flex-col items-center">
           <div className="animate-fade-up mb-6 inline-flex items-center gap-1.5 rounded-full border border-black/5 bg-white/80 py-1.5 pl-1.5 pr-3.5 backdrop-blur-md sm:gap-2 sm:pr-4">
             <span className="flex items-center -space-x-1">
@@ -596,7 +597,7 @@ export default function LandingPage() {
                 <span
                   key={src}
                   className={`h-5 w-5 items-center justify-center rounded-full bg-white sm:h-6 sm:w-6 ${
-                    src === "/barth-staging/perplexity.png" ? "hidden sm:flex" : "flex"
+                    src === asset("/perplexity.png") ? "hidden sm:flex" : "flex"
                   }`}
                   style={{ boxShadow: "0 4px 20px 0 rgba(0, 0, 0, 0.10)" }}
                 >
@@ -674,13 +675,13 @@ export default function LandingPage() {
           <Reveal className="relative mx-auto max-w-[1100px] overflow-hidden rounded-[28px]">
             {/* Mobile : image dédiée (sans cartes ni dégradé) */}
             <img
-              src="/barth-staging/LandingPage/image_hero_mobile.png"
+              src={asset("/LandingPage/image_hero_mobile.png")}
               alt="Un dirigeant consulte l'analyse de visibilité de son entreprise"
               className="block aspect-[1120/677] w-full object-cover sm:hidden"
             />
             {/* Desktop : photo + dégradé + cartes flottantes */}
             <img
-              src="/barth-staging/LandingPage/femme souriante.jpg"
+              src={asset("/LandingPage/femme souriante.jpg")}
               alt="Une dirigeante consulte l'analyse de visibilité de son entreprise"
               className="hidden aspect-[16/10] w-full object-cover sm:block"
             />
@@ -698,10 +699,10 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <div className="flex -space-x-2.5">
                 {[
-                  "/barth-staging/LandingPage/photo-dirigeants/image 21.png",
-                  "/barth-staging/LandingPage/photo-dirigeants/image 22.png",
-                  "/barth-staging/LandingPage/photo-dirigeants/image 23.png",
-                  "/barth-staging/LandingPage/photo-dirigeants/image 24.png",
+                  asset("/LandingPage/photo-dirigeants/image 21.png"),
+                  asset("/LandingPage/photo-dirigeants/image 22.png"),
+                  asset("/LandingPage/photo-dirigeants/image 23.png"),
+                  asset("/LandingPage/photo-dirigeants/image 24.png"),
                 ].map((src) => (
                   <img key={src} src={src} alt="" className="h-8 w-8 rounded-full border-2 border-bg-primary object-cover" />
                 ))}
@@ -795,8 +796,8 @@ export default function LandingPage() {
           </div>
           {/* Panneau : illustration des outils autour du dashboard */}
           <Reveal className="relative mx-auto mt-12 flex max-w-[1120px] items-end justify-center overflow-hidden rounded-[32px] border border-[#4f406d]/[0.12] px-8 pt-10 md:px-16 md:pt-16">
-            <img src="/barth-staging/LandingPage/background-outils-techs.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
-            <img src="/barth-staging/LandingPage/img-outils-techs.png" alt="Le GSI agrège les données des meilleurs outils du marché de référence" className="relative w-full max-w-[880px] object-contain" />
+            <img src={asset("/LandingPage/background-outils-techs.jpg")} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={asset("/LandingPage/img-outils-techs.png")} alt="Le GSI agrège les données des meilleurs outils du marché de référence" className="relative w-full max-w-[880px] object-contain" />
           </Reveal>
           <p className="mx-auto mt-12 max-w-[830px] text-center text-[26px] font-medium leading-tight tracking-[-0.5px] text-text-heading md:text-[34px]">
             GSI agrège les données des meilleurs outils du marché pour produire une analyse unique, enrichie par l&apos;expertise des équipes AWI.
@@ -817,7 +818,7 @@ export default function LandingPage() {
               <div className="grid grid-cols-[1fr_5rem_5rem] items-center border-b border-border-subtle py-5 sm:grid-cols-[1fr_10rem_10rem]">
                 <span />
                 <span className="flex items-center justify-center gap-2 text-[15px] font-semibold text-text-heading sm:text-[17px]">
-                  <img src="/barth-staging/faviconGSI.svg" alt="" className="h-6 w-6 rounded-md" />
+                  <img src={asset("/faviconGSI.svg")} alt="" className="h-6 w-6 rounded-md" />
                   GSI
                 </span>
                 <span className="text-center text-[12px] font-medium leading-tight text-text-muted sm:text-[14px]">Diagnostic SEO<br />classique</span>
@@ -864,13 +865,13 @@ export default function LandingPage() {
         {/* ───────── Bandeau CTA sombre ───────── */}
         <section className="px-6 py-16 md:py-20">
           <Reveal className="relative mx-auto max-w-[1120px] overflow-hidden rounded-[32px] bg-neutral-950">
-            <img src="/barth-staging/LandingPage/img-bg-woman-divcta.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={asset("/LandingPage/img-bg-woman-divcta.jpg")} alt="" className="absolute inset-0 h-full w-full object-cover" />
             {/* Voile pour lisibilité du texte à gauche */}
             <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(10,8,20,0.9) 0%, rgba(10,8,20,0.6) 45%, rgba(10,8,20,0.35) 100%)" }} />
 
             {/* Mockup benchmark (à droite, flottant) */}
             <img
-              src="/barth-staging/LandingPage/img-div-cta.png"
+              src={asset("/LandingPage/img-div-cta.png")}
               alt="Benchmark concurrentiel de votre visibilité"
               className="pointer-events-none absolute right-[6%] top-1/2 hidden w-[400px] max-w-[40%] -translate-y-1/2 object-contain drop-shadow-2xl lg:block"
             />

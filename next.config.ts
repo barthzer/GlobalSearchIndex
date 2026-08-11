@@ -1,17 +1,25 @@
 import type { NextConfig } from "next";
 
-// Front Barth déployé sous /barth-staging (staging). Export statique (nginx sert
-// out/), trailingSlash pour le fallback nginx (token /report/ lu côté client),
-// images non optimisées (contrainte de l'export statique).
+// Front Barth. Export statique (nginx sert out/), trailingSlash pour le fallback
+// nginx (token /report/ lu côté client), images non optimisées (export statique).
 //
-// ⚠️ RECONSTRUIT après la perte /tmp du 2026-08-04 (valeurs confirmées depuis le
-//    out/ déployé : basePath baké /barth-staging, dossiers trailingSlash).
-// ⚠️ Bascule PROD : basePath "/barth" (adapter avant le build prod).
+// basePath PILOTÉ PAR ENV (`NEXT_PUBLIC_BASE_PATH`) — un seul point de vérité pour
+// l'URL libre accès :
+//   • non défini      → "/barth-staging" (staging, comportement par défaut)
+//   • "" (vide)       → racine "/"        (bascule PROD : `NEXT_PUBLIC_BASE_PATH= pnpm build`)
+//   • autre slug      → ce slug
+// La valeur résolue est réinjectée dans le bundle (`env`) pour que le helper
+// `asset()` (src/lib/asset.ts) préfixe les chemins d'assets bruts (<img>, favicon,
+// backgrounds) que Next ne préfixe pas automatiquement (contrairement à <Link>/router).
+//
 // ⚠️ TOUJOURS builder avec `next build --webpack` (turbopack produit des chunks
 //    instables `..js` qui cassent l'hydratation — voir package.json).
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "/barth-staging";
+
 const nextConfig: NextConfig = {
   output: "export",
-  basePath: "/barth-staging",
+  basePath: BASE_PATH || undefined,
+  env: { NEXT_PUBLIC_BASE_PATH: BASE_PATH },
   trailingSlash: true,
   images: { unoptimized: true },
 };

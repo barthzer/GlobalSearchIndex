@@ -1,3 +1,5 @@
+import { asset } from "@/lib/asset";
+
 export interface AnalyseScore {
   label: string;
   score: number | null; // null = non audité
@@ -23,13 +25,13 @@ export const geoScore = 62;
 
 /** Moteurs suivis, du plus important au moins important (les 3 derniers sont repliés par défaut). */
 export const geoByModel: GeoModelScore[] = [
-  { name: "ChatGPT", logo: "/barth-staging/chatgpt.png", citations: 48, pages: 31 },
-  { name: "Google Mode IA", logo: "/barth-staging/google.svg", citations: 42, pages: 27 },
-  { name: "Gemini", logo: "/barth-staging/gemini.png", citations: 35, pages: 22 },
-  { name: "Perplexity", logo: "/barth-staging/perplexity.png", citations: 29, pages: 18 },
-  { name: "Copilot", logo: "/barth-staging/copilot.svg", citations: 19, pages: 12 },
-  { name: "Grok", logo: "/barth-staging/grok.svg", citations: 11, pages: 7 },
-  { name: "AIO (recherche Google)", logo: "/barth-staging/gemini.png", citations: 8, pages: 5 },
+  { name: "ChatGPT", logo: asset("/chatgpt.png"), citations: 48, pages: 31 },
+  { name: "Google Mode IA", logo: asset("/google.svg"), citations: 42, pages: 27 },
+  { name: "Gemini", logo: asset("/gemini.png"), citations: 35, pages: 22 },
+  { name: "Perplexity", logo: asset("/perplexity.png"), citations: 29, pages: 18 },
+  { name: "Copilot", logo: asset("/copilot.svg"), citations: 19, pages: 12 },
+  { name: "Grok", logo: asset("/grok.svg"), citations: 11, pages: 7 },
+  { name: "AIO (recherche Google)", logo: asset("/gemini.png"), citations: 8, pages: 5 },
 ];
 
 export const pageSpeedScores = [

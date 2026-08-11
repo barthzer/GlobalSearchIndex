@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { asset } from "@/lib/asset";
 import { Hanken_Grotesk, Instrument_Serif, Manrope, Space_Grotesk } from "next/font/google";
 import ThemeProvider from "@/components/ThemeProvider";
 import AccountProvider from "@/components/AccountProvider";
@@ -32,9 +33,9 @@ export const metadata: Metadata = {
   title: "GlobalSearchIndex by AWI",
   description: "Analysez et améliorez votre référencement global avec le Global Search Index.",
   icons: {
-    icon: { url: "/barth-staging/faviconGSI.svg", type: "image/svg+xml" },
-    shortcut: "/barth-staging/faviconGSI.svg",
-    apple: "/barth-staging/faviconGSI.svg",
+    icon: { url: asset("/faviconGSI.svg"), type: "image/svg+xml" },
+    shortcut: asset("/faviconGSI.svg"),
+    apple: asset("/faviconGSI.svg"),
   },
 };
 

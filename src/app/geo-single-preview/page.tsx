@@ -1,6 +1,7 @@
 "use client";
 
 import { bandLabel } from "@/lib/scoreLabel";
+import { asset } from "@/lib/asset";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PREVIEW (mockée, aucun backend) — nouveau design GEO demandé par le COMEX :
@@ -142,10 +143,10 @@ export default function GeoSinglePreviewPage() {
             composite={69}
             platforms
             citations={[
-              { name: "ChatGPT", logo: "/barth-staging/chatgpt.png", count: 19, pages: 15 },
-              { name: "Perplexity", logo: "/barth-staging/perplexity.png", count: 6, pages: 5 },
-              { name: "Copilot", logo: "/barth-staging/copilot.svg", count: 23, pages: 17 },
-              { name: "Grok", logo: "/barth-staging/grok.svg", count: 1, pages: 1 },
+              { name: "ChatGPT", logo: asset("/chatgpt.png"), count: 19, pages: 15 },
+              { name: "Perplexity", logo: asset("/perplexity.png"), count: 6, pages: 5 },
+              { name: "Copilot", logo: asset("/copilot.svg"), count: 23, pages: 17 },
+              { name: "Grok", logo: asset("/grok.svg"), count: 1, pages: 1 },
             ]}
             interpretation={
               <>
@@ -160,10 +161,10 @@ export default function GeoSinglePreviewPage() {
             composite={99}
             platforms
             citations={[
-              { name: "ChatGPT", logo: "/barth-staging/chatgpt.png", count: 54, pages: 41 },
-              { name: "Perplexity", logo: "/barth-staging/perplexity.png", count: 22, pages: 18 },
-              { name: "Copilot", logo: "/barth-staging/copilot.svg", count: 31, pages: 24 },
-              { name: "Grok", logo: "/barth-staging/grok.svg", count: 8, pages: 6 },
+              { name: "ChatGPT", logo: asset("/chatgpt.png"), count: 54, pages: 41 },
+              { name: "Perplexity", logo: asset("/perplexity.png"), count: 22, pages: 18 },
+              { name: "Copilot", logo: asset("/copilot.svg"), count: 31, pages: 24 },
+              { name: "Grok", logo: asset("/grok.svg"), count: 8, pages: 6 },
             ]}
             interpretation={
               <>

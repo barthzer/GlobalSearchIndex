@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { asset } from "@/lib/asset";
 import { createPortal } from "react-dom";
 import Button from "./Button";
 import { getLatestLead, submitExpertLead } from "@/lib/lead";
@@ -207,7 +208,7 @@ export default function ExpertModal({ onClose }: ExpertModalProps) {
               <div className="mb-6 flex flex-col items-center text-center">
                 {/* Avatars */}
                 <div className="mb-4 flex -space-x-2">
-                  {["/barth-staging/consultant1.png", "/barth-staging/consultant2.png", "/barth-staging/consultant3.png"].map((src, i) => (
+                  {[asset("/consultant1.png"), asset("/consultant2.png"), asset("/consultant3.png")].map((src, i) => (
                     <img
                       key={i}
                       src={src}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { asset } from "@/lib/asset";
 import type { GeoCitationsDisplay, AiCrawlerAccess } from "@/lib/scores";
 import { bandLabel } from "@/lib/scoreLabel";
 import ScoreInfoModal from "./ScoreInfoModal";
@@ -29,12 +30,12 @@ const ARC_PATH =
   "M4 90.3301C4 67.4339 13.0955 45.4755 29.2855 29.2855C45.4756 13.0955 67.434 4 90.3302 4C113.226 4 135.185 13.0955 151.375 29.2855C167.565 45.4755 176.66 67.4339 176.66 90.3301";
 
 const PLATFORMS: { key: string; name: string; logo: string }[] = [
-  { key: "chatgpt", name: "ChatGPT", logo: "/barth-staging/chatgpt.png" },
-  { key: "perplexity", name: "Perplexity", logo: "/barth-staging/perplexity.png" },
-  { key: "copilot", name: "Copilot", logo: "/barth-staging/copilot.svg" },
-  { key: "grok", name: "Grok", logo: "/barth-staging/grok.svg" },
-  { key: "gemini", name: "Gemini", logo: "/barth-staging/gemini.png" },
-  { key: "google_ai_mode", name: "Google AI Mode", logo: "/barth-staging/google.svg" },
+  { key: "chatgpt", name: "ChatGPT", logo: asset("/chatgpt.png") },
+  { key: "perplexity", name: "Perplexity", logo: asset("/perplexity.png") },
+  { key: "copilot", name: "Copilot", logo: asset("/copilot.svg") },
+  { key: "grok", name: "Grok", logo: asset("/grok.svg") },
+  { key: "gemini", name: "Gemini", logo: asset("/gemini.png") },
+  { key: "google_ai_mode", name: "Google AI Mode", logo: asset("/google.svg") },
 ];
 
 const geoIcon = (

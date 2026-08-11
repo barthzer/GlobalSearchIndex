@@ -1,6 +1,7 @@
 "use client";
 
 import ExpertCtaBanner from "@/components/ExpertCtaBanner";
+import { asset } from "@/lib/asset";
 import RealScoreArc from "@/components/RealScoreArc";
 import { scoreInfos, scoreIcons } from "@/app/dashboard/rapport/score-infos";
 import { bandLabel } from "@/lib/scoreLabel";
@@ -108,10 +109,10 @@ const LOCKED: ScoreDisplay = { type: "geo", scorable: false, value: null, absolu
 
 // ── 3. Concurrents cités, pas vous — constat en tête, technique en sous-ligne ──
 const ROWS = [
-  { name: "ChatGPT", logo: "/barth-staging/chatgpt.png", competitor: "Roadsurfer", cited: 12 },
-  { name: "Perplexity", logo: "/barth-staging/perplexity.png", competitor: "We-van", cited: 8 },
-  { name: "Copilot", logo: "/barth-staging/copilot.svg", competitor: "Roadsurfer", cited: 5 },
-  { name: "Gemini", logo: "/barth-staging/gemini.png", competitor: "Wikicampers", cited: 3 },
+  { name: "ChatGPT", logo: asset("/chatgpt.png"), competitor: "Roadsurfer", cited: 12 },
+  { name: "Perplexity", logo: asset("/perplexity.png"), competitor: "We-van", cited: 8 },
+  { name: "Copilot", logo: asset("/copilot.svg"), competitor: "Roadsurfer", cited: 5 },
+  { name: "Gemini", logo: asset("/gemini.png"), competitor: "Wikicampers", cited: 3 },
 ];
 const MAX = Math.max(...ROWS.map((r) => r.cited));
 function GeoStatementCard() {

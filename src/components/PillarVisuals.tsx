@@ -1,5 +1,7 @@
 "use client";
 
+import { asset } from "@/lib/asset";
+
 /*
   All white fill-opacity values use currentColor approach:
   - In dark mode: white with various opacities
@@ -176,9 +178,9 @@ export function GEOVisual() {
       {/* LLM badges with real logos */}
       <div className="flex shrink-0 flex-col gap-2.5">
         {[
-          { name: "ChatGPT", img: "/barth-staging/chatgpt.png" },
-          { name: "Gemini", img: "/barth-staging/gemini.png" },
-          { name: "Claude", img: "/barth-staging/claude.png" },
+          { name: "ChatGPT", img: asset("/chatgpt.png") },
+          { name: "Gemini", img: asset("/gemini.png") },
+          { name: "Claude", img: asset("/claude.png") },
         ].map((llm) => (
           <div
             key={llm.name}

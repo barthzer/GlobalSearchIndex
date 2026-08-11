@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { asset } from "@/lib/asset";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -451,13 +452,13 @@ export default function DashboardPage() {
                     className="flex flex-col gap-3 overflow-hidden rounded-2xl border border-white/10 p-8"
                     style={{
                       background:
-                        "linear-gradient(180deg, rgba(20,4,18,0.10) 0%, rgba(20,4,18,0.45) 100%), url('/barth-staging/expert-card-bg.jpg') center/cover no-repeat, radial-gradient(120% 80% at 50% 0%, rgba(236,77,203,0.3) 0%, transparent 55%), linear-gradient(160deg, #2b0826 0%, #46103c 100%)",
+                        `linear-gradient(180deg, rgba(20,4,18,0.10) 0%, rgba(20,4,18,0.45) 100%), url('${asset("/expert-card-bg.jpg")}') center/cover no-repeat, radial-gradient(120% 80% at 50% 0%, rgba(236,77,203,0.3) 0%, transparent 55%), linear-gradient(160deg, #2b0826 0%, #46103c 100%)`,
                     }}
                   >
                     {/* Avatars + preuve sociale */}
                     <div className="flex items-center gap-2">
                       <div className="flex shrink-0 -space-x-2">
-                        {["/barth-staging/consultant1.png", "/barth-staging/consultant2.png", "/barth-staging/consultant3.png"].map((src) => (
+                        {[asset("/consultant1.png"), asset("/consultant2.png"), asset("/consultant3.png")].map((src) => (
                           <img key={src} src={src} alt="Consultant" className="h-8 w-8 rounded-full border-2 border-white object-cover" />
                         ))}
                       </div>
@@ -482,7 +483,7 @@ export default function DashboardPage() {
 
                     {/* Note Google */}
                     <div className="flex items-center justify-center gap-1.5 text-[12px] text-white/85">
-                      <img src="/barth-staging/google.svg" alt="Google" className="h-3.5 w-3.5" />
+                      <img src={asset("/google.svg")} alt="Google" className="h-3.5 w-3.5" />
                       <span>Noté 5.0 sur 50+ avis</span>
                       <span className="flex -space-x-1">
                         {[0, 1, 2, 3, 4].map((i) => (
