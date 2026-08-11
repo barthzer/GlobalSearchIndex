@@ -84,12 +84,13 @@ export default function DashboardPage() {
   // (« tout cassé », retour Alexis 2026-08-11). On repart de l'onglet Analyse (étape 1).
   useEffect(() => {
     function replay() {
+      if (isAdmin) return; // Tutoriel = onboarding client, jamais pour l'admin.
       setActiveTab("analyse");
       setShowTour(true);
     }
     window.addEventListener("gsi:replay-tour", replay);
     return () => window.removeEventListener("gsi:replay-tour", replay);
-  }, []);
+  }, [isAdmin]);
 
   // Au changement d'onglet, on remonte en haut (sinon la position de scroll de la vue
   // précédente est conservée — ex. on arrivait en bas du Plan d'action).

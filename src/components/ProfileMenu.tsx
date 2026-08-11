@@ -118,6 +118,9 @@ export default function ProfileMenu({ dropUp = false, hideThemeToggle = false }:
               </span>
             </button>
           )}
+          {/* Tutoriel = onboarding CLIENT uniquement (jamais pour l'admin, cohérent
+              avec le déclenchement au montage `!isAdmin`). */}
+          {account?.type !== "admin" && (
           <button
             onClick={() => {
               // Re-jouer le tour SANS rechargement : event pour le dashboard (cas réel,
@@ -136,6 +139,7 @@ export default function ProfileMenu({ dropUp = false, hideThemeToggle = false }:
             </svg>
             Revoir le tutoriel
           </button>
+          )}
           {account?.type === "admin" && (
             <Link
               href="/admin"
