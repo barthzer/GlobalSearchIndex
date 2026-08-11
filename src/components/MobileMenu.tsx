@@ -20,7 +20,7 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ onClose, onExpertClick, activeTab, onTabChange, hideThemeToggle = false }: MobileMenuProps) {
-  const { isAdmin } = useAccount();
+  const { isAdmin, isLoggedIn } = useAccount();
   const { selected, setSelectedId, all: generations } = useGeneration();
   const [search, setSearch] = useState("");
   const [showNewAnalysis, setShowNewAnalysis] = useState(false);
@@ -196,6 +196,22 @@ export default function MobileMenu({ onClose, onExpertClick, activeTab, onTabCha
           <nav className="flex flex-1 flex-col gap-2 px-6 pt-4">
             <ViewTabs />
 
+            {/* Retour à l'espace pour un utilisateur déjà connecté hors dashboard
+                (landing). Même besoin qu'en desktop (retour Alexis 2026-08-11). */}
+            {isLoggedIn && !activeTab && (
+              <Link
+                href="/dashboard"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-xl px-4 py-4 text-left text-[18px] font-medium text-text-primary transition-colors duration-200 hover:bg-bg-card"
+                style={{ animation: "fade-up 300ms var(--ease-expo) 150ms both" }}
+              >
+                <svg className="h-5 w-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+                Accédez à mon espace
+              </Link>
+            )}
+
             <div className="my-2 h-px bg-border-subtle" />
 
             <button
@@ -209,8 +225,9 @@ export default function MobileMenu({ onClose, onExpertClick, activeTab, onTabCha
               Parler à un expert
             </button>
 
-            <a
+            <Link
               href="/"
+              onClick={onClose}
               className="flex items-center gap-3 rounded-xl px-4 py-4 text-[18px] font-medium text-text-primary transition-colors duration-200 hover:bg-bg-card"
               style={{ animation: "fade-up 300ms var(--ease-expo) 200ms both" }}
             >
@@ -218,7 +235,7 @@ export default function MobileMenu({ onClose, onExpertClick, activeTab, onTabCha
                 <path d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
               Nouvelle analyse
-            </a>
+            </Link>
           </nav>
         )}
       </div>

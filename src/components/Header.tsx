@@ -10,6 +10,7 @@ import WebtvModal from "./WebtvModal";
 import CreditBadge from "./CreditBadge";
 import { useGeneration } from "./GenerationProvider";
 import { useTheme } from "./ThemeProvider";
+import { useAccount } from "./AccountProvider";
 import { tabsForRole, type TabKey } from "@/lib/tabs";
 
 interface HeaderProps {
@@ -41,6 +42,12 @@ export default function Header({ onExpertClick, hideLogo = false, sidebarWidth =
   const [showWebtv, setShowWebtv] = useState(false);
   const { selected: currentGeneration } = useGeneration();
   const { theme } = useTheme();
+  // Retour à l'espace : un utilisateur DÉJÀ connecté qui revient sur la landing (ou une
+  // page légale) doit pouvoir regagner son dashboard. `!activeTab` = on n'est pas déjà
+  // dans l'espace (le dashboard passe activeTab), donc on affiche l'accès (retour Alexis
+  // 2026-08-11 : « quand je reviens, impossible d'y retourner »).
+  const { isLoggedIn } = useAccount();
+  const showBackToSpace = isLoggedIn && !activeTab;
   // Barre fixe : transparente en haut, fond opaque une fois scrollé (apparition douce).
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -179,6 +186,14 @@ export default function Header({ onExpertClick, hideLogo = false, sidebarWidth =
             </a>
           )}
           {!isAdmin && <CreditBadge onExhaustedClick={onExpertClick} />}
+          {showBackToSpace && (
+            <Button href="/dashboard" variant="secondary">
+              Accédez à mon espace
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+              </svg>
+            </Button>
+          )}
           <ProfileMenu hideThemeToggle={hideThemeToggle} />
           {!isAdmin && (onExpertClick ? (
             <Button variant="tertiary" onClick={onExpertClick}>
