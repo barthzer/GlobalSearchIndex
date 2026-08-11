@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import Button from "./Button";
 import { useGeneration } from "./GenerationProvider";
 import NewProjectModal from "./NewProjectModal";
@@ -43,7 +44,7 @@ export default function GenerationsSidebar() {
       <div className={`shrink-0 pt-6 pb-3 ${collapsed ? "px-3" : "px-5"}`}>
         <div className="mb-5 flex items-center justify-between">
           {!collapsed && (
-            <a href="/" className="flex flex-col leading-tight">
+            <Link href="/" className="flex flex-col leading-tight">
               <span className="text-[20px] tracking-[-1.2px] text-text-primary">
                 <span className="font-semibold">GlobalSearch</span>
                 <span className="font-normal">Index</span>
@@ -51,7 +52,7 @@ export default function GenerationsSidebar() {
               <span className="flex items-center gap-1.5 text-[12px] font-semibold text-text-primary">
                 By <AWILogoCompact className="h-[12px] w-auto text-text-primary" />
               </span>
-            </a>
+            </Link>
           )}
           <div className={`flex items-center gap-2 ${collapsed ? "mx-auto flex-col" : ""}`}>
             <button

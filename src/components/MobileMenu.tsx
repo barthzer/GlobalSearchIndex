@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
 import ProfileMenu from "./ProfileMenu";
 import { useAccount } from "./AccountProvider";
@@ -70,7 +71,7 @@ export default function MobileMenu({ onClose, onExpertClick, activeTab, onTabCha
 
       {/* Header */}
       <div className="relative flex items-center justify-between px-6 py-5">
-        <a href="/" className="flex flex-col leading-tight">
+        <Link href="/" className="flex flex-col leading-tight">
           <span className="text-[20px] tracking-[-1.2px] text-text-primary">
             <span className="font-semibold">GlobalSearch</span>
             <span className="font-normal">Index</span>
@@ -78,7 +79,7 @@ export default function MobileMenu({ onClose, onExpertClick, activeTab, onTabCha
           <span className="flex items-center gap-1.5 text-[12px] font-semibold text-text-primary">
             By <AWILogoCompact className="h-[12px] w-auto text-text-primary" />
           </span>
-        </a>
+        </Link>
         <button
           onClick={onClose}
           className="flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle bg-bg-card text-text-primary transition-all duration-200 hover:bg-bg-card-hover active:scale-[0.95]"

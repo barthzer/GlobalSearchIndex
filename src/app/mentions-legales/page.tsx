@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import LegalLayout from "@/components/LegalLayout";
 
 export const metadata: Metadata = {
@@ -63,7 +64,7 @@ export default function MentionsLegalesPage() {
         <p>
           Les modalités de traitement de vos données personnelles sont détaillées
           dans notre{" "}
-          <a href="/confidentialite">politique de confidentialité</a>.
+          <Link href="/confidentialite">politique de confidentialité</Link>.
         </p>
       </section>
 
@@ -71,7 +72,7 @@ export default function MentionsLegalesPage() {
         <h2>5. Cookies</h2>
         <p>
           L&apos;utilisation des cookies et traceurs est décrite dans la{" "}
-          <a href="/confidentialite">politique de confidentialité</a>. Vous pouvez
+          <Link href="/confidentialite">politique de confidentialité</Link>. Vous pouvez
           paramétrer votre consentement à tout moment.
         </p>
       </section>
