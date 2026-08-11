@@ -78,6 +78,19 @@ export default function DashboardPage() {
     if (!isAdmin && !tourSeen()) setShowTour(true);
   }, [isAdmin]);
 
+  // « Revoir le tutoriel » (menu compte) → re-déclenche le tour EN PLACE. Avant, le
+  // bouton faisait window.location.assign("/dashboard") : en absolu, sans le basePath
+  // (/barth-staging), ça éjectait hors de l'app vers un dashboard sans contexte projet
+  // (« tout cassé », retour Alexis 2026-08-11). On repart de l'onglet Analyse (étape 1).
+  useEffect(() => {
+    function replay() {
+      setActiveTab("analyse");
+      setShowTour(true);
+    }
+    window.addEventListener("gsi:replay-tour", replay);
+    return () => window.removeEventListener("gsi:replay-tour", replay);
+  }, []);
+
   // Au changement d'onglet, on remonte en haut (sinon la position de scroll de la vue
   // précédente est conservée — ex. on arrivait en bas du Plan d'action).
   useEffect(() => {

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAccount } from "./AccountProvider";
 import { useTheme } from "./ThemeProvider";
 import { resetTour } from "./TutorialModal";
@@ -24,6 +25,7 @@ function ThemeIcon({ theme }: { theme: "dark" | "light" }) {
 export default function ProfileMenu({ dropUp = false, hideThemeToggle = false }: { dropUp?: boolean; hideThemeToggle?: boolean }) {
   const { account, logout, isLoggedIn } = useAccount();
   const { theme, toggle } = useTheme();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -117,7 +119,16 @@ export default function ProfileMenu({ dropUp = false, hideThemeToggle = false }:
             </button>
           )}
           <button
-            onClick={() => { resetTour(); window.location.assign("/dashboard"); }}
+            onClick={() => {
+              // Re-jouer le tour SANS rechargement : event pour le dashboard (cas réel,
+              // rejoue en place), + router.push basePath-aware en repli si on est sur une
+              // autre page. Jamais window.location.assign("/dashboard") : perdait le
+              // basePath /barth-… et éjectait hors de l'app (retour Alexis 2026-08-11).
+              resetTour();
+              setOpen(false);
+              window.dispatchEvent(new Event("gsi:replay-tour"));
+              router.push("/dashboard");
+            }}
             className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-text-secondary transition-colors duration-150 hover:bg-card-inner-bg hover:text-text-primary"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
