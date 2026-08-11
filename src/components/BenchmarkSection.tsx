@@ -168,9 +168,12 @@ function CompetitorsTable({
                   className={isYou ? "bg-accent-pink/[0.08] shadow-[inset_3px_0_0_var(--gsi-accent-pink)]" : ""}
                 >
                   <td className="border-b border-border-subtle px-3 py-4 text-[14px] font-semibold text-text-primary">
-                    {/* Affichage uniquement : strip `www.` en tête pour aligner
-                        le benchmark Autorité sur le pilier GEO. Données intactes. */}
-                    {isYou ? stripWww(clientName) : stripWww(row.name)}
+                    {/* Nom = la DONNÉE du benchmark (row.name, correct par projet).
+                        La ligne client prend row.name (fallback clientName si vide) —
+                        JAMAIS le prop clientName seul, qui pouvait rester périmé au
+                        changement de projet (bug « ecomundo » gardé, retour Alexis
+                        2026-08-11). Strip `www.` pour aligner sur le pilier GEO. */}
+                    {stripWww(isYou ? row.name || clientName : row.name)}
                     {unavailable && (
                       <span className="ml-2 text-[11px] font-normal text-text-muted">
                         {row.unavailable_reason === "insufficient" || row.unavailable_reason === "not_measured"
