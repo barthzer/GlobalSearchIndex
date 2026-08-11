@@ -3,6 +3,8 @@
  * Centralise le modèle + la persistance — point d'intégration backend unique.
  */
 
+import { apiFetch } from "./api";
+
 export type CompanySize = "solo" | "2-10" | "11-50" | "51-200" | "200+";
 export type AgencyAnswer = "oui" | "non";
 
@@ -22,10 +24,16 @@ export interface OnboardingLead {
 const LEADS_KEY = "gsi:leads:v1";
 
 /**
- * Persiste le lead (mock localStorage) et expose le point de branchement N8N.
- * Le jour du backend : remplacer le corps par un POST vers le webhook.
+ * Persiste le lead SERVEUR (POST /public/leads → table `leads`, source de vérité ;
+ * le webhook N8N est déclenché côté serveur). Best-effort : un échec réseau ne
+ * bloque JAMAIS le parcours (comme requestPublicCode). Envoie exactement les champs
+ * du DTO (forbidNonWhitelisted côté API) — `submittedAt` reste local.
+ *
+ * Le cache localStorage est conservé pour le préremplissage consultant
+ * (getLatestLead). La lecture par email (getLeadByEmail, login particulier) sera
+ * remplacée par un chantier serveur dédié — d'ici là elle reste locale.
  */
-export function saveLead(lead: OnboardingLead) {
+export async function saveLead(lead: OnboardingLead): Promise<void> {
   if (typeof window !== "undefined") {
     try {
       const raw = window.localStorage.getItem(LEADS_KEY);
@@ -33,11 +41,58 @@ export function saveLead(lead: OnboardingLead) {
       list.push(lead);
       window.localStorage.setItem(LEADS_KEY, JSON.stringify(list));
     } catch {
-      /* ignore en mock */
+      /* mode privé : le cache local est optionnel, la persistance serveur prime */
     }
   }
-  // TODO(backend N8N): POST lead → webhook de capture de lead
-  // await fetch(process.env.NEXT_PUBLIC_LEAD_WEBHOOK!, { method: "POST", body: JSON.stringify(lead) });
+  try {
+    await apiFetch("/public/leads", {
+      method: "POST",
+      body: JSON.stringify({
+        firstName: lead.firstName,
+        lastName: lead.lastName,
+        company: lead.company,
+        email: lead.email,
+        phone: lead.phone,
+        companySize: lead.companySize,
+        worksWithAgency: lead.worksWithAgency,
+        goals: lead.goals,
+        url: lead.url,
+      }),
+    });
+  } catch {
+    /* best-effort : ne bloque pas l'onboarding si la capture serveur échoue */
+  }
+}
+
+/**
+ * Demande d'expert (CTA « Demandez votre plan d'action ») → POST /public/leads avec
+ * source='expert' (notifié à contact@l-agenceweb.com côté serveur). Complète les
+ * champs manquants (url, objectifs) depuis le dernier lead d'onboarding. Best-effort :
+ * un échec ne bloque JAMAIS la confirmation affichée à l'utilisateur.
+ */
+export async function submitExpertLead(fields: {
+  firstName: string;
+  lastName: string;
+  company: string;
+  email: string;
+  phone: string;
+}): Promise<void> {
+  const base = getLatestLead();
+  try {
+    await apiFetch("/public/leads", {
+      method: "POST",
+      body: JSON.stringify({
+        ...fields,
+        companySize: base?.companySize ?? null,
+        worksWithAgency: base?.worksWithAgency ?? null,
+        goals: base?.goals ?? [],
+        url: base?.url ?? "",
+        source: "expert",
+      }),
+    });
+  } catch {
+    /* best-effort */
+  }
 }
 
 /**

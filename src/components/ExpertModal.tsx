@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Button from "./Button";
-import { getLatestLead } from "@/lib/lead";
+import { getLatestLead, submitExpertLead } from "@/lib/lead";
 
 interface ExpertModalProps {
   onClose: () => void;
@@ -75,6 +75,15 @@ export default function ExpertModal({ onClose }: ExpertModalProps) {
       setErrors(errs);
       return;
     }
+    // Envoi de la demande d'expert au serveur (source='expert' → notif
+    // contact@l-agenceweb.com). Best-effort : la confirmation s'affiche quoi qu'il arrive.
+    void submitExpertLead({
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      company: form.company.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+    });
     setSubmitted(true);
   }
 
