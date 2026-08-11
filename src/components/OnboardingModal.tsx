@@ -4,6 +4,7 @@ import { useState } from "react";
 import ModalPortal from "./ModalPortal";
 import Button from "./Button";
 import { validateProEmail } from "@/lib/proEmail";
+import { checkEmailHasAnalysis } from "@/lib/lead";
 import type { OnboardingLead, CompanySize, AgencyAnswer } from "@/lib/lead";
 
 /** Normalise une URL pour comparaison souple (protocole, www, casse, slash final). */
@@ -20,6 +21,8 @@ interface OnboardingModalProps {
   url: string;
   onComplete: (lead: OnboardingLead) => void;
   onClose: () => void;
+  /** L'email a déjà une analyse → l'utilisateur veut rejoindre son espace (login). */
+  onLoginRequest?: () => void;
 }
 
 const COMPANY_SIZES: { key: CompanySize; label: string }[] = [
@@ -70,7 +73,7 @@ const GOALS: { key: string; label: string; icon: React.ReactNode }[] = [
   },
 ];
 
-export default function OnboardingModal({ url, onComplete, onClose }: OnboardingModalProps) {
+export default function OnboardingModal({ url, onComplete, onClose, onLoginRequest }: OnboardingModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState({
     firstName: "",
@@ -83,10 +86,15 @@ export default function OnboardingModal({ url, onComplete, onClose }: Onboarding
     goals: [] as string[],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Vérification serveur en cours (email déjà analysé ?) + blocage si oui.
+  const [checking, setChecking] = useState(false);
+  const [emailExists, setEmailExists] = useState(false);
 
   function update<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field as string]) setErrors((prev) => ({ ...prev, [field as string]: "" }));
+    // Toute modif de l'email lève le blocage « déjà analysé ».
+    if (field === "email") setEmailExists(false);
   }
 
   function toggleGoal(key: string) {
@@ -97,23 +105,29 @@ export default function OnboardingModal({ url, onComplete, onClose }: Onboarding
     if (errors.goals) setErrors((prev) => ({ ...prev, goals: "" }));
   }
 
-  function handleStep1() {
+  async function handleStep1() {
     const errs: Record<string, string> = {};
     if (!form.firstName.trim()) errs.firstName = "Requis";
     if (!form.lastName.trim()) errs.lastName = "Requis";
     if (!form.company.trim()) errs.company = "Requis";
     const emailErr = validateProEmail(form.email);
-    if (emailErr) {
-      errs.email = emailErr;
-    }
-    // Plus de garde « déjà utilisée » côté client : le SERVEUR est l'autorité
-    // (idempotent — un email déjà analysé revoit son rapport, il n'est pas refusé ;
-    //  + plafond quotidien + 1 analyse/prospect appliqués en base).
+    if (emailErr) errs.email = emailErr;
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
+    // Garde « déjà une analyse » (retour Alexis 2026-08-11) : on bloque et on
+    // redirige vers l'espace au lieu de re-lancer. Le SERVEUR reste l'autorité et
+    // n'exempte QUE les internes (scribeo.com/aw-i.com relancent librement → false).
+    // Fail-open : si le check échoue, on laisse passer (la garde serveur backstop).
     setErrors({});
+    setChecking(true);
+    const exists = await checkEmailHasAnalysis(form.email);
+    setChecking(false);
+    if (exists) {
+      setEmailExists(true);
+      return;
+    }
     setStep(2);
   }
 
@@ -213,16 +227,47 @@ export default function OnboardingModal({ url, onComplete, onClose }: Onboarding
                     <Field label="Nom" id="ob-ln" value={form.lastName} error={errors.lastName} placeholder="Dupont" onChange={(v) => update("lastName", v)} />
                   </div>
                   <Field label="Entreprise" id="ob-company" value={form.company} error={errors.company} placeholder="Nom de votre entreprise" onChange={(v) => update("company", v)} />
-                  <Field label="Email professionnel" id="ob-email" type="email" value={form.email} error={errors.email} placeholder="vous@entreprise.com" onChange={(v) => update("email", v)} />
+                  <div>
+                    <Field label="Email professionnel" id="ob-email" type="email" value={form.email} error={errors.email} invalid={emailExists} placeholder="vous@entreprise.com" onChange={(v) => update("email", v)} />
+                    {/* Email déjà analysé → on redirige vers l'espace (retour Alexis
+                        2026-08-11). Les internes exemptés ne tombent jamais ici (serveur). */}
+                    {emailExists && (
+                      <div className="mt-2 flex items-start gap-2 rounded-xl border border-red-400/30 bg-red-400/[0.06] px-3 py-2.5">
+                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                        </svg>
+                        <p className="text-[12.5px] font-light leading-relaxed text-text-secondary">
+                          Un compte avec une analyse existe déjà pour cette adresse email. Veuillez vous connecter directement à{" "}
+                          <button
+                            type="button"
+                            onClick={onLoginRequest}
+                            className="font-medium text-accent-pink underline underline-offset-2 transition-opacity hover:opacity-80"
+                          >
+                            votre espace
+                          </button>
+                          .
+                        </p>
+                      </div>
+                    )}
+                  </div>
                   <Field label="Téléphone" id="ob-phone" type="tel" value={form.phone} placeholder="+33 6 12 34 56 78" optional onChange={(v) => update("phone", v)} />
                 </div>
 
                 <div className="mt-6">
-                  <Button variant="primary" fullWidth onClick={handleStep1}>
-                    Continuer
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                    </svg>
+                  <Button variant="primary" fullWidth onClick={handleStep1} disabled={checking}>
+                    {checking ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                        Vérification…
+                      </>
+                    ) : (
+                      <>
+                        Continuer
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                        </svg>
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -365,11 +410,14 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 function Field({
-  label, id, value, error, placeholder, type = "text", optional = false, onChange,
+  label, id, value, error, invalid = false, placeholder, type = "text", optional = false, onChange,
 }: {
-  label: string; id: string; value: string; error?: string; placeholder: string;
+  label: string; id: string; value: string; error?: string; invalid?: boolean; placeholder: string;
   type?: string; optional?: boolean; onChange: (v: string) => void;
 }) {
+  // `invalid` = bordure rouge SANS texte (le message est affiché à part, ex. bannière
+  // « compte déjà existant »). `error` = bordure rouge + texte sous le champ.
+  const isRed = Boolean(error) || invalid;
   return (
     <div>
       <label htmlFor={id} className="mb-1.5 flex items-center gap-2 text-[13px] font-medium text-text-secondary">
@@ -383,7 +431,7 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={`w-full rounded-xl border bg-input-bg px-4 py-3 text-[14px] text-text-primary placeholder:text-text-muted outline-none transition-all duration-300 ${
-          error
+          isRed
             ? "border-red-400/50"
             : "border-white/[0.06] focus:border-accent-pink/40 focus:shadow-[0_0_12px_-4px_rgba(236,77,203,0.15)]"
         }`}

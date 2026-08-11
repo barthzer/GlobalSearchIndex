@@ -5,6 +5,27 @@
 
 import { apiFetch } from "./api";
 
+/**
+ * L'email a-t-il DÉJÀ une analyse (compte validé) ? Sert à bloquer le formulaire
+ * d'onboarding et rediriger vers l'espace (retour Alexis 2026-08-11). Le serveur ne
+ * répond true que si une analyse existe (post-validation du code) — jamais pour un
+ * email non validé. Best-effort : en cas d'échec réseau on renvoie false (fail-open,
+ * la garde serveur reste l'autorité), on ne bloque JAMAIS un utilisateur légitime.
+ */
+export async function checkEmailHasAnalysis(email: string): Promise<boolean> {
+  try {
+    const res = await apiFetch("/public/email-status", {
+      method: "POST",
+      body: JSON.stringify({ email: email.trim() }),
+    });
+    if (!res.ok) return false;
+    const data = (await res.json()) as { hasAnalysis?: boolean };
+    return data?.hasAnalysis === true;
+  } catch {
+    return false;
+  }
+}
+
 export type CompanySize = "solo" | "2-10" | "11-50" | "51-200" | "200+";
 export type AgencyAnswer = "oui" | "non";
 

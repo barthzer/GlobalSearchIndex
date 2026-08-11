@@ -10,6 +10,7 @@ import SmoothScroll from "@/components/SmoothScroll";
 import Reveal from "@/components/Reveal";
 import { LightSurfaceContext } from "@/components/LightSurfaceContext";
 import OnboardingModal from "@/components/OnboardingModal";
+import LoginModal from "@/components/LoginModal";
 import ExpertModal from "@/components/ExpertModal";
 import ConsultantUpsellModal from "@/components/ConsultantUpsellModal";
 import AnalysisVerification from "@/components/AnalysisVerification";
@@ -495,6 +496,7 @@ export default function LandingPage() {
   const [url, setUrl] = useState("");
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
   const [showExpert, setShowExpert] = useState(false);
   const [showUpsell, setShowUpsell] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -568,8 +570,14 @@ export default function LandingPage() {
         />
       )}
       {showOnboarding && (
-        <OnboardingModal url={url.trim()} onComplete={handleOnboardingComplete} onClose={() => setShowOnboarding(false)} />
+        <OnboardingModal
+          url={url.trim()}
+          onComplete={handleOnboardingComplete}
+          onClose={() => setShowOnboarding(false)}
+          onLoginRequest={() => { setShowOnboarding(false); setShowLogin(true); }}
+        />
       )}
+      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
       {verifying && (
         <AnalysisVerification
           url={url.trim()}
