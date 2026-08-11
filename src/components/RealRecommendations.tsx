@@ -5,6 +5,7 @@ import { fetchRecommendations, type RecoContent } from "@/lib/recos";
 import { fetchProjectScores } from "@/lib/scores";
 import RealRecommendationCard from "./RealRecommendationCard";
 import SemanticUnlockModal from "./SemanticUnlockModal";
+import { useAccount } from "./AccountProvider";
 
 function Heading() {
   return (
@@ -128,6 +129,9 @@ export default function RealRecommendations({
   const [error, setError] = useState(false);
   const [showUnlock, setShowUnlock] = useState(false);
   const [reloadNonce, setReloadNonce] = useState(0);
+  // Le verrou recos ne concerne QUE le prospect (levier de conversion). Le commercial
+  // voit toujours les recos, même analyse non débloquée (décision Kevin 2026-08-11).
+  const { isProspect } = useAccount();
 
   useEffect(() => {
     let active = true;
@@ -178,8 +182,9 @@ export default function RealRecommendations({
         </p>
       </section>
     );
-  } else if (geoLocked) {
-    // VERROUILLÉ (avant même la génération) → cadenas + CTA de déblocage.
+  } else if (geoLocked && isProspect) {
+    // VERROUILLÉ (prospect uniquement) → cadenas + CTA de déblocage. Le commercial
+    // voit les recos directement (pas de verrou).
     body = <LockedState onUnlock={() => setShowUnlock(true)} />;
   } else if (isEmpty) {
     // Débloqué mais recos pas encore là → flou de génération (ad vitam, jamais un
