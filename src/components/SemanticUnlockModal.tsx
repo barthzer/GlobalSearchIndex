@@ -36,10 +36,11 @@ const PREVIEW_UNAVAILABLE_MSG =
 const GEN_UNAVAILABLE_MSG =
   "La proposition automatique n'est pas disponible. Saisissez directement les acteurs de votre secteur.";
 
-// Bornes corrigées (SEO Engine v7.30 : 1-3 concurrents + 5-10 mots-clés).
+// Bornes : 1-3 concurrents + 5 mots-clés (cap à 5, retour Alexis 2026-08-11 : on
+// bloque à 5, plus d'ajout au-delà). Reste dans le contrat SEO Engine (5-10 kw : 5 = min valide).
 const COMP_MAX = 3;
 const COMP_MIN = 1;
-const KW_MAX = 10;
+const KW_MAX = 5;
 const KW_MIN = 5;
 
 const emptyItems = (n: number): Item[] => Array.from({ length: n }, () => ({ value: "", checked: false }));
