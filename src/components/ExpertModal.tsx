@@ -83,6 +83,7 @@ export default function ExpertModal({ onClose }: ExpertModalProps) {
       company: form.company.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
+      message: form.message.trim(),
     });
     setSubmitted(true);
   }

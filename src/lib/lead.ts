@@ -76,6 +76,7 @@ export async function submitExpertLead(fields: {
   company: string;
   email: string;
   phone: string;
+  message?: string;
 }): Promise<void> {
   const base = getLatestLead();
   try {
@@ -83,6 +84,7 @@ export async function submitExpertLead(fields: {
       method: "POST",
       body: JSON.stringify({
         ...fields,
+        message: fields.message?.trim() || null,
         companySize: base?.companySize ?? null,
         worksWithAgency: base?.worksWithAgency ?? null,
         goals: base?.goals ?? [],
