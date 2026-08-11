@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { TrafficChart } from "./PageSpeedCard";
 import InsightNote from "./InsightNote";
+import SemanticUnlockModal from "./SemanticUnlockModal";
 import { fetchProjectScores, type ProjectScore } from "@/lib/scores";
 
 interface TrafficPoint {
@@ -98,6 +99,10 @@ export default function RealTrafficVisibility({
   // Poll actif → on montre un spinner (Haloscan/Ahrefs calculent), jamais un message
   // d'erreur transitoire.
   const [polling, setPolling] = useState(true);
+  // Cadenas de l'onglet Trafic : le déblocage concurrence/sémantique collecte la
+  // courbe (geo_citations processé avec trafficCurve=true). Après submit → reload.
+  const [showUnlock, setShowUnlock] = useState(false);
+  const [reloadNonce, setReloadNonce] = useState(0);
   const score = scoreProp ?? selfScore;
 
   // Fetch groupé (statuts des scores + données de visibilité) avec POLLING tant que
@@ -154,14 +159,38 @@ export default function RealTrafficVisibility({
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [projectId, scoreProp]);
+  }, [projectId, scoreProp, reloadNonce]);
 
   // ── Onglet Trafic mensuel (org_traffic MONDE) ────────────────────────────
   function TrafficPanel() {
     const status = score?.status ?? null;
     const raw = score?.rawData ?? null;
     if (status == null || status === "locked")
-      return <Msg>La courbe de trafic organique (monde) est collectée avec l&apos;analyse concurrentielle. Débloquez-la pour la visualiser.</Msg>;
+      return (
+        <div className="flex flex-col items-center gap-4 px-6 py-8 text-center md:py-10">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-pink/10 text-accent-pink">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+          </span>
+          <div className="max-w-md">
+            <h3 className="text-[16px] font-semibold text-text-heading">
+              Votre courbe de trafic se débloque avec l&apos;analyse concurrentielle
+            </h3>
+            <p className="mt-1.5 text-[13px] font-light leading-relaxed text-text-secondary">
+              La courbe de trafic organique (monde) est collectée en même temps que votre analyse
+              concurrentielle. Débloquez-la pour la visualiser.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowUnlock(true)}
+            className="rounded-full bg-accent-pink px-5 py-2.5 text-[13px] font-medium text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
+            style={{ transitionTimingFunction: "var(--ease-out)" }}
+          >
+            Débloquer ma courbe de trafic
+          </button>
+        </div>
+      );
     // En cours de collecte → un cercle qui tourne (le score arrive), jamais un message alarmant.
     if (status === "processing" || status === "pending")
       return <Loading>Collecte de la courbe de trafic en cours…</Loading>;
@@ -224,8 +253,20 @@ export default function RealTrafficVisibility({
   }
 
   return (
-    <Shell tab={tab} setTab={setTab}>
-      {tab === "traffic" ? <TrafficPanel /> : <VisibilityPanel />}
-    </Shell>
+    <>
+      {showUnlock && (
+        <SemanticUnlockModal
+          projectId={projectId}
+          onClose={() => setShowUnlock(false)}
+          onSubmit={() => {
+            setShowUnlock(false);
+            setReloadNonce((n) => n + 1);
+          }}
+        />
+      )}
+      <Shell tab={tab} setTab={setTab}>
+        {tab === "traffic" ? <TrafficPanel /> : <VisibilityPanel />}
+      </Shell>
+    </>
   );
 }
