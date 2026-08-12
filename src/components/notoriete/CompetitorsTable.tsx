@@ -57,7 +57,7 @@ export default function CompetitorsTable({ rows, clientName }: Props) {
                 Entreprise
               </th>
               <th className="border-b border-border-subtle px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-text-muted">
-                Backlinks
+                Domaines réf.
               </th>
               <th className="border-b border-border-subtle px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-text-muted">
                 Médias

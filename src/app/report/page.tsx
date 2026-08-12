@@ -67,20 +67,39 @@ export default function ReportTokenPage() {
       return;
     }
     let active = true;
-    fetchReport(token)
-      .then((d) => {
-        if (!active) return;
-        setData(d);
-        setState("ok");
-      })
-      .catch(() => {
-        if (active) setState("invalid");
-      });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // Poll tant qu'un score n'est pas terminal (comme le dashboard) : sinon le prospect
+    // qui ouvre le lien pendant le calcul resterait figé sur le spinner « en cours ».
+    // Lecture du stocké uniquement (aucun recalcul serveur), backoff doux.
+    const NON_TERMINAL = new Set(["pending", "processing"]);
+    let interval = 4000;
+    let loaded = false;
+    const load = () => {
+      fetchReport(token)
+        .then((d) => {
+          if (!active) return;
+          loaded = true;
+          setData(d);
+          setState("ok");
+          const anyRunning = d.scores?.some((s) => NON_TERMINAL.has(s.status ?? ""));
+          if (anyRunning) {
+            timer = setTimeout(load, interval);
+            interval = Math.min(interval + 2000, 15000);
+          }
+        })
+        .catch(() => {
+          // N'invalide QUE le premier chargement : un échec de poll transitoire ne
+          // doit pas casser un rapport déjà affiché.
+          if (active && !loaded) setState("invalid");
+        });
+    };
+    load();
     fetchReportVisibility(token).then((v) => {
       if (active) setVis(v);
     });
     return () => {
       active = false;
+      if (timer) clearTimeout(timer);
     };
   }, []);
 
@@ -201,6 +220,10 @@ export default function ReportTokenPage() {
                 composite={composite}
                 compositeMessage={noto.display?.message ?? null}
                 clientName={project.companyName || project.domain}
+                authorityProcessing={noto.status === "processing" || noto.status === "pending"}
+                benchmarkProcessing={scores.some(
+                  (s) => s.scoreType === "semantic" && (s.status === "processing" || s.status === "pending"),
+                )}
                 readOnly
               />
             </section>
