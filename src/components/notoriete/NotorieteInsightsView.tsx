@@ -17,7 +17,6 @@ import AuthorityGauge from "./AuthorityGauge";
 import BacklinksCard from "./BacklinksCard";
 import MajorMediaCard from "./MajorMediaCard";
 import BenchmarkSection from "./BenchmarkSection";
-import MediaLogo from "./MediaLogo";
 import type { CompetitorRow as BarthCompetitorRow } from "./data";
 
 export default function NotorieteInsightsView({
@@ -28,7 +27,6 @@ export default function NotorieteInsightsView({
   benchmarkProcessing = false,
   authorityProcessing = false,
   readOnly = false,
-  showEditorial = true,
   onUnlockClick,
 }: {
   /** raw_data du score notoriété (source des cards + benchmark). */
@@ -45,19 +43,12 @@ export default function NotorieteInsightsView({
   authorityProcessing?: boolean;
   /** true → surface prospect : AUCUN bouton d'action (read-only strict). */
   readOnly?: boolean;
-  /** Plan éditorial (marronniers). false → masqué (dashboard interne, retour Alexis
-   *  2026-08-07 : vue synthétique). Gardé dans les livrables prospect (/report + PDF). */
-  showEditorial?: boolean;
   /** CTA de déblocage benchmark (dashboard interne uniquement). */
   onUnlockClick?: () => void;
 }) {
   const bl = backlinksView(raw);
   const media = mediaView(raw);
   const bench = benchmarkView(raw);
-  // Plan éditorial (marronniers) — prospect-facing (présent dans le PDF partagé) :
-  // affiché à l'écran en PARITÉ. Subtitle DYNAMIQUE (jamais un secteur en dur).
-  const editorial = raw?.editorial_plan ?? null;
-  const editorialSlots = editorial?.slots ?? [];
 
   // Benchmark de Barth attend SA forme de ligne. Verrouillé → rows vides.
   const barthRows: BarthCompetitorRow[] = bench.rows.map((r) => ({
@@ -139,59 +130,6 @@ export default function NotorieteInsightsView({
           rankHint={bench.rankHint}
         />
       </div>
-
-      {/* Plan éditorial recommandé (marronniers). Masqué sur le dashboard interne
-          (showEditorial=false, retour Alexis) ; gardé dans les livrables prospect
-          (/report + PDF). Media en texte, subtitle dynamique depuis le secteur mesuré. */}
-      {showEditorial && editorialSlots.length > 0 && (
-        <section className="mt-8">
-          <h3 className="text-xl font-medium tracking-tight text-text-primary">
-            Plan éditorial recommandé
-          </h3>
-          {editorial?.marronniers_subtitle && (
-            <p className="mt-1.5 max-w-[720px] text-[length:var(--text-body)] font-light leading-relaxed text-text-secondary">
-              {editorial.marronniers_subtitle}
-            </p>
-          )}
-          <div className="mt-5 flex flex-col gap-4">
-            {editorialSlots.map((slot, i) => (
-              <article
-                key={i}
-                className="grid grid-cols-1 gap-3 rounded-2xl border border-border-subtle bg-bg-card p-5 md:grid-cols-[150px_minmax(0,1fr)_150px] md:items-center md:gap-5"
-              >
-                <div className="flex flex-col gap-2">
-                  <div className="text-[15px] font-medium leading-none text-text-primary">
-                    {slot.month}
-                  </div>
-                  <span className="inline-flex w-fit items-center rounded-full bg-accent-pink/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-pink">
-                    {slot.tag}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <h4 className="mb-1.5 text-[length:var(--text-body-lg)] font-medium leading-snug tracking-tight text-text-primary">
-                    {slot.title}
-                  </h4>
-                  <p className="text-[13px] font-light leading-relaxed text-text-secondary">
-                    {slot.description}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1 md:items-end md:text-right">
-                  {/* Logo SVG du média quand dispo (figaro/bfm/lepoint/latribune),
-                      sinon le nom en texte (jdn, lesechos…) — comme l'ancien GSI. */}
-                  <MediaLogo
-                    mediaLogo={slot.media_target ?? ""}
-                    fallbackLabel={slot.media_label}
-                    height={16}
-                  />
-                  {slot.media_subtitle && (
-                    <span className="text-[11px] font-light text-text-muted">{slot.media_subtitle}</span>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

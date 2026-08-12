@@ -58,6 +58,8 @@ export default function ConcurrenceTab({
   clientLogoUrl = null,
   isProspect = false,
   onExpertClick,
+  providedScores = null,
+  readOnly = false,
 }: {
   projectId: string;
   clientName?: string;
@@ -69,8 +71,14 @@ export default function ConcurrenceTab({
   // déblocage, sous les résultats.
   isProspect?: boolean;
   onExpertClick?: () => void;
+  // Scores fournis par le parent (vue /report token : pas de session prospect, donc
+  // pas de fetchProjectScores). Si présent → on n'appelle rien, on rend tel quel.
+  providedScores?: ProjectScore[] | null;
+  // Lecture seule stricte (rapport partagé) : pas de bouton de déblocage (le token
+  // ne permet pas d'action), on affiche un état honnête si le sémantique n'est pas là.
+  readOnly?: boolean;
 }) {
-  const [scores, setScores] = useState<ProjectScore[] | null>(null);
+  const [scores, setScores] = useState<ProjectScore[] | null>(providedScores);
   const [error, setError] = useState(false);
   const [view, setView] = useState<CoverageView>("heatmap");
   const [setupOpen, setSetupOpen] = useState(false);
@@ -78,6 +86,11 @@ export default function ConcurrenceTab({
   const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
+    // Scores fournis (rapport partagé) : source de vérité, aucun fetch.
+    if (providedScores) {
+      setScores(providedScores);
+      return;
+    }
     if (!projectId) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -99,7 +112,7 @@ export default function ConcurrenceTab({
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [projectId, reloadNonce]);
+  }, [projectId, reloadNonce, providedScores]);
 
   if (error) {
     return <EmptyCard title="Concurrence" body="Impossible de charger l'analyse concurrentielle, réessayez." />;
@@ -129,6 +142,18 @@ export default function ConcurrenceTab({
           Le résultat s&apos;affiche automatiquement, inutile de recharger.
         </p>
       </div>
+    );
+  }
+
+  // Rapport partagé (read-only, token) : aucune action possible → si le sémantique
+  // n'est pas débloqué, on l'annonce honnêtement, sans bouton (le prospect ne peut
+  // pas débloquer depuis le lien partagé).
+  if (readOnly && (!semantic || semantic.status !== "completed")) {
+    return (
+      <EmptyCard
+        title="Analyse concurrentielle"
+        body="L'analyse concurrentielle n'a pas encore été débloquée pour ce rapport."
+      />
     );
   }
 

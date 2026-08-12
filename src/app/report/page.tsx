@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import RealScoreArc from "@/components/RealScoreArc";
 import RealGeoScoreCard, { type PlatformBreakdown } from "@/components/RealGeoScoreCard";
 import NotorieteInsightsView from "@/components/notoriete/NotorieteInsightsView";
+import ConcurrenceTab from "@/components/concurrence/ConcurrenceTab";
 import ReportTrafficVisibility, {
   type ReportTrafficPoint,
 } from "@/components/ReportTrafficVisibility";
 import { type NotorieteRaw } from "@/lib/notoriete";
-import { citationsDisplay, aiCrawlerAccess, type ScoreDisplay } from "@/lib/scores";
+import { citationsDisplay, aiCrawlerAccess, type ScoreDisplay, type ProjectScore } from "@/lib/scores";
 import {
   fetchReport,
   fetchReportVisibility,
@@ -224,6 +225,39 @@ export default function ReportTokenPage() {
                 benchmarkProcessing={scores.some(
                   (s) => s.scoreType === "semantic" && (s.status === "processing" || s.status === "pending"),
                 )}
+                readOnly
+              />
+            </section>
+          );
+        })()}
+
+        {/* Analyse concurrentielle (part de voix / couverture mots-clés) — parité avec
+            l'app ET le PDF (retour Alexis 2026-08-12 : « tout dans le lien partagé »).
+            Read-only strict, alimenté par le score sémantique du payload (aucun fetch,
+            aucun bouton). Gatée comme le PDF : affichée seulement si le sémantique est
+            débloqué (completed) ou en cours ; masquée sinon (pas de vide inutile). */}
+        {(() => {
+          const sem = scores.find((s) => s.scoreType === "semantic");
+          const show = sem && ["completed", "processing", "pending"].includes(sem.status ?? "");
+          if (!show) return null;
+          const provided = scores.map((s) => ({
+            scoreType: s.scoreType,
+            scoreValue: null,
+            status: (s.status ?? "completed") as ProjectScore["status"],
+            rawData: s.rawData,
+            display: s.display,
+          })) as ProjectScore[];
+          return (
+            <section className="mt-12">
+              <h2 className="mb-5 text-xl font-medium tracking-tight text-text-primary">
+                Analyse concurrentielle
+              </h2>
+              <ConcurrenceTab
+                projectId={project.domain}
+                providedScores={provided}
+                clientName={project.companyName || project.domain}
+                clientInitial={initial}
+                clientLogoUrl={project.logoUrl ?? null}
                 readOnly
               />
             </section>

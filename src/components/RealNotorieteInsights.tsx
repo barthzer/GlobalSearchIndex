@@ -101,7 +101,6 @@ export default function RealNotorieteInsights({
       clientName={clientName}
       benchmarkProcessing={benchmarkProcessing}
       authorityProcessing={authorityProcessing}
-      showEditorial={false}
       onUnlockClick={onUnlockClick}
     />
   );
