@@ -144,7 +144,21 @@ export default function GenerationProvider({ children }: { children: React.React
       const body = (await res.json()) as { data: ApiProject[]; total: number };
       const gens = body.data.map(toGeneration);
       setAll(gens);
-      if (gens.length) setSelectedId((prev) => prev || gens[0].id);
+      if (gens.length) {
+        // Liste COMPLÈTE (hors recherche) : si le projet sélectionné n'est plus dans
+        // la liste — typiquement un CHANGEMENT DE PROSPECT/SESSION — on repointe sur
+        // le premier. Sans ça, le header gardait le NOM du parcours précédent (via le
+        // cache selectedGen) alors que les données étaient déjà les bonnes (retour
+        // Alexis 2026-08-13 : « daccueil » affiché sur l'analyse ecomundo). En
+        // RECHERCHE, on garde le gen courant caché (il peut être hors résultats).
+        setSelectedId((prev) =>
+          debouncedSearch
+            ? prev || gens[0].id
+            : gens.some((g) => g.id === prev)
+              ? prev
+              : gens[0].id,
+        );
+      }
 
       // Statut par projet (N+1) — borné au seuil, au-delà on trace et on n'affiche
       // pas de statut (badge neutre) plutôt que d'exploser le nombre de requêtes.
