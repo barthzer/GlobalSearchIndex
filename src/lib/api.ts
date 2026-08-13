@@ -339,7 +339,13 @@ export async function apiFetch(
   // données sont réécrits vers /public/analysis (token prospect) ; les POST du
   // déblocage sémantique vers /public/* (Response réelle du backend, 409 compris).
   // Tout autre appel prospect renvoie une Response synthétique sûre.
-  const prospect = getProspectSession();
+  //
+  // DOUBLE RÔLE (retour Alexis 2026-08-13) : un interne (admin/commercial) peut aussi
+  // avoir une session prospect résiduelle (il a testé le libre accès avec son email).
+  // Dans ce cas la session INTERNE PRIME : sans ce garde, son GET /projects était
+  // hijacké vers son unique analyse prospect (il ne voyait qu'un projet en admin).
+  // Un vrai prospect du funnel n'a jamais de token authStore → comportement inchangé.
+  const prospect = authStore.access() ? null : getProspectSession();
   if (prospect) {
     const method = (init.method ?? "GET").toUpperCase();
     if (method === "GET" || method === "POST") {
