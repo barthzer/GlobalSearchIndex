@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fetchRecommendations, type RecoContent } from "@/lib/recos";
 import { fetchProjectScores } from "@/lib/scores";
 import RealRecommendationCard from "./RealRecommendationCard";
@@ -129,6 +129,10 @@ export default function RealRecommendations({
   const [error, setError] = useState(false);
   const [showUnlock, setShowUnlock] = useState(false);
   const [reloadNonce, setReloadNonce] = useState(0);
+  // Filtres Priorité (via impact) + Type (via pilier/axe) — parité VF, absents du
+  // Barth (retour Alexis 2026-08-13). Affichés uniquement en vue complète (pas aperçu).
+  const [fPriority, setFPriority] = useState<string>("all");
+  const [fType, setFType] = useState<string>("all");
   // Le verrou recos ne concerne QUE le prospect (levier de conversion). Le commercial
   // voit toujours les recos, même analyse non débloquée (décision Kevin 2026-08-11).
   const { isProspect } = useAccount();
@@ -192,16 +196,61 @@ export default function RealRecommendations({
     body = <GeneratingState />;
   } else {
     const recos = content!.recommendations;
-    const shown = preview ? recos.slice(0, 3) : recos;
+    // Type = piliers réellement présents dans les recos (axe = libellé dynamique).
+    const typeOptions = Array.from(
+      new Set(recos.map((r) => (r.pillar || r.axe || "").trim()).filter(Boolean)),
+    );
+    // Aperçu : 3 premières, sans filtre. Vue complète : filtrable Priorité + Type.
+    const shown = preview
+      ? recos.slice(0, 3)
+      : recos.filter(
+          (r) =>
+            (fPriority === "all" || r.impact === fPriority) &&
+            (fType === "all" || (r.pillar || r.axe) === fType),
+        );
     body = (
       <section>
         <Heading />
-        <div className="relative">
-          <div className="flex flex-col gap-3">
-            {shown.map((r, i) => (
-              <RealRecommendationCard key={i} rec={r} index={i} delay={480 + i * 60} />
-            ))}
+        {!preview && (
+          <div className="mb-5 flex flex-wrap items-center gap-2.5">
+            <RecoDropdown
+              label="Priorité"
+              value={fPriority}
+              onChange={setFPriority}
+              options={[
+                { value: "all", label: "Toutes" },
+                { value: "Fort", label: "Élevée" },
+                { value: "Moyen", label: "Moyenne" },
+                { value: "Faible", label: "Faible" },
+              ]}
+            />
+            <RecoDropdown
+              label="Type"
+              value={fType}
+              onChange={setFType}
+              options={[
+                { value: "all", label: "Tous" },
+                ...typeOptions.map((t) => ({ value: t, label: t })),
+              ]}
+            />
+            <span className="text-[13px] text-text-muted">
+              {shown.length} recommandation{shown.length > 1 ? "s" : ""}
+              {fPriority === "all" && fType === "all" ? "" : " correspondant à vos filtres"}
+            </span>
           </div>
+        )}
+        <div className="relative">
+          {shown.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {shown.map((r, i) => (
+                <RealRecommendationCard key={i} rec={r} index={i} delay={480 + i * 60} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border-subtle bg-bg-card p-8 text-center text-[14px] text-text-secondary">
+              Aucune recommandation ne correspond à ces filtres.
+            </div>
+          )}
           {/* Aperçu : fondu bas comme la maquette. */}
           {preview && recos.length > shown.length && (
             <div
@@ -248,5 +297,85 @@ export default function RealRecommendations({
       )}
       {body}
     </>
+  );
+}
+
+// Menu déroulant de filtre (Priorité / Type) — calqué sur la VF (RecommendationsView).
+function RecoDropdown({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value);
+  const active = value !== "all";
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`flex items-center gap-2 rounded-full border py-2 pl-3.5 pr-2.5 text-[13px] font-medium transition-colors duration-200 ${
+          active
+            ? "border-accent-pink/50 bg-accent-pink/10 text-text-primary"
+            : "border-border-subtle bg-card-inner-bg text-text-secondary hover:border-border-badge hover:text-text-primary"
+        }`}
+        style={{ transitionTimingFunction: "var(--ease-out)" }}
+      >
+        <span>
+          {label}
+          {active && <span className="text-text-primary"> · {selected?.label}</span>}
+        </span>
+        <svg
+          className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""} ${active ? "text-accent-pink" : "text-text-muted"}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+
+      <div
+        className="absolute left-0 top-full z-50 mt-2 min-w-[190px] overflow-hidden rounded-xl border border-border-subtle bg-modal-bg p-1 shadow-[0px_16px_40px_-8px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-200"
+        style={{
+          opacity: open ? 1 : 0,
+          transform: open ? "translateY(0) scale(1)" : "translateY(-4px) scale(0.97)",
+          pointerEvents: open ? "auto" : "none",
+          transitionTimingFunction: "var(--ease-out)",
+        }}
+      >
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => { onChange(o.value); setOpen(false); }}
+            className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-[13px] transition-colors duration-150 hover:bg-card-inner-bg ${
+              o.value === value ? "text-text-primary" : "text-text-secondary"
+            }`}
+          >
+            {o.label}
+            {o.value === value && (
+              <svg className="h-3.5 w-3.5 shrink-0 text-accent-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

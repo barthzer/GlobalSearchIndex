@@ -271,21 +271,6 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
     );
   }
 
-  /** Ajoute une ligne vide éditable sous la liste (saisie manuelle d'un concurrent / mot-clé). */
-  function addRow(
-    setList: React.Dispatch<React.SetStateAction<Item[]>>,
-    setLoading: React.Dispatch<React.SetStateAction<boolean[]>>,
-    idPrefix: string,
-  ) {
-    let newIdx = 0;
-    setList((prev) => {
-      newIdx = prev.length;
-      return [...prev, { value: "", checked: false }];
-    });
-    setLoading((prev) => [...prev, false]);
-    setTimeout(() => document.getElementById(`${idPrefix}-${newIdx}`)?.focus(), 0);
-  }
-
   async function persistAndSubmit(payload: Partial<SemanticInputs>) {
     saveSemanticInputs(payload);
     setSubmitting(true);
@@ -520,18 +505,6 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
                 {competitors.map((item, i) =>
                   renderRow(item, i, compLoading[i] ?? false, compChecked, COMP_MAX, setCompetitors, `https://concurrent${i + 1}.com`, "comp"),
                 )}
-                <button
-                  type="button"
-                  onClick={() => addRow(setCompetitors, setCompLoading, "comp")}
-                  disabled={aiBusy !== null || submitting}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border-badge bg-transparent py-2.5 text-[13px] font-medium text-text-muted transition-all duration-200 hover:border-accent-pink/40 hover:text-accent-pink active:scale-[0.99] disabled:opacity-50"
-                  style={{ transitionTimingFunction: "var(--ease-out)" }}
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  Ajouter un concurrent
-                </button>
               </div>
 
               {error && (
@@ -612,18 +585,6 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
                 {keywords.map((item, i) =>
                   renderRow(item, i, kwLoading[i] ?? false, kwChecked, KW_MAX, setKeywords, `Mot-clé ${i + 1}`, "kw"),
                 )}
-                <button
-                  type="button"
-                  onClick={() => addRow(setKeywords, setKwLoading, "kw")}
-                  disabled={aiBusy !== null || submitting}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border-badge bg-transparent py-2.5 text-[13px] font-medium text-text-muted transition-all duration-200 hover:border-accent-pink/40 hover:text-accent-pink active:scale-[0.99] disabled:opacity-50"
-                  style={{ transitionTimingFunction: "var(--ease-out)" }}
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  Ajouter un mot-clé
-                </button>
 
                 {error && (
                   <p className="mt-1 flex items-center gap-1.5 text-[12px] text-red-400">

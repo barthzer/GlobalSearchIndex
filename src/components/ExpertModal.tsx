@@ -5,12 +5,17 @@ import { asset } from "@/lib/asset";
 import { createPortal } from "react-dom";
 import Button from "./Button";
 import { getLatestLead, submitExpertLead } from "@/lib/lead";
+import { useGeneration } from "./GenerationProvider";
 
 interface ExpertModalProps {
   onClose: () => void;
 }
 
 export default function ExpertModal({ onClose }: ExpertModalProps) {
+  // Entreprise = le PROJET RÉELLEMENT AFFICHÉ (pas le dernier lead du localStorage,
+  // qui pouvait être périmé → "Daccueil.com" sur une analyse ecomundo, retour Alexis
+  // 2026-08-13). Même classe que le nom fantôme corrigé dans GenerationProvider.
+  const { selected } = useGeneration();
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState({
     firstName: "",
@@ -26,19 +31,21 @@ export default function ExpertModal({ onClose }: ExpertModalProps) {
 
   useEffect(() => {
     setMounted(true);
-    // Préremplissage depuis l'onboarding : on ne redemande pas ce que le lead a déjà saisi.
+    // Identité préremplie depuis l'onboarding (le lead) ; Entreprise depuis le PROJET
+    // COURANT (selected.name) pour ne jamais afficher un projet croisé.
     const lead = getLatestLead();
-    if (lead) {
+    const company = selected?.name?.trim() || lead?.company || "";
+    if (lead || company) {
       setForm((prev) => ({
         ...prev,
-        firstName: lead.firstName || prev.firstName,
-        lastName: lead.lastName || prev.lastName,
-        email: lead.email || prev.email,
-        phone: lead.phone || prev.phone,
-        company: lead.company || prev.company,
+        firstName: lead?.firstName || prev.firstName,
+        lastName: lead?.lastName || prev.lastName,
+        email: lead?.email || prev.email,
+        phone: lead?.phone || prev.phone,
+        company: company || prev.company,
       }));
       // Identité connue → on saute l'étape coordonnées et on va droit au contexte.
-      if (lead.firstName && lead.lastName && lead.email && lead.company) {
+      if (lead?.firstName && lead?.lastName && lead?.email && company) {
         setStep(2);
       }
     }

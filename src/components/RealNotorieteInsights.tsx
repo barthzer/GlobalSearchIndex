@@ -63,9 +63,19 @@ export default function RealNotorieteInsights({
   }, [projectId, refreshTick]);
 
   if (scores == null) {
+    // Tout premier chargement (avant la 1re réponse) : le rond Autorité tourne DÈS le
+    // montage au lieu d'un cadre gris vide (retour Alexis 2026-08-13 : le rond
+    // n'apparaissait qu'après le 1er rafraîchissement). Les 2 autres cartes restent en
+    // skeleton (pas de « 0 backlinks » trompeur tant que la donnée n'est pas là).
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[0, 1, 2].map((i) => (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border-subtle bg-bg-card p-6 text-center backdrop-blur-[6px]">
+          <span className="h-7 w-7 animate-spin rounded-full border-2 border-accent-pink/30 border-t-accent-pink" />
+          <span className="text-[13px] font-light text-text-secondary">
+            Calcul de votre autorité média en cours…
+          </span>
+        </div>
+        {[0, 1].map((i) => (
           <div
             key={i}
             className="h-44 animate-pulse rounded-2xl border border-border-subtle bg-bg-card"
