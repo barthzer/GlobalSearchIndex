@@ -44,6 +44,22 @@ function monthLabelFromIso(iso: string): string {
   return `${MONTHS_FR[parseInt(m[2], 10)] ?? m[2]} ${m[1].slice(2)}`;
 }
 
+// Interprétation de TENDANCE (retour Alexis 2026-08-14 : dire si ça monte ou baisse
+// et donner notre avis). Compare la moyenne des 1ers vs derniers relevés → % + verdict
+// court. Vide si historique trop court (<4 points) : jamais un avis sur du bruit.
+function trendVerdict(values: number[], sujet: string): string {
+  if (values.length < 4) return "";
+  const n = Math.min(3, Math.floor(values.length / 2));
+  const avg = (a: number[]) => a.reduce((s, v) => s + v, 0) / (a.length || 1);
+  const start = avg(values.slice(0, n));
+  const end = avg(values.slice(-n));
+  if (start <= 0) return "";
+  const pct = Math.round(((end - start) / start) * 100);
+  if (pct >= 10) return `${sujet} progresse d'environ ${pct}% sur la période, une dynamique à entretenir.`;
+  if (pct <= -10) return `${sujet} recule d'environ ${Math.abs(pct)}% sur la période, une tendance à surveiller de près.`;
+  return `${sujet} reste globalement stable sur la période.`;
+}
+
 function Shell({ tab, setTab, children }: { tab: TabKey; setTab: (t: TabKey) => void; children: React.ReactNode }) {
   return (
     <section className="rounded-2xl border border-border-subtle bg-bg-card">
@@ -204,6 +220,10 @@ export default function RealTrafficVisibility({
         <InsightNote className="mt-3">
           Le <span className="font-medium text-text-primary">trafic mensuel</span> correspond aux visites organiques
           estimées (monde) sur les {curve.length} derniers mois relevés.
+          {(() => {
+            const t = trendVerdict(curve.map((p) => p.org_traffic), "Votre trafic organique");
+            return t ? ` ${t}` : "";
+          })()}
         </InsightNote>
       </>
     );
@@ -247,6 +267,10 @@ export default function RealTrafficVisibility({
         <InsightNote className="mt-3">
           L&apos;<span className="font-medium text-text-primary">indice de visibilité</span> reflète la part de clics
           potentiels captée sur l&apos;ensemble de vos mots-clés suivis. Le tableau détaille vos positions top 3 à 50.
+          {(() => {
+            const t = trendVerdict(hist.map((p) => p.visibility), "Votre indice de visibilité");
+            return t ? ` ${t}` : "";
+          })()}
         </InsightNote>
       </>
     );

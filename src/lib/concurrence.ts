@@ -151,14 +151,26 @@ export function computeRanking(data: ConcurrenceData): {
 }
 
 // Phrase de synthèse globale (couverture top 10 + part de voix réunies). Prospect-safe.
+// Interprétation NUANCÉE sur l'ensemble des mots-clés (retour Alexis 2026-08-14 :
+// « 1er mais absent du top 100 sur 3 mots-clés, on n'en parle pas »). On dit le rang
+// ET les trous (mots-clés hors top 100), pour ne pas sur-vendre une avance étroite.
 export function globalInsight(data: ConcurrenceData): string {
-  const { brands } = data;
+  const { brands, keywords, positions } = data;
   const { rank, total, leaderName, isLeader } = computeRanking(data);
   const you = brands.find((b) => b.id === "main")?.name ?? "Votre marque";
+  const mainIdx = Math.max(0, brands.findIndex((b) => b.id === "main"));
+  const nbKw = keywords.length;
+  // Mots-clés où le client n'est PAS dans le top 100 (position null = non mesurée).
+  const absent = positions.filter((row) => row[mainIdx] == null).length;
+  const gapPhrase =
+    absent > 0
+      ? ` En revanche, l'avance repose sur peu de requêtes : vous êtes absent du top 100 sur ${absent} de vos ${nbKw} mots-clés. Élargir votre présence sécuriserait ce rang.`
+      : ` Vous êtes positionné sur l'ensemble de vos ${nbKw} mots-clés, une base solide à consolider sur les plus forts volumes.`;
+
   if (isLeader) {
-    return `${you} se classe 1ʳᵉ sur ${total} en combinant couverture top 10 et part de voix. Maintenez l'avance en consolidant les mots-clés à fort volume où vous êtes déjà bien positionné.`;
+    return `${you} se classe 1ʳᵉ sur ${total} en combinant couverture top 10 et part de voix.${gapPhrase}`;
   }
-  return `Sur l'ensemble couverture top 10 et part de voix, ${you} se classe ${rank}ᵉ sur ${total}, derrière ${leaderName}. La priorité : gagner des positions sur les mots-clés à fort volume encore hors du top 10.`;
+  return `Sur l'ensemble couverture top 10 et part de voix, ${you} se classe ${rank}ᵉ sur ${total}, derrière ${leaderName}.${gapPhrase} La priorité : gagner des positions sur les mots-clés à fort volume encore hors du top 10.`;
 }
 
 // ── Dérivation depuis le rawData du score sémantique ────────────────────────

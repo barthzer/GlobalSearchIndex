@@ -39,6 +39,29 @@ function CriterionIcon({ d }: { d: string }) {
   );
 }
 
+// Verdict PageSpeed (retour Alexis 2026-08-14 : dire si c'est bien ou pas). Basé sur
+// le score Performances (seuils Google : <50 faible, 50-89 correct, 90+ excellent) et
+// le LCP (>2,5 s à améliorer, >4 s mauvais). Cite les catégories déjà au vert. Vide si
+// pas de catégorie Performances (jamais un avis sans mesure).
+function pageSpeedVerdict(cats: PsCategory[], metrics: PsMetric[]): string {
+  const perf = cats.find((c) => /perform/i.test(c.label));
+  if (!perf) return "";
+  const p = perf.score;
+  const perfWord = p >= 90 ? "excellentes" : p >= 50 ? "correctes mais perfectibles" : "à améliorer en priorité";
+  const lcp = metrics.find((m) => /largest contentful/i.test(m.label));
+  let lcpPhrase = "";
+  if (lcp && lcp.value > 0) {
+    const sec = lcp.unit === "ms" ? lcp.value / 1000 : lcp.value;
+    const v = `${lcp.value}${lcp.unit ? " " + lcp.unit : ""}`;
+    if (sec > 4) lcpPhrase = ` Votre LCP à ${v} dépasse largement le seuil de 2,5 s recommandé, un frein direct à l'expérience et au référencement.`;
+    else if (sec > 2.5) lcpPhrase = ` Votre LCP à ${v} reste au-dessus du seuil de 2,5 s recommandé.`;
+    else lcpPhrase = ` Votre LCP à ${v} respecte le seuil recommandé.`;
+  }
+  const strong = cats.filter((c) => !/perform/i.test(c.label) && c.score >= 90).map((c) => c.label);
+  const strongPhrase = strong.length ? ` En revanche, ${strong.join(" et ")} sont au vert.` : "";
+  return `Vos performances sont ${perfWord} (${p}/100).${lcpPhrase}${strongPhrase}`;
+}
+
 // Icône + fiche info par catégorie Lighthouse (contenu statique VF). Clé = label
 // serveur. Une catégorie inconnue tombe sur un icône neutre, sans info.
 const CATEGORY_META: Record<
@@ -291,6 +314,10 @@ export default function RealPageSpeed({
               Ces métriques (Core Web Vitals) mesurent la vitesse et la stabilité de chargement réelles de votre page
               sur {device === "mobile" ? "mobile" : "ordinateur"}. Elles pèsent directement sur l&apos;expérience
               utilisateur et sur votre classement Google.
+              {(() => {
+                const v = pageSpeedVerdict(cats, metrics);
+                return v ? ` ${v}` : "";
+              })()}
             </InsightNote>
           </div>
         )}
