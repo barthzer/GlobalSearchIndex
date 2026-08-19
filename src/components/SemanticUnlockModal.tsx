@@ -237,10 +237,14 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
         return;
       }
       // (d) Candidats proposés → préremplissage (chemin de succès).
+      // baseCount pad au MINIMUM requis : si l'IA rend moins que le min (ex. 4 mots-clés
+      // pour un min de 5, après filtrage marque/hors-sujet), on garde des lignes VIDES
+      // éditables pour que l'utilisateur complète à la main — sinon il est bloqué sous le
+      // seuil sans pouvoir ajouter (bug Alexis 2026-08-19 : 4/5 sans 5e ligne).
       if (key === "comp") {
-        runAiFill(candidates, setCompetitors, setCompLoading, "comp", COMP_MAX, candidates.length);
+        runAiFill(candidates, setCompetitors, setCompLoading, "comp", COMP_MAX, Math.max(candidates.length, COMP_MIN));
       } else {
-        runAiFill(candidates, setKeywords, setKwLoading, "kw", KW_MAX, candidates.length);
+        runAiFill(candidates, setKeywords, setKwLoading, "kw", KW_MAX, Math.max(candidates.length, KW_MIN));
       }
     } catch {
       setAiBusy(null);
