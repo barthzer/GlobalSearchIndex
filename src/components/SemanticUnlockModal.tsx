@@ -54,7 +54,7 @@ function itemsFromStore(values: string[], min: number, max: number): Item[] {
 
 export default function SemanticUnlockModal({ onClose, onSubmit, projectId, competitorsOnly = false, submitLabel }: SemanticUnlockModalProps) {
   // Lecture du store une seule fois au montage (pré-remplissage lié au benchmark).
-  const stored = useRef<SemanticInputs>(getSemanticInputs()).current;
+  const stored = useRef<SemanticInputs>(getSemanticInputs(projectId)).current;
   const compInit = stored.competitors.length ? itemsFromStore(stored.competitors, 3, COMP_MAX) : emptyItems(3);
   const kwInit = stored.keywords.length ? itemsFromStore(stored.keywords, 5, KW_MAX) : emptyItems(5);
 
@@ -276,7 +276,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
   }
 
   async function persistAndSubmit(payload: Partial<SemanticInputs>) {
-    saveSemanticInputs(payload);
+    saveSemanticInputs(projectId, payload);
     setSubmitting(true);
     try {
       // Mode benchmark (concurrents seuls) → notoriété ; sinon → sémantique complet.

@@ -25,7 +25,7 @@ import {
  */
 export function NotorieteInsights() {
   const { selected: currentGeneration } = useGeneration();
-  const semantic = useSemanticInputs();
+  const semantic = useSemanticInputs(currentGeneration.id);
   const [benchmarkUnlocked, setBenchmarkUnlocked] = useState(false);
   const [showBenchmarkUnlock, setShowBenchmarkUnlock] = useState(false);
 

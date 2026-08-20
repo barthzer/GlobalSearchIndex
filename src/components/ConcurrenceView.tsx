@@ -191,7 +191,7 @@ export default function ConcurrenceView({ onExpertClick }: { onExpertClick?: () 
       }
     } catch {}
     // Linked : concurrents/mots-clés déjà saisis dans la modale SEO sémantique (vue analyse).
-    const sem = getSemanticInputs();
+    const sem = getSemanticInputs(currentGeneration.id);
     if (sem.competitors.length && sem.keywords.length) {
       setCompetitors(sem.competitors);
       setKeywords(sem.keywords);
@@ -427,7 +427,7 @@ export function CoverageSection() {
       }
     } catch {}
     // Linked : concurrents/mots-clés saisis dans la modale SEO sémantique.
-    const sem = getSemanticInputs();
+    const sem = getSemanticInputs(currentGeneration.id);
     if (sem.competitors.length && sem.keywords.length) {
       setCompetitors(sem.competitors);
       setKeywords(sem.keywords);
