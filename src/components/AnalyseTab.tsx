@@ -192,7 +192,12 @@ export default function AnalyseTab({
               // (carte « Données insuffisantes » honnête, gérée par le display).
               unlockable={type === "semantic" && sc?.status === "locked"}
               unlockCtaLabel="Calculer mon score sémantique"
-              processing={sc?.status === "processing"}
+              // 'pending' compte comme 'processing' (retour Alexis/Kevin 08-20) : le
+              // composite autorité (notoriete) reste PENDING tant que ses composantes se
+              // calculent (benchmark concurrents…) → spinner « Analyse en cours », JAMAIS
+              // le verdict « composantes manquantes » prématuré. L'insuffisance n'est
+              // affichée qu'une fois notoriete 'completed'.
+              processing={sc?.status === "processing" || sc?.status === "pending"}
               projectId={projectId}
               onUnlocked={handleUnlocked}
             />
