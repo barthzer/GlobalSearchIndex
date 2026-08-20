@@ -44,15 +44,19 @@ function Msg({ children }: { children: React.ReactNode }) {
 // historique trop court : jamais un avis sur du bruit.
 function trendVerdict(values: number[], sujet: string): string {
   if (values.length < 4) return "";
-  const n = Math.min(3, Math.floor(values.length / 2));
+  // Tendance RÉCENTE (retour Alexis 2026-08-20) : moyenne des N derniers relevés vs N
+  // précédents, PAS début vs fin sur 24 mois. Une courbe montée-puis-chute affichait
+  // « progresse » alors qu'elle recule depuis des mois. Cf. RealTrafficVisibility (parité).
+  const n = Math.min(3, Math.floor(values.length / 3));
+  if (n < 1) return "";
   const avg = (a: number[]) => a.reduce((s, v) => s + v, 0) / (a.length || 1);
-  const start = avg(values.slice(0, n));
-  const end = avg(values.slice(-n));
-  if (start <= 0) return "";
-  const pct = Math.round(((end - start) / start) * 100);
-  if (pct >= 10) return `${sujet} progresse d'environ ${pct}% sur la période, une dynamique à entretenir.`;
-  if (pct <= -10) return `${sujet} recule d'environ ${Math.abs(pct)}% sur la période, une tendance à surveiller de près.`;
-  return `${sujet} reste globalement stable sur la période.`;
+  const prior = avg(values.slice(-2 * n, -n));
+  const recent = avg(values.slice(-n));
+  if (prior <= 0) return "";
+  const pct = Math.round(((recent - prior) / prior) * 100);
+  if (pct >= 10) return `${sujet} progresse d'environ ${pct}% sur les derniers mois, une dynamique à entretenir.`;
+  if (pct <= -10) return `${sujet} recule d'environ ${Math.abs(pct)}% sur les derniers mois, une tendance à surveiller de près.`;
+  return `${sujet} reste globalement stable sur les derniers mois.`;
 }
 
 export default function ReportTrafficVisibility({
@@ -101,7 +105,7 @@ export default function ReportTrafficVisibility({
                 showPositions={false}
               />
               <InsightNote className="mt-3">
-                Le <span className="font-medium text-text-primary">trafic mensuel</span> correspond aux visites organiques
+                Le <span className="font-medium text-text-primary">trafic mensuel</span>{" "}correspond aux visites organiques
                 estimées (monde) sur les {traffic.length} derniers mois relevés.
                 {(() => {
                   const t = trendVerdict(traffic.map((p) => p.org_traffic), "Votre trafic organique");
@@ -127,7 +131,7 @@ export default function ReportTrafficVisibility({
               showPositions={positions.length > 0}
             />
             <InsightNote className="mt-3">
-              L&apos;<span className="font-medium text-text-primary">indice de visibilité</span> reflète la part de clics
+              L&apos;<span className="font-medium text-text-primary">indice de visibilité</span>{" "}reflète la part de clics
               potentiels captée sur l&apos;ensemble de vos mots-clés suivis. Le tableau détaille vos positions top 3 à 50.
               {(() => {
                 const t = trendVerdict(visibility.map((p) => p.visibility), "Votre indice de visibilité");

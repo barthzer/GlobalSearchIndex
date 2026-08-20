@@ -49,15 +49,22 @@ function monthLabelFromIso(iso: string): string {
 // court. Vide si historique trop court (<4 points) : jamais un avis sur du bruit.
 function trendVerdict(values: number[], sujet: string): string {
   if (values.length < 4) return "";
-  const n = Math.min(3, Math.floor(values.length / 2));
+  // Tendance RÉCENTE (retour Alexis 2026-08-20) : on compare la moyenne des N derniers
+  // relevés à celle des N précédents — PAS le tout début vs la toute fin sur 24 mois.
+  // Une courbe qui monte puis chute (pic à mi-période) affichait « progresse +79% »
+  // alors qu'elle RECULE depuis des mois : premier-vs-dernier sur toute la période
+  // masquait la direction actuelle. On décrit ce que le client voit : où va la courbe
+  // maintenant. Fenêtre = derniers ~2N mois (N plafonné à 3 → 6 mois glissants).
+  const n = Math.min(3, Math.floor(values.length / 3));
+  if (n < 1) return "";
   const avg = (a: number[]) => a.reduce((s, v) => s + v, 0) / (a.length || 1);
-  const start = avg(values.slice(0, n));
-  const end = avg(values.slice(-n));
-  if (start <= 0) return "";
-  const pct = Math.round(((end - start) / start) * 100);
-  if (pct >= 10) return `${sujet} progresse d'environ ${pct}% sur la période, une dynamique à entretenir.`;
-  if (pct <= -10) return `${sujet} recule d'environ ${Math.abs(pct)}% sur la période, une tendance à surveiller de près.`;
-  return `${sujet} reste globalement stable sur la période.`;
+  const prior = avg(values.slice(-2 * n, -n));
+  const recent = avg(values.slice(-n));
+  if (prior <= 0) return "";
+  const pct = Math.round(((recent - prior) / prior) * 100);
+  if (pct >= 10) return `${sujet} progresse d'environ ${pct}% sur les derniers mois, une dynamique à entretenir.`;
+  if (pct <= -10) return `${sujet} recule d'environ ${Math.abs(pct)}% sur les derniers mois, une tendance à surveiller de près.`;
+  return `${sujet} reste globalement stable sur les derniers mois.`;
 }
 
 function Shell({ tab, setTab, children }: { tab: TabKey; setTab: (t: TabKey) => void; children: React.ReactNode }) {
@@ -218,7 +225,7 @@ export default function RealTrafficVisibility({
       <>
         <TrafficChart values={curve.map((p) => p.org_traffic)} months={curve.map((p) => monthLabelFromIso(p.date))} showPositions={false} />
         <InsightNote className="mt-3">
-          Le <span className="font-medium text-text-primary">trafic mensuel</span> correspond aux visites organiques
+          Le <span className="font-medium text-text-primary">trafic mensuel</span>{" "}correspond aux visites organiques
           estimées (monde) sur les {curve.length} derniers mois relevés.
           {(() => {
             const t = trendVerdict(curve.map((p) => p.org_traffic), "Votre trafic organique");
@@ -271,7 +278,7 @@ export default function RealTrafficVisibility({
           showPositions={positions.length > 0}
         />
         <InsightNote className="mt-3">
-          L&apos;<span className="font-medium text-text-primary">indice de visibilité</span> reflète la part de clics
+          L&apos;<span className="font-medium text-text-primary">indice de visibilité</span>{" "}reflète la part de clics
           potentiels captée sur l&apos;ensemble de vos mots-clés suivis. Le tableau détaille vos positions top 3 à 50.
           {(() => {
             const t = trendVerdict(hist.map((p) => p.visibility), "Votre indice de visibilité");
