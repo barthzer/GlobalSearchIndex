@@ -107,11 +107,6 @@ export default function ReportTrafficVisibility({
                   const t = trendVerdict(traffic.map((p) => p.org_traffic), "Votre trafic organique");
                   return t ? ` ${t}` : "";
                 })()}
-                {" "}
-                <span className="text-text-muted">
-                  C&apos;est une estimation externe : elle sous-évalue les sites récents ou à faible historique ; votre
-                  Search Console fait foi pour les volumes exacts.
-                </span>
               </InsightNote>
             </>
           ) : (
