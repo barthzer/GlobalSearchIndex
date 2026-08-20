@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ModalPortal from "@/components/ModalPortal";
 import Button from "@/components/Button";
+import AnalysesHealth from "@/components/AnalysesHealth";
 import { apiFetch } from "@/lib/api";
 import { useAccount } from "@/components/AccountProvider";
 
@@ -51,6 +52,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
+  const [section, setSection] = useState<"users" | "health">("users");
 
   // Modales / actions courantes.
   const [createOpen, setCreateOpen] = useState(false);
@@ -158,6 +160,27 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {/* Onglets */}
+        <div className="mb-6 flex gap-2 border-b border-border-subtle">
+          {(["users", "health"] as const).map((sec) => (
+            <button
+              key={sec}
+              onClick={() => setSection(sec)}
+              className={`px-4 py-2 text-[14px] font-medium transition-colors ${
+                section === sec
+                  ? "border-b-2 border-accent-pink text-text-primary"
+                  : "text-text-muted hover:text-text-primary"
+              }`}
+            >
+              {sec === "users" ? "Utilisateurs" : "Santé des analyses"}
+            </button>
+          ))}
+        </div>
+
+        {section === "health" && <AnalysesHealth />}
+        {section === "users" && (
+        <>
+
         {/* Recherche */}
         <div className="mb-4 max-w-sm">
           <input
@@ -264,6 +287,8 @@ export default function AdminPage() {
             </table>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {createOpen && (
