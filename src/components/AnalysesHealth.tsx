@@ -71,10 +71,23 @@ export default function AnalysesHealth() {
     setError(null);
     try {
       const res = await apiFetch("/admin/analyses-health");
-      if (!res.ok) throw new Error(String(res.status));
+      if (!res.ok) {
+        // Message parlant selon la cause RÉELLE : 401/403 = session admin
+        // expirée ou périmée (se reconnecter), pas une feature cassée ; autre =
+        // vraie erreur serveur avec son code, diagnosticable d'un coup d'œil.
+        if (res.status === 401 || res.status === 403) {
+          setError(
+            "Session admin expirée ou insuffisante — déconnecte-toi puis reconnecte-toi (accès réservé admin).",
+          );
+        } else {
+          setError(`Impossible de charger la santé des analyses (HTTP ${res.status}).`);
+        }
+        return;
+      }
       setData((await res.json()) as HealthResponse);
     } catch {
-      setError("Impossible de charger la santé des analyses.");
+      // Ici : échec réseau AVANT toute réponse (offline, DNS, CORS), pas un code HTTP.
+      setError("Impossible de charger la santé des analyses (réseau indisponible).");
     } finally {
       setLoading(false);
     }

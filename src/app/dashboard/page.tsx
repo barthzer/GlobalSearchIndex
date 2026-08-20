@@ -21,6 +21,7 @@ import ConcurrenceTab from "@/components/concurrence/ConcurrenceTab";
 import { useAccount } from "@/components/AccountProvider";
 import { useGeneration } from "@/components/GenerationProvider";
 import { exportProjectPdf } from "@/lib/report-actions";
+import { getProspectSession } from "@/lib/api";
 import NotWiredNotice from "@/components/NotWiredNotice";
 import AnalyseTab from "@/components/AnalyseTab";
 import NotorieteTab from "@/components/NotorieteTab";
@@ -44,8 +45,12 @@ export default function DashboardPage() {
 
   // Pas de dashboard en déconnecté : PROSPECT → landing (funnel public), STAFF → connexion
   // interne (/login → /connexion-admin). Jamais un prospect vers la porte admin.
+  // Défense en profondeur (Alexis 2026-08-20) : une session prospect résiduelle force
+  // le retour funnel même si wasStaffRef a été armé par un passage staff antérieur.
   useEffect(() => {
-    if (hydrated && !isLoggedIn) router.replace(wasStaffRef.current ? "/login" : "/");
+    if (!hydrated || isLoggedIn) return;
+    const staffExit = wasStaffRef.current && !getProspectSession();
+    router.replace(staffExit ? "/login" : "/");
   }, [hydrated, isLoggedIn, router]);
   const [showSEOEngine, setShowSEOEngine] = useState(false);
   const [showExpert, setShowExpert] = useState(false);

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "@/components/AccountProvider";
+import { getProspectSession } from "@/lib/api";
 
 /**
  * Point d'entrée de reconnexion interne (commercial + admin).
@@ -22,7 +23,17 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!hydrated) return;
-    router.replace(isLoggedIn ? "/dashboard" : "/connexion-admin");
+    if (isLoggedIn) {
+      router.replace("/dashboard");
+      return;
+    }
+    // Défense en profondeur (retour Alexis 2026-08-20) : un porteur de session
+    // prospect NE DOIT JAMAIS atterrir sur la porte admin. On le renvoie au funnel.
+    if (getProspectSession()) {
+      router.replace("/");
+      return;
+    }
+    router.replace("/connexion-admin");
   }, [hydrated, isLoggedIn, router]);
 
   return null;

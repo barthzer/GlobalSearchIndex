@@ -165,7 +165,15 @@ export default function AccountProvider({ children }: { children: React.ReactNod
   // Prospect (funnel public) : compte d'affichage persisté (pas de JWT). Force
   // le type "user" (jamais admin) et le drapeau isProspect. Les données ne sont
   // JAMAIS servies par ce compte — elles passent par le token prospect (lib/api).
+  //
+  // PURGE du token staff résiduel (retour Alexis 2026-08-20) : entrer dans le funnel
+  // prospect est une intention EXPLICITE d'être prospect. Sans cette purge, un token
+  // interne subsistant fait primer la session staff (garde lib/api) → le prospect est
+  // ignoré, puis à l'expiration du token (15 min) le dashboard renvoie vers la PORTE
+  // ADMIN (/login → /connexion-admin). apiLogout ne touche QUE les tokens staff
+  // (gsi_access/refresh/user) ; la session prospect posée juste avant est préservée.
   function loginAsProspect(next: Account) {
+    apiLogout();
     applyAccount({ ...next, type: "user", isProspect: true });
   }
 

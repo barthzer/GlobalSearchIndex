@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import ModalPortal from "@/components/ModalPortal";
 import Button from "@/components/Button";
 import AnalysesHealth from "@/components/AnalysesHealth";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, getProspectSession } from "@/lib/api";
 import { useAccount } from "@/components/AccountProvider";
 
 /**
@@ -65,9 +65,11 @@ export default function AdminPage() {
   >({});
 
   // Garde d'accès : non-admin → login. On attend l'hydratation pour ne pas
-  // rediriger sur un état non restauré (même pattern que le dashboard).
+  // rediriger sur un état non restauré (même pattern que le dashboard). Un porteur
+  // de session PROSPECT est renvoyé au funnel (jamais la porte admin — Alexis 2026-08-20).
   useEffect(() => {
-    if (hydrated && !isAdmin) router.replace("/login");
+    if (!hydrated || isAdmin) return;
+    router.replace(getProspectSession() ? "/" : "/login");
   }, [hydrated, isAdmin, router]);
 
   const loadUsers = useCallback(async () => {

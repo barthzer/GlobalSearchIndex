@@ -31,6 +31,14 @@ const NO_COMP_MSG =
 const GEN_UNAVAILABLE_MSG =
   "La proposition automatique n'est pas disponible. Saisissez directement les acteurs de votre secteur.";
 
+// Pool concurrents vide TRANSITOIRE (retour Alexis 2026-08-20, byvertikal) : la préview
+// Haloscan (competitors_detected) n'est pas encore collectée (previewAvailable=false).
+// Contrairement à NO_COMP_MSG (niche RÉELLE), ici réessayer aboutit une fois la préview
+// prête — d'où un message de RÉESSAI, pas un verdict « niche ». Les mots-clés, eux, ont
+// un fallback LLM homepage → ils sortent même sans préview, ce qui expliquait l'asymétrie.
+const COMP_RETRY_MSG =
+  "Nos données concurrents pour ce site finissent de se collecter. Réessayez dans quelques secondes, ou saisissez directement un acteur de votre secteur pour continuer.";
+
 // Bornes : 1-3 concurrents + 5 mots-clés (cap à 5, retour Alexis 2026-08-11 : on
 // bloque à 5, plus d'ajout au-delà). Reste dans le contrat SEO Engine (5-10 kw : 5 = min valide).
 const COMP_MAX = 3;
@@ -226,7 +234,10 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
       // Les lignes restent éditables → l'utilisateur saisit à la main et continue.
       if (key === "comp") {
         setAiBusy(null);
-        setError(NO_COMP_MSG);
+        // Distinguer TRANSITOIRE (préview pas encore collectée → réessayer aboutit)
+        // de NICHE RÉELLE (préview a tourné, zéro concurrent). Sans ça, byvertikal
+        // affichait « niche » sur un simple délai de collecte Haloscan (Alexis 08-20).
+        setError(data.previewAvailable === false ? COMP_RETRY_MSG : NO_COMP_MSG);
         return;
       }
       // Mots-clés sans candidat (LLM homepage a aussi échoué) → saisie manuelle, jamais
