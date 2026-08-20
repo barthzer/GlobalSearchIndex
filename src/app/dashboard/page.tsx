@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { asset } from "@/lib/asset";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
@@ -21,7 +21,7 @@ import ConcurrenceTab from "@/components/concurrence/ConcurrenceTab";
 import { useAccount } from "@/components/AccountProvider";
 import { useGeneration } from "@/components/GenerationProvider";
 import { exportProjectPdf } from "@/lib/report-actions";
-import { getProspectSession } from "@/lib/api";
+import { getProspectSession, hasStaffSession } from "@/lib/api";
 import NotWiredNotice from "@/components/NotWiredNotice";
 import AnalyseTab from "@/components/AnalyseTab";
 import NotorieteTab from "@/components/NotorieteTab";
@@ -34,24 +34,26 @@ export default function DashboardPage() {
   const router = useRouter();
   const { selected: currentGeneration, collapsed, loading } = useGeneration();
 
-  // Destination de déconnexion selon l'AUDIENCE (retour Alexis 2026-08-20 : un prospect
-  // en libre accès tombait sur la page admin en se déconnectant). On mémorise si la session
-  // était STAFF (commercial/admin) AVANT la déconnexion — car au logout isLoggedIn/isProspect
-  // retombent à false et on ne pourrait plus trancher.
-  const wasStaffRef = useRef(false);
+  // Destination quand la session est perdue, décidée par un signal FIABLE qui survit à
+  // l'expiration du token (retours Alexis/Ben 2026-08-20 : un prospect en libre accès
+  // tombait sur la page admin). PLUS de wasStaffRef ni de getProspectSession() ici : les
+  // deux sont faux au moment critique (au logout isProspect retombe à false ; à
+  // l'expiration la session prospect est déjà effacée par le 401). Seul `hasStaffSession()`
+  // (token authStore, qu'un prospect n'a jamais) distingue staff → porte interne de
+  // prospect → funnel. Jamais un non-staff vers /connexion-admin.
   useEffect(() => {
-    if (isLoggedIn && !isProspect) wasStaffRef.current = true;
-  }, [isLoggedIn, isProspect]);
-
-  // Pas de dashboard en déconnecté : PROSPECT → landing (funnel public), STAFF → connexion
-  // interne (/login → /connexion-admin). Jamais un prospect vers la porte admin.
-  // Défense en profondeur (Alexis 2026-08-20) : une session prospect résiduelle force
-  // le retour funnel même si wasStaffRef a été armé par un passage staff antérieur.
-  useEffect(() => {
-    if (!hydrated || isLoggedIn) return;
-    const staffExit = wasStaffRef.current && !getProspectSession();
-    router.replace(staffExit ? "/login" : "/");
-  }, [hydrated, isLoggedIn, router]);
+    if (!hydrated) return;
+    // Prospect dont le token a expiré (session prospect disparue) mais dont le compte
+    // d'affichage persiste : isLoggedIn resterait true → dashboard cassé. On le renvoie
+    // au funnel AVEC un message clair, jamais une porte admin ni un écran vide.
+    if (isProspect && !getProspectSession()) {
+      router.replace("/?expired=1");
+      return;
+    }
+    if (!isLoggedIn) {
+      router.replace(hasStaffSession() ? "/login" : "/");
+    }
+  }, [hydrated, isLoggedIn, isProspect, router]);
   const [showSEOEngine, setShowSEOEngine] = useState(false);
   const [showExpert, setShowExpert] = useState(false);
   const [showActions, setShowActions] = useState(false);

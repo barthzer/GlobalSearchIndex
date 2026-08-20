@@ -40,6 +40,17 @@ export function getProspectSession(): ProspectSession | null {
   }
 }
 
+// Signal FIABLE « session STAFF (commercial/admin) » qui SURVIT à l'expiration du
+// token prospect. Un prospect n'a JAMAIS de token authStore (loginAsProspect purge
+// même un résiduel). Sert à décider la destination d'une session PERDUE : staff → porte
+// interne, sinon → funnel. On ne se base PLUS sur getProspectSession() (effacé au 401
+// d'expiration → faux négatif → un prospect expiré tombait sur /connexion-admin, racine
+// du leak Alexis/Ben 2026-08-20). Le refresh token (7j) survit à l'expiration de l'access
+// (15 min) ; s'il est mort aussi (>7j), on retombe côté funnel — jamais la porte admin.
+export function hasStaffSession(): boolean {
+  return !!(authStore.refresh() || authStore.user());
+}
+
 export function clearProspectSession(): void {
   // Purge du cache d'analyse AVANT de retirer le token : un nouveau parcours ne
   // doit jamais réafficher les données de l'ancien pendant le laps entre deux

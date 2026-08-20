@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import ModalPortal from "@/components/ModalPortal";
 import Button from "@/components/Button";
 import AnalysesHealth from "@/components/AnalysesHealth";
-import { apiFetch, getProspectSession } from "@/lib/api";
+import { apiFetch, hasStaffSession } from "@/lib/api";
 import { useAccount } from "@/components/AccountProvider";
 
 /**
@@ -64,12 +64,12 @@ export default function AdminPage() {
     Record<string, { state: "sending" | "sent" | "error"; message?: string }>
   >({});
 
-  // Garde d'accès : non-admin → login. On attend l'hydratation pour ne pas
-  // rediriger sur un état non restauré (même pattern que le dashboard). Un porteur
-  // de session PROSPECT est renvoyé au funnel (jamais la porte admin — Alexis 2026-08-20).
+  // Garde d'accès : non-admin. STAFF non-admin (commercial) → /login ; tout le reste,
+  // dont un prospect (aucun token staff, même expiré) → funnel, jamais la boucle vers
+  // /connexion-admin (racine du leak Alexis/Ben 2026-08-20). On attend l'hydratation.
   useEffect(() => {
     if (!hydrated || isAdmin) return;
-    router.replace(getProspectSession() ? "/" : "/login");
+    router.replace(hasStaffSession() ? "/login" : "/");
   }, [hydrated, isAdmin, router]);
 
   const loadUsers = useCallback(async () => {

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "@/components/AccountProvider";
-import { getProspectSession } from "@/lib/api";
+import { hasStaffSession } from "@/lib/api";
 
 /**
  * Point d'entrée de reconnexion interne (commercial + admin).
@@ -27,13 +27,11 @@ export default function LoginPage() {
       router.replace("/dashboard");
       return;
     }
-    // Défense en profondeur (retour Alexis 2026-08-20) : un porteur de session
-    // prospect NE DOIT JAMAIS atterrir sur la porte admin. On le renvoie au funnel.
-    if (getProspectSession()) {
-      router.replace("/");
-      return;
-    }
-    router.replace("/connexion-admin");
+    // /connexion-admin UNIQUEMENT si une session STAFF existe (token authStore). Sinon
+    // → funnel. Un prospect (aucun token staff), même expiré, ne voit JAMAIS la porte
+    // admin (racine du leak Alexis/Ben 2026-08-20 : le signal getProspectSession() était
+    // effacé au 401 d'expiration → on tombait dans le else /connexion-admin).
+    router.replace(hasStaffSession() ? "/connexion-admin" : "/");
   }, [hydrated, isLoggedIn, router]);
 
   return null;

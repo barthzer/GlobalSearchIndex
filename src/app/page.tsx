@@ -505,6 +505,18 @@ export default function LandingPage() {
   // code vérifié (verify-code renvoie le token, pas l'identité saisie).
   const [pendingLead, setPendingLead] = useState<OnboardingLead | null>(null);
 
+  // Session prospect expirée : le dashboard renvoie ici avec ?expired=1 (au lieu d'un
+  // atterrissage silencieux ou d'une porte admin). Message clair → le prospect relance
+  // son analyse. Flag retiré de l'URL une fois lu (pas de bannière collante au reload).
+  const [expiredNotice, setExpiredNotice] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("expired") === "1") {
+      setExpiredNotice(true);
+      const clean = window.location.pathname + window.location.hash;
+      window.history.replaceState(null, "", clean);
+    }
+  }, []);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!url.trim()) return;
@@ -550,6 +562,23 @@ export default function LandingPage() {
     <LightSurfaceContext.Provider value={true}>
     <SmoothScroll>
     <div data-theme="light" className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-bg-primary">
+      {expiredNotice && (
+        <div className="fixed left-1/2 top-4 z-[60] flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-full border border-amber-300 bg-amber-50 px-4 py-2.5 text-[13px] text-amber-800 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.25)]">
+          <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          <span>Votre session a expiré. Relancez votre analyse ci-dessous pour retrouver votre bilan.</span>
+          <button
+            onClick={() => setExpiredNotice(false)}
+            aria-label="Fermer"
+            className="ml-1 shrink-0 text-amber-600 transition-colors hover:text-amber-900"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
       {showExpert && <ExpertModal onClose={() => setShowExpert(false)} />}
       {showUpsell && (
         <ConsultantUpsellModal
