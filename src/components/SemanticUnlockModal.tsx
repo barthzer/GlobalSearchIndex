@@ -24,11 +24,6 @@ type Item = { value: string; checked: boolean };
 const NO_COMP_MSG =
   "Aucun concurrent n'a pu être proposé automatiquement, ce qui arrive sur un site très récent ou un secteur de niche. Saisissez au moins un acteur de votre secteur, même plus gros : il sert de point de comparaison. C'est une limite de notre source de données, pas une erreur de votre part.";
 
-// Preview INDISPONIBLE (n'a pas pu tourner : timeout Haloscan à la création). Ce
-// n'est PAS une limite de la source — c'est transitoire, donc réessayable. À ne
-// jamais confondre avec NO_COMP_MSG (qui, lui, suppose un preview vide réel).
-const PREVIEW_UNAVAILABLE_MSG =
-  "La génération n'a pas pu aboutir pour l'instant. Réessayez dans un instant, ou saisissez directement les acteurs de votre secteur.";
 
 // Le preview a bien tourné mais la PROPOSITION automatique (passe IA) n'a pas
 // abouti — cas non transitoire (pas un ordre de réessayer en boucle). Le prospect
@@ -208,44 +203,40 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
         keywords?: string[];
         previewAvailable?: boolean;
       };
-      // Défaut prudent : champ absent → traité comme indisponible (réessayable),
-      // jamais le message niche à tort.
-      const previewAvailable = data.previewAvailable === true;
+      // previewAvailable n'est plus un gate (retour Kevin 08-20) : on ne bloque plus la
+      // génération sur l'état de la préview Haloscan — les candidats priment (voir plus bas).
       const cap = key === "comp" ? COMP_MAX : KW_MAX;
       const candidates = (key === "comp" ? data.competitors ?? [] : data.keywords ?? []).slice(0, cap);
-      // (a) Preview indisponible (n'a pas pu tourner) → transitoire, réessayable.
-      if (!previewAvailable) {
-        setAiBusy(null);
-        setError(PREVIEW_UNAVAILABLE_MSG);
+      // (d) SUCCÈS D'ABORD (retour Kevin 2026-08-20) : dès qu'on a des candidats, on les
+      // utilise — PEU IMPORTE previewAvailable. Le fallback homepage-LLM (préview Haloscan
+      // KO) produit des mots-clés secteur valides ; on ne les jette plus au prétexte que la
+      // préview n'a pas tourné. Fini le dead-end « réessayez » quand une proposition existe.
+      // baseCount pad au MINIMUM requis → si l'IA rend moins que le min, lignes vides
+      // éditables pour compléter à la main (bug Alexis 2026-08-19 : 4/5 sans 5e ligne).
+      if (data.generated && candidates.length > 0) {
+        if (key === "comp") {
+          runAiFill(candidates, setCompetitors, setCompLoading, "comp", COMP_MAX, Math.max(candidates.length, COMP_MIN));
+        } else {
+          runAiFill(candidates, setKeywords, setKwLoading, "kw", KW_MAX, Math.max(candidates.length, KW_MIN));
+        }
         return;
       }
-      // (b) Preview OK mais la proposition IA a échoué (non transitoire) → saisie
-      //     manuelle, sans promesse de réessai infini. Découplé de (a).
-      if (!data.generated) {
-        setAiBusy(null);
-        setError(GEN_UNAVAILABLE_MSG);
-        return;
-      }
-      // (c) Preview a tourné mais 0 candidat → vide RÉEL (récent/niche).
-      if (candidates.length === 0) {
-        setAiBusy(null);
-        setError(
-          key === "comp"
-            ? NO_COMP_MSG
-            : "Aucun mot-clé n'a pu être proposé. Saisissez ceux de votre activité.",
-        );
-        return;
-      }
-      // (d) Candidats proposés → préremplissage (chemin de succès).
-      // baseCount pad au MINIMUM requis : si l'IA rend moins que le min (ex. 4 mots-clés
-      // pour un min de 5, après filtrage marque/hors-sujet), on garde des lignes VIDES
-      // éditables pour que l'utilisateur complète à la main — sinon il est bloqué sous le
-      // seuil sans pouvoir ajouter (bug Alexis 2026-08-19 : 4/5 sans 5e ligne).
+      // Aucun candidat. Les CONCURRENTS ne sont JAMAIS inventés (garde anti-domaine-mort) :
+      // pool vide → message HONNÊTE « saisissez les vôtres », jamais un dead-end « réessayez ».
+      // Les lignes restent éditables → l'utilisateur saisit à la main et continue.
       if (key === "comp") {
-        runAiFill(candidates, setCompetitors, setCompLoading, "comp", COMP_MAX, Math.max(candidates.length, COMP_MIN));
-      } else {
-        runAiFill(candidates, setKeywords, setKwLoading, "kw", KW_MAX, Math.max(candidates.length, KW_MIN));
+        setAiBusy(null);
+        setError(NO_COMP_MSG);
+        return;
       }
+      // Mots-clés sans candidat (LLM homepage a aussi échoué) → saisie manuelle, jamais
+      // un ordre de réessayer en boucle. `previewAvailable` ne bloque plus rien ici.
+      setAiBusy(null);
+      setError(
+        data.generated
+          ? "Aucun mot-clé n'a pu être proposé. Saisissez ceux de votre activité."
+          : GEN_UNAVAILABLE_MSG,
+      );
     } catch {
       setAiBusy(null);
       setError("La génération a échoué. Réessayez, ou saisissez à la main.");
