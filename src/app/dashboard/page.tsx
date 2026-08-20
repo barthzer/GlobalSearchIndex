@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { asset } from "@/lib/asset";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
@@ -33,10 +33,19 @@ export default function DashboardPage() {
   const router = useRouter();
   const { selected: currentGeneration, collapsed, loading } = useGeneration();
 
-  // Pas de dashboard en déconnecté : on renvoie vers la connexion interne (pas le
-  // funnel public) une fois la session restaurée.
+  // Destination de déconnexion selon l'AUDIENCE (retour Alexis 2026-08-20 : un prospect
+  // en libre accès tombait sur la page admin en se déconnectant). On mémorise si la session
+  // était STAFF (commercial/admin) AVANT la déconnexion — car au logout isLoggedIn/isProspect
+  // retombent à false et on ne pourrait plus trancher.
+  const wasStaffRef = useRef(false);
   useEffect(() => {
-    if (hydrated && !isLoggedIn) router.replace("/login");
+    if (isLoggedIn && !isProspect) wasStaffRef.current = true;
+  }, [isLoggedIn, isProspect]);
+
+  // Pas de dashboard en déconnecté : PROSPECT → landing (funnel public), STAFF → connexion
+  // interne (/login → /connexion-admin). Jamais un prospect vers la porte admin.
+  useEffect(() => {
+    if (hydrated && !isLoggedIn) router.replace(wasStaffRef.current ? "/login" : "/");
   }, [hydrated, isLoggedIn, router]);
   const [showSEOEngine, setShowSEOEngine] = useState(false);
   const [showExpert, setShowExpert] = useState(false);
