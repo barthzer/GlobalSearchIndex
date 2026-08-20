@@ -224,6 +224,12 @@ export default function RealTrafficVisibility({
             const t = trendVerdict(curve.map((p) => p.org_traffic), "Votre trafic organique");
             return t ? ` ${t}` : "";
           })()}
+          {" "}
+          <span className="text-text-muted">
+            Cette estimation ne couvre que le référencement naturel hors marque : elle ne compte ni vos recherches de
+            marque ni le trafic direct. Lisez-la comme une tendance SEO, pas un compteur de visites ; votre Search
+            Console fait foi pour les volumes réels.
+          </span>
         </InsightNote>
       </>
     );
