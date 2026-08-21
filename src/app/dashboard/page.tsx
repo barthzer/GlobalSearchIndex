@@ -425,7 +425,16 @@ export default function DashboardPage() {
                       Ces 4 leviers montrent un potentiel de gain immédiat sur votre visibilité organique.
                     </p>
                     <p className="mt-3 text-[length:var(--text-body)] font-light leading-relaxed text-text-secondary">
-                      Je vous propose un rendez-vous de 30 minutes pour cadrer un plan d&apos;action priorisé sur 90 jours et identifier les chantiers à lancer en premier.
+                      Je vous propose un{" "}
+                      {/* Retour Alexis 21/08 : la phrase devient cliquable vers le formulaire expert. */}
+                      <button
+                        type="button"
+                        onClick={() => setShowExpert(true)}
+                        className="font-medium text-accent-pink underline underline-offset-2 transition-colors duration-150 hover:text-accent-pink/80"
+                      >
+                        rendez-vous de 30 minutes
+                      </button>{" "}
+                      pour cadrer un plan d&apos;action priorisé sur 90 jours et identifier les chantiers à lancer en premier.
                     </p>
                     <div className="mt-6">
                       <Button variant="primary" fullWidth onClick={() => setShowExpert(true)}>

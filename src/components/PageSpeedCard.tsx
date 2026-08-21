@@ -308,7 +308,7 @@ export function PositionsTable() {
                 <div key={colIdx} className={`py-4 text-center text-[12px] tabular-nums text-text-secondary ${rowIdx > 0 ? "border-t border-border-subtle/25" : ""}`}>
                   {v}
                   {delta !== null && (
-                    <div className={`mt-0.5 text-[8px] tabular-nums font-medium ${delta > 0 ? "text-emerald-400" : delta < 0 ? "text-red-400" : "text-text-muted"}`}>
+                    <div className={`mt-0.5 text-[11px] tabular-nums font-medium ${delta > 0 ? "text-emerald-400" : delta < 0 ? "text-red-400" : "text-text-muted"}`}>
                       {delta > 0 ? `+${delta}` : delta}
                     </div>
                   )}
@@ -475,7 +475,7 @@ export function TrafficChart({ values, months = MONTHS, rows = positionRows, sho
                       >
                         {v}
                         {delta !== null && (
-                          <div className={`mt-0.5 text-[8px] tabular-nums font-medium ${
+                          <div className={`mt-0.5 text-[11px] tabular-nums font-medium ${
                             delta > 0 ? "text-emerald-400" : delta < 0 ? "text-red-400" : "text-text-muted"
                           }`}>
                             {delta > 0 ? `+${delta}` : delta}

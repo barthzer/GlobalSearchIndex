@@ -3,8 +3,12 @@
 import { useEffect, useState } from "react";
 import RealScoreArc from "@/components/RealScoreArc";
 import RealGeoScoreCard, { type PlatformBreakdown } from "@/components/RealGeoScoreCard";
+import RealPageSpeed from "@/components/RealPageSpeed";
+import RealRecommendationCard from "@/components/RealRecommendationCard";
+import ExpertModal from "@/components/ExpertModal";
 import NotorieteInsightsView from "@/components/notoriete/NotorieteInsightsView";
 import ConcurrenceTab from "@/components/concurrence/ConcurrenceTab";
+import { type Reco } from "@/lib/recos";
 import ReportTrafficVisibility, {
   type ReportTrafficPoint,
 } from "@/components/ReportTrafficVisibility";
@@ -46,17 +50,14 @@ function icon(d: string) {
   );
 }
 
-const IMPACT_STYLE: Record<string, string> = {
-  Fort: "text-red-400 border-red-400/20 bg-red-500/10",
-  Moyen: "text-orange-400 border-orange-400/20 bg-orange-500/10",
-  Faible: "text-sky-400 border-sky-400/20 bg-sky-500/10",
-};
-
 
 export default function ReportTokenPage() {
   const [data, setData] = useState<ReportPayload | null>(null);
   const [vis, setVis] = useState<ReportVisibility | null>(null);
   const [state, setState] = useState<"loading" | "ok" | "invalid">("loading");
+  // CTA « Parler à un expert » (retour Alexis 21/08) : même formulaire lead que l'app
+  // (ExpertModal poste sur /public/leads, sans auth) — utilisable en contexte prospect.
+  const [showExpert, setShowExpert] = useState(false);
 
   useEffect(() => {
     const token =
@@ -130,6 +131,7 @@ export default function ReportTokenPage() {
 
   return (
     <main className="min-h-screen bg-bg-primary px-4 py-10 md:py-16">
+      {showExpert && <ExpertModal onClose={() => setShowExpert(false)} />}
       <div className="mx-auto max-w-5xl">
         {/* Header client */}
         <section className="mb-10 text-center">
@@ -264,6 +266,30 @@ export default function ReportTokenPage() {
           );
         })()}
 
+        {/* PageSpeed — parité avec l'app (retour Alexis 21/08 : le bloc manquait au
+            rapport partagé). Rendu depuis le score page_speed du payload, même
+            composant que le dashboard. Masqué si le score n'est pas présent. */}
+        {(() => {
+          const ps = scores.find((s) => s.scoreType === "page_speed");
+          if (!ps) return null;
+          return (
+            <section className="mt-10">
+              <h2 className="mb-4 text-xl font-medium tracking-tight text-text-primary">
+                Performance technique
+              </h2>
+              <RealPageSpeed
+                raw={
+                  (ps.rawData ?? null) as Parameters<
+                    typeof RealPageSpeed
+                  >[0]["raw"]
+                }
+                reason={ps.display?.message ?? null}
+                status={ps.status ?? null}
+              />
+            </section>
+          );
+        })()}
+
         {/* Trafic mensuel + Indice de visibilité — MÊME chart que le dashboard
             (TrafficChart VF), parité écran interne (retour Alexis 2026-08-10 : les
             deux courbes manquaient au lien partagé). Trafic = traffic_curve du
@@ -294,7 +320,9 @@ export default function ReportTokenPage() {
           );
         })()}
 
-        {/* Recommandations — déjà filtrées audience prospect côté serveur */}
+        {/* Recommandations — déjà filtrées audience prospect côté serveur. Retour
+            Alexis 21/08 : MÊME présentation que l'app (RealRecommendationCard) au lieu
+            d'un rendu inline divergent. `pilier` → `pillar` pour le contrat de la carte. */}
         {recos.length > 0 && (
           <section className="mt-10">
             <h2 className="mb-5 text-xl font-medium tracking-tight text-text-primary">
@@ -302,40 +330,29 @@ export default function ReportTokenPage() {
             </h2>
             <div className="flex flex-col gap-3">
               {recos.map((reco: ReportReco, i) => (
-                <div
+                <RealRecommendationCard
                   key={i}
-                  className="rounded-2xl border border-border-subtle bg-bg-card p-5"
-                >
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    {reco.impact && (
-                      <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${IMPACT_STYLE[reco.impact] ?? "text-text-muted border-border-subtle bg-card-inner-bg"}`}>
-                        {reco.impact}
-                      </span>
-                    )}
-                    {(reco.axe || reco.pilier) && (
-                      <span className="text-[13px] font-medium text-text-primary">
-                        {reco.axe || reco.pilier}
-                      </span>
-                    )}
-                  </div>
-                  {(reco.diagnostic || reco.probleme) && (
-                    <p className="text-[14px] font-medium text-text-primary/90">
-                      {reco.diagnostic || reco.probleme}
-                    </p>
-                  )}
-                  {(reco.objectif || reco.action) && (
-                    <p className="mt-1.5 text-[13.5px] font-light leading-relaxed text-text-secondary">
-                      {reco.objectif || reco.action}
-                    </p>
-                  )}
-                </div>
+                  index={i}
+                  rec={{ ...reco, pillar: reco.pilier } as Reco}
+                />
               ))}
             </div>
-            {recommendations?.cta && (
-              <p className="mt-6 text-center text-[14px] font-light leading-relaxed text-text-secondary">
-                {recommendations.cta}
-              </p>
-            )}
+            {/* CTA contact — retour Alexis 21/08 : lien vers « Parler à un expert »
+                (ExpertModal, formulaire lead public). Toujours proposé au prospect. */}
+            <div className="mt-6 rounded-2xl border border-accent-pink/20 bg-accent-pink/[0.05] p-5 text-center">
+              {recommendations?.cta && (
+                <p className="text-[14px] font-light leading-relaxed text-text-secondary">
+                  {recommendations.cta}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowExpert(true)}
+                className={`inline-flex items-center gap-2 rounded-full bg-accent-pink px-5 py-2.5 text-[13px] font-medium text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97] ${recommendations?.cta ? "mt-4" : ""}`}
+              >
+                Parler à un expert
+              </button>
+            </div>
           </section>
         )}
 

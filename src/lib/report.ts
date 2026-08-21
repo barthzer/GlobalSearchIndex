@@ -17,7 +17,8 @@ export interface ReportScore {
     | "authority"
     | "notoriete"
     | "semantic"
-    | "visibility";
+    | "visibility"
+    | "page_speed";
   scoreValue: number | null;
   rawData: Record<string, unknown> | null;
   display: ScoreDisplay;
