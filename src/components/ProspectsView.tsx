@@ -21,6 +21,7 @@ interface Lead {
   phone: string;
   url: string;
   projectId: string | null;
+  hasLead: boolean;
   parcours: LeadParcours;
 }
 
@@ -142,10 +143,20 @@ export default function ProspectsView() {
                     {frDate(l.createdAt)}
                   </td>
                   <td className="px-3 py-3">
-                    <div className="font-medium text-text-primary">
-                      {l.firstName} {l.lastName}
-                    </div>
-                    <div className="text-[12px] text-text-muted">{l.company}</div>
+                    {l.hasLead ? (
+                      <>
+                        <div className="font-medium text-text-primary">
+                          {l.firstName} {l.lastName}
+                        </div>
+                        <div className="text-[12px] text-text-muted">{l.company}</div>
+                      </>
+                    ) : (
+                      // Prospect qui a lancé une analyse sans remplir le formulaire de
+                      // contact : on n'a que l'email, on le dit clairement.
+                      <span className="inline-flex items-center rounded-full border border-border-subtle bg-card-inner-bg px-2 py-0.5 text-[11px] font-medium text-text-muted">
+                        Sans formulaire
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-3">
                     <a
