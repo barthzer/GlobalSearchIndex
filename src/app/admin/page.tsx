@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import ModalPortal from "@/components/ModalPortal";
 import Button from "@/components/Button";
 import AnalysesHealth from "@/components/AnalysesHealth";
+import ProspectsView from "@/components/ProspectsView";
 import { apiFetch, hasStaffSession } from "@/lib/api";
 import { useAccount } from "@/components/AccountProvider";
 
@@ -52,7 +53,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
-  const [section, setSection] = useState<"users" | "health">("users");
+  const [section, setSection] = useState<"users" | "health" | "prospects">("users");
 
   // Modales / actions courantes.
   const [createOpen, setCreateOpen] = useState(false);
@@ -164,7 +165,7 @@ export default function AdminPage() {
 
         {/* Onglets */}
         <div className="mb-6 flex gap-2 border-b border-border-subtle">
-          {(["users", "health"] as const).map((sec) => (
+          {(["users", "health", "prospects"] as const).map((sec) => (
             <button
               key={sec}
               onClick={() => setSection(sec)}
@@ -174,12 +175,17 @@ export default function AdminPage() {
                   : "text-text-muted hover:text-text-primary"
               }`}
             >
-              {sec === "users" ? "Utilisateurs" : "Santé des analyses"}
+              {sec === "users"
+                ? "Utilisateurs"
+                : sec === "health"
+                  ? "Santé des analyses"
+                  : "Prospects"}
             </button>
           ))}
         </div>
 
         {section === "health" && <AnalysesHealth />}
+        {section === "prospects" && <ProspectsView />}
         {section === "users" && (
         <>
 

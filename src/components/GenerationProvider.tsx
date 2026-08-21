@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useAccount } from "./AccountProvider";
 
@@ -214,6 +214,23 @@ export default function GenerationProvider({ children }: { children: React.React
     }
     loadProjects();
   }, [hydrated, isLoggedIn, loadProjects]);
+
+  // Deep-link admin « Voir l'analyse » (vue Prospects) : ?project=<id> sélectionne
+  // ce projet une fois la liste chargée. One-shot (n'écrase pas une nav manuelle
+  // ultérieure). Sans param → marqué appliqué immédiatement, comportement inchangé.
+  const deepLinkApplied = useRef(false);
+  useEffect(() => {
+    if (deepLinkApplied.current || typeof window === "undefined") return;
+    const wanted = new URLSearchParams(window.location.search).get("project");
+    if (!wanted) {
+      deepLinkApplied.current = true;
+      return;
+    }
+    if (all.some((g) => g.id === wanted)) {
+      setSelectedId(wanted);
+      deepLinkApplied.current = true;
+    }
+  }, [all]);
 
   // Cache le gen sélectionné dès qu'il est dans `all` (chargement initial + nav).
   useEffect(() => {
