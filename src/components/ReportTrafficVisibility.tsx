@@ -106,7 +106,7 @@ export default function ReportTrafficVisibility({
               />
               <InsightNote className="mt-3">
                 Le <span className="font-medium text-text-primary">trafic mensuel</span>{" "}correspond aux visites organiques
-                estimées (monde) sur les {traffic.length} derniers mois relevés.
+                estimées sur les {traffic.length} derniers mois relevés.
                 {(() => {
                   const t = trendVerdict(traffic.map((p) => p.org_traffic), "Votre trafic organique");
                   return t ? ` ${t}` : "";

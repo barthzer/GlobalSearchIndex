@@ -62,24 +62,6 @@ export default function NotorieteInsightsView({
 
   return (
     <div>
-      {/* Conseil — texte fixe de Barth. */}
-      <div className="mb-4 flex items-start gap-3 rounded-xl border border-accent-pink/15 bg-accent-pink/10 px-4 py-3">
-        <svg
-          className="mt-0.5 h-4 w-4 shrink-0 text-accent-pink"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path d="M11.25 11.25h1.5v5.25M12 7.5h.008v.008H12V7.5Zm9.75 4.5a9.75 9.75 0 1 1-19.5 0 9.75 9.75 0 0 1 19.5 0Z" />
-        </svg>
-        <p className="text-[length:var(--text-body)] font-light leading-relaxed text-text-primary">
-          L&apos;autorité média se construit dans la durée : croisez backlinks de
-          qualité, couverture par les grands titres et calendrier éditorial régulier
-          pour renforcer votre crédibilité SEO et auprès des moteurs IA.
-        </p>
-      </div>
-
       {/* 3 cards diagnostic (AuthorityGauge / BacklinksCard / MajorMediaCard). */}
       <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {composite != null ? (
@@ -129,6 +111,25 @@ export default function NotorieteInsightsView({
           total={bench.total}
           rankHint={bench.rankHint}
         />
+      </div>
+
+      {/* Conseil — texte fixe de Barth. Retour COMEX 21/08 (#9) : déplacé sous le
+          benchmark (marge haute mt-6 au lieu de mb-4) pour ne plus coiffer la vue. */}
+      <div className="mt-6 flex items-start gap-3 rounded-xl border border-accent-pink/15 bg-accent-pink/10 px-4 py-3">
+        <svg
+          className="mt-0.5 h-4 w-4 shrink-0 text-accent-pink"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path d="M11.25 11.25h1.5v5.25M12 7.5h.008v.008H12V7.5Zm9.75 4.5a9.75 9.75 0 1 1-19.5 0 9.75 9.75 0 0 1 19.5 0Z" />
+        </svg>
+        <p className="text-[length:var(--text-body)] font-light leading-relaxed text-text-primary">
+          L&apos;autorité média se construit dans la durée : croisez backlinks de
+          qualité, couverture par les grands titres et calendrier éditorial régulier
+          pour renforcer votre crédibilité SEO et auprès des moteurs IA.
+        </p>
       </div>
     </div>
   );

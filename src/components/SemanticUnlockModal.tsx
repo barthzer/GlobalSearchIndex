@@ -199,6 +199,12 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
     if (aiBusy) return;
     setAiBusy(key);
     setError("");
+    // Retour COMEX 21/08 (#3) : allumer « Recherche en cours… » sur les lignes concernées
+    // dès le clic, pendant toute l'attente réseau (comme le fait déjà runAiFill). Sur succès,
+    // runAiFill réinitialise proprement ; sur échec, clearLoading rétablit les cases éditables.
+    const setLoadingRows = key === "comp" ? setCompLoading : setKwLoading;
+    setLoadingRows((prev) => prev.map(() => true));
+    const clearLoading = () => setLoadingRows((prev) => prev.map(() => false));
     try {
       const res = await apiFetch(`/projects/${projectId}/semantic/generate`, {
         method: "POST",
@@ -234,6 +240,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
       // Les lignes restent éditables → l'utilisateur saisit à la main et continue.
       if (key === "comp") {
         setAiBusy(null);
+        clearLoading();
         // Distinguer TRANSITOIRE (préview pas encore collectée → réessayer aboutit)
         // de NICHE RÉELLE (préview a tourné, zéro concurrent). Sans ça, byvertikal
         // affichait « niche » sur un simple délai de collecte Haloscan (Alexis 08-20).
@@ -243,6 +250,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
       // Mots-clés sans candidat (LLM homepage a aussi échoué) → saisie manuelle, jamais
       // un ordre de réessayer en boucle. `previewAvailable` ne bloque plus rien ici.
       setAiBusy(null);
+      clearLoading();
       setError(
         data.generated
           ? "Aucun mot-clé n'a pu être proposé. Saisissez ceux de votre activité."
@@ -250,6 +258,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
       );
     } catch {
       setAiBusy(null);
+      clearLoading();
       setError("La génération a échoué. Réessayez, ou saisissez à la main.");
     }
   }
@@ -386,39 +395,9 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
           )}
         </button>
 
-        {/* Badge d'écart de taille (concurrents uniquement) : lisible, jamais un
-            chiffre nu. « à vérifier » si non mesuré (jamais un vide silencieux). */}
-        {idPrefix === "comp" && item.value.trim() && !loading && (() => {
-          const d = item.value.trim();
-          if (sizing.has(d)) {
-            return (
-              <p className="mt-1.5 pl-1 text-[11px] italic text-text-muted animate-pulse">
-                Analyse de la taille du concurrent…
-              </p>
-            );
-          }
-          const r = sizes[d];
-          if (!r) return null;
-          if (r.ratio === null) {
-            return (
-              <p className="mt-1.5 pl-1 text-[11px] text-text-muted">
-                Autorité non mesurée pour ce domaine : vérifiez qu&apos;il s&apos;agit bien d&apos;un concurrent réel.
-              </p>
-            );
-          }
-          if (r.ratio >= 2) {
-            return (
-              <p className="mt-1.5 pl-1 text-[11px] text-amber-400">
-                {Math.round(r.ratio)}× plus de domaines référents que votre prospect. National ou régional ?
-              </p>
-            );
-          }
-          return (
-            <p className="mt-1.5 pl-1 text-[11px] text-text-secondary">
-              Profil comparable au vôtre en domaines référents.
-            </p>
-          );
-        })()}
+        {/* Retour COMEX 21/08 (#5) : sous-textes d'écart de taille retirés (jugés
+            bruyants sous la saisie concurrent). Le state/effet M5 sera nettoyé en suivi
+            hors fenêtre de recette. */}
       </div>
     );
   }

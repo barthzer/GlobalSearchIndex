@@ -305,6 +305,18 @@ export function generateCoverageInsight(data: ConcurrenceData): string | null {
   const winner = brands[bestIdx];
   const winnerCov = coverages[bestIdx];
 
+  // Retour COMEX 21/08 (#11) : détecter les ex aequo en tête AVANT de brancher sur
+  // « mène / domine ». coverageRate renvoie un entier arrondi, la comparaison stricte
+  // est fiable. Plusieurs leaders au même taux → phrase d'égalité dédiée.
+  const leadersIdx = coverages.reduce<number[]>(
+    (acc, c, i) => (c === maxCov ? [...acc, i] : acc),
+    [],
+  );
+  if (leadersIdx.length >= 2) {
+    const leaderNames = leadersIdx.map((i) => brands[i].name).join(", ");
+    return `${leaderNames} sont à égalité en tête de la couverture top 10, avec ${winnerCov}% des mots-clés chacun. Aucun acteur ne se détache : opportunité de prise de position sur les requêtes où personne n'est encore installé.`;
+  }
+
   let bestPos: number | null = null;
   let bestKwLabel = "";
   for (let kIdx = 0; kIdx < keywords.length; kIdx++) {

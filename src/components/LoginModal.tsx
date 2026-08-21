@@ -52,9 +52,12 @@ export default function LoginModal({ onClose }: LoginModalProps) {
     return () => clearTimeout(t);
   }, [resendIn]);
 
-  function goToDashboard() {
+  // Retour COMEX 21/08 (#1) : à la connexion retour d'un prospect dont l'analyse est
+  // déjà prête (status 'ready'), on propage ?reused=1 (le dashboard affiche le bandeau
+  // « nous avons retrouvé votre analyse »), comme le fait déjà le chemin onboarding.
+  function goToDashboard(reused?: boolean) {
     onClose();
-    router.push("/dashboard");
+    router.push(reused ? "/dashboard?reused=1" : "/dashboard");
   }
 
   // Connexion PROSPECT (retour) : le client saisit l'email de son analyse gratuite
@@ -98,7 +101,8 @@ export default function LoginModal({ onClose }: LoginModalProps) {
       setProspectSession({ token: result.token, projectId: result.projectId });
       loginAsProspect({ type: "user", name: email, email });
       setVerified(true);
-      setTimeout(goToDashboard, 650);
+      const reused = result.status === "ready";
+      setTimeout(() => goToDashboard(reused), 650);
     } catch (err) {
       setVerifying(false);
       setCode("");

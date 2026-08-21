@@ -230,7 +230,9 @@ export default function ConcurrenceTab({
       <section>
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="mr-2 text-[length:var(--text-body-lg)] font-medium text-text-heading">
-            Couverture mots-clés
+            {/* Retour COMEX 21/08 (#10) : libellé dynamique sur le nombre réel de mots-clés
+                (déblocage 5-10 kw : un « 5 » en dur mentirait pour un projet à 7 ou 10). */}
+            {`Couverture de vos ${data.keywords.length} mots-clés`}
           </span>
           {VIEWS.map((v) => (
             <button

@@ -12,6 +12,7 @@ import { useGeneration } from "./GenerationProvider";
 import { useTheme } from "./ThemeProvider";
 import { useAccount } from "./AccountProvider";
 import { tabsForRole, type TabKey } from "@/lib/tabs";
+import { fetchRecommendations } from "@/lib/recos";
 
 interface HeaderProps {
   showNewAudit?: boolean;
@@ -42,6 +43,28 @@ export default function Header({ onExpertClick, hideLogo = false, sidebarWidth =
   const [showWebtv, setShowWebtv] = useState(false);
   const { selected: currentGeneration } = useGeneration();
   const { theme } = useTheme();
+  // Retour COMEX 21/08 (#13, option A) : le badge de l'onglet Recommandations reflète le
+  // NOMBRE RÉEL de recos (fini le « +10 » en dur trompeur). On ne padde jamais avec du
+  // bruit : masqué si 0. Lecture du stocké (aucun recalcul serveur).
+  const [recoCount, setRecoCount] = useState(0);
+  const generationId = currentGeneration?.id;
+  useEffect(() => {
+    if (isAdmin || !generationId) {
+      setRecoCount(0);
+      return;
+    }
+    let active = true;
+    fetchRecommendations(generationId)
+      .then((c) => {
+        if (active) setRecoCount(c.recommendations.length);
+      })
+      .catch(() => {
+        /* réseau : on garde 0, le badge reste masqué plutôt que faux */
+      });
+    return () => {
+      active = false;
+    };
+  }, [generationId, isAdmin]);
   // Retour à l'espace : un utilisateur DÉJÀ connecté qui revient sur la landing (ou une
   // page légale) doit pouvoir regagner son dashboard. `!activeTab` = on n'est pas déjà
   // dans l'espace (le dashboard passe activeTab), donc on affiche l'accès (retour Alexis
@@ -118,9 +141,9 @@ export default function Header({ onExpertClick, hideLogo = false, sidebarWidth =
                   style={{ transitionTimingFunction: "var(--ease-out)" }}
                 >
                   {t.label}
-                  {!isAdmin && t.key === "recommandations" && (
+                  {!isAdmin && t.key === "recommandations" && recoCount > 0 && (
                     <span className="-mt-2.5 rounded-full bg-accent-pink px-1.5 py-[1px] text-[10px] font-bold leading-none text-white shadow-[0_2px_6px_-1px_rgba(236,77,203,0.5)]">
-                      +10
+                      +{recoCount}
                     </span>
                   )}
                 </button>

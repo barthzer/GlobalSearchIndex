@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { fetchRecommendations, type RecoContent } from "@/lib/recos";
-import { fetchProjectScores } from "@/lib/scores";
+import { fetchProjectScores, anyProcessing } from "@/lib/scores";
 import RealRecommendationCard from "./RealRecommendationCard";
 import SemanticUnlockModal from "./SemanticUnlockModal";
 import { useAccount } from "./AccountProvider";
@@ -126,6 +126,10 @@ export default function RealRecommendations({
   const [content, setContent] = useState<RecoContent | undefined>(undefined);
   // null = inconnu (avant 1er fetch) ; true = geo_citations verrouillé (analyse non débloquée).
   const [geoLocked, setGeoLocked] = useState<boolean | null>(null);
+  // Retour COMEX 21/08 (#12) : gater l'AFFICHAGE (pas la génération) tant qu'un score
+  // auto n'est pas finalisé, pour ne pas montrer des recos partielles qui « sautent »
+  // quand le dernier score arrive. La génération LLM continue en fond côté serveur.
+  const [autoRunning, setAutoRunning] = useState(false);
   const [error, setError] = useState(false);
   const [showUnlock, setShowUnlock] = useState(false);
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -151,12 +155,17 @@ export default function RealRecommendations({
         if (!active) return;
         const geo = scores?.find((s) => s.scoreType === "geo_citations") ?? null;
         const locked = geo?.status === "locked";
+        // Un score auto encore pending/processing → on attend sa finalisation avant
+        // d'afficher les recos (les scores 'locked' sémantique/geo sont ignorés par
+        // anyProcessing, donc l'attente du formulaire sémantique ne bloque pas l'affichage).
+        const running = scores ? anyProcessing(scores) : false;
+        setAutoRunning(running);
         setGeoLocked(locked);
         setContent(c);
         setError(false);
-        // Poll tant que : verrouillé (détecter le déblocage) OU recos pas encore là.
-        // Lecture du stocké (aucun recalcul serveur), backoff doux.
-        if (locked || c.recommendations.length === 0) {
+        // Poll tant que : un score auto tourne OU verrouillé (détecter le déblocage) OU
+        // recos pas encore là. Lecture du stocké (aucun recalcul serveur), backoff doux.
+        if (running || locked || c.recommendations.length === 0) {
           timer = setTimeout(load, interval);
           interval = Math.min(interval + 3000, POLL_MAX_MS);
         }
@@ -166,6 +175,7 @@ export default function RealRecommendations({
     }
     setContent(undefined);
     setGeoLocked(null);
+    setAutoRunning(false);
     setError(false);
     load();
     return () => {
@@ -190,6 +200,10 @@ export default function RealRecommendations({
     // VERROUILLÉ (prospect uniquement) → cadenas + CTA de déblocage. Le commercial
     // voit les recos directement (pas de verrou).
     body = <LockedState onUnlock={() => setShowUnlock(true)} />;
+  } else if (autoRunning) {
+    // Un score auto se calcule encore → flou de génération, on n'affiche pas de recos
+    // partielles susceptibles d'être régénérées à l'arrivée du dernier score (#12).
+    body = <GeneratingState />;
   } else if (isEmpty) {
     // Débloqué mais recos pas encore là → flou de génération (ad vitam, jamais un
     // « non disponible » prématuré : la génération LLM peut être longue).
@@ -274,7 +288,7 @@ export default function RealRecommendations({
           </div>
         ) : (
           content!.cta && (
-            <div className="mt-5 rounded-2xl border border-accent-pink/20 bg-accent-pink/[0.05] p-5 text-[13.5px] leading-relaxed text-text-secondary">
+            <div className="mt-5 mb-8 rounded-2xl border border-accent-pink/20 bg-accent-pink/[0.05] p-5 text-[13.5px] leading-relaxed text-text-secondary">
               {content!.cta}
             </div>
           )

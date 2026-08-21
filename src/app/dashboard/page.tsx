@@ -211,6 +211,13 @@ export default function DashboardPage() {
               <div className="animate-fade-up mb-5">
                 <CompanyLogo name={currentGeneration.name} initial={currentGeneration.initial} />
               </div>
+              {/* Retour COMEX 21/08 (#8) : rappeler le domaine analysé sous le badge client
+                  (masqué si vide ou identique au nom, pour éviter le doublon). */}
+              {currentGeneration.url && currentGeneration.url !== currentGeneration.name && (
+                <p className="animate-fade-up mb-1 text-[13px] font-light text-text-muted">
+                  {currentGeneration.url}
+                </p>
+              )}
               <h1
                 className="animate-fade-up text-2xl font-medium tracking-tight text-text-primary md:text-3xl"
                 style={{ animationDelay: "60ms" }}

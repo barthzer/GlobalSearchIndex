@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useGeneration } from "./GenerationProvider";
+import { fetchProjectScores, anyProcessing } from "@/lib/scores";
 
 /**
  * Bandeau sticky d'attente (réf. Rox "no actions remaining" banner) : prévient le
@@ -15,15 +16,42 @@ const DISMISS_KEY = "gsi:processing-banner:dismissed";
 export default function ProcessingBanner() {
   const { selected } = useGeneration();
   const [dismissed, setDismissed] = useState(false);
+  // Retour COMEX 21/08 (#2) : le bandeau devient autonome sur le poll de SON projet.
+  // Valeur initiale dérivée du statut provider (évite le flash), puis on interroge les
+  // scores serveur : dès que plus aucun n'est pending/processing, `processing` passe à
+  // false → le bandeau se masque tout seul, sans refresh. On ne touche pas au provider
+  // partagé (son `status` sert au badge sidebar).
+  const [processing, setProcessing] = useState<boolean>(selected?.status !== "ready");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.sessionStorage.getItem(DISMISS_KEY) === "1") setDismissed(true);
   }, []);
 
-  // Statut inconnu (undefined) : on affiche le bandeau (état d'attente par défaut,
-  // le rapport vient d'être lancé). `ready` → plus rien à annoncer, on masque.
-  const processing = selected?.status !== "ready";
+  const projectId = selected?.id;
+  useEffect(() => {
+    if (!projectId) return;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    async function load() {
+      try {
+        const s = await fetchProjectScores(projectId!);
+        if (!active) return;
+        const running = anyProcessing(s);
+        setProcessing(running);
+        // On re-poll tant qu'un score se calcule ; sinon on s'arrête et le bandeau tombe.
+        if (running) timer = setTimeout(load, 3000);
+      } catch {
+        /* réseau : on garde l'état courant, prochain montage réessaiera */
+      }
+    }
+    load();
+    return () => {
+      active = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, [projectId]);
+
   if (dismissed || !processing) return null;
 
   function dismiss() {
@@ -47,10 +75,10 @@ export default function ProcessingBanner() {
       </span>
 
       <p className="flex-1 text-[13px] font-light leading-snug text-text-primary">
-        <span className="font-medium">Votre rapport finalise ses derniers calculs.</span>{" "}
-        Vos premiers résultats sont déjà consultables. L&apos;analyse complète prend de
-        quelques minutes à 1 à 2 h selon la taille de votre site — inutile d&apos;attendre,
-        les données s&apos;actualisent automatiquement.
+        <span className="font-medium">Votre rapport est en cours de finalisation...</span>{" "}
+        L&apos;analyse complète peut prendre de quelques minutes à 2 h selon la taille de
+        votre site. Les données s&apos;actualisent en temps réel : vous pouvez déjà
+        consulter les premiers résultats, inutile de patienter.
       </p>
 
       <button

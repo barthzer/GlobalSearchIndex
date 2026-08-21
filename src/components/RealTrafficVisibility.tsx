@@ -113,7 +113,14 @@ export default function RealTrafficVisibility({
    *  (utilisé tel quel dans la Vue d'ensemble, sans scores parents). */
   score?: ProjectScore | null;
 }) {
-  const [tab, setTab] = useState<TabKey>("visibility");
+  // Retour COMEX 21/08 (#8b) : ouvrir sur l'onglet Trafic quand la courbe existe
+  // (analyse débloquée), sinon retomber sur Visibilité — on n'accueille pas l'utilisateur
+  // sur un écran de déblocage vide. Dérivé du score résolu par le parent (scoreProp).
+  const hasTrafficCurve =
+    scoreProp?.status !== "locked" &&
+    Array.isArray((scoreProp?.rawData as { traffic_curve?: unknown[] } | null)?.traffic_curve) &&
+    (scoreProp!.rawData as { traffic_curve?: unknown[] }).traffic_curve!.length >= 2;
+  const [tab, setTab] = useState<TabKey>(hasTrafficCurve ? "traffic" : "visibility");
   const [vis, setVis] = useState<{ visibility_history: VisibilityPoint[]; positions_history: PositionsPoint[] } | null | "error">(null);
   const [selfScore, setSelfScore] = useState<ProjectScore | null>(null);
   // Statut du score visibility (pour distinguer « en cours » d'un vrai « terminé sans
@@ -159,7 +166,15 @@ export default function RealTrafficVisibility({
       try {
         const r = await apiFetch(`/projects/${projectId}/visibility`);
         if (!active) return;
-        if (r.ok) setVis(await r.json());
+        // Retour COMEX 21/08 (#4) : setVis idempotent. À chaque tick le poll relit la même
+        // visibilité ; ne remplacer l'état que si le contenu a réellement changé, sinon le
+        // re-render redessine le SVG et fait clignoter la courbe.
+        if (r.ok) {
+          const next = await r.json();
+          setVis((prev) =>
+            prev && prev !== "error" && JSON.stringify(prev) === JSON.stringify(next) ? prev : next,
+          );
+        }
       } catch {
         /* transitoire : le poll retente */
       }
@@ -226,7 +241,7 @@ export default function RealTrafficVisibility({
         <TrafficChart values={curve.map((p) => p.org_traffic)} months={curve.map((p) => monthLabelFromIso(p.date))} showPositions={false} />
         <InsightNote className="mt-3">
           Le <span className="font-medium text-text-primary">trafic mensuel</span>{" "}correspond aux visites organiques
-          estimées (monde) sur les {curve.length} derniers mois relevés.
+          estimées sur les {curve.length} derniers mois relevés.
           {(() => {
             const t = trendVerdict(curve.map((p) => p.org_traffic), "Votre trafic organique");
             return t ? ` ${t}` : "";

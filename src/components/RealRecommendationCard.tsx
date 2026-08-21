@@ -26,10 +26,12 @@ export default function RealRecommendationCard({
   const priority = IMPACT_TO_PRIORITY[rec.impact] ?? "P2";
   const pillar = rec.axe || rec.pillar || "";
   const detail = rec.diagnostic || rec.probleme || rec.observation || "";
-  // Titre = objectif (phrase marché) ; observation = constat technique. Si pas
-  // d'objectif, le constat devient le titre (jamais deux fois le même texte).
-  const title = rec.objectif || detail;
-  const observation = rec.objectif ? detail : "";
+  // Retour COMEX 21/08 (#15) : inversion validée. Le titre porte l'action concrète
+  // (wording marché), l'encart « Action à mener » porte l'objectif visé. Filets
+  // anti-vide et anti-doublon : jamais deux fois le même texte à l'écran.
+  const title = rec.action || rec.objectif || detail;
+  const actionText = rec.objectif || detail;
+  const observation = detail && detail !== title && detail !== actionText ? detail : "";
   const p = PRIORITY_STYLE[priority];
 
   return (
@@ -67,7 +69,7 @@ export default function RealRecommendationCard({
             <svg className="mt-[2px] h-3.5 w-3.5 shrink-0 text-accent-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
             </svg>
-            <p className="text-[13px] font-light leading-relaxed text-text-primary">{rec.action}</p>
+            <p className="text-[13px] font-light leading-relaxed text-text-primary">{actionText}</p>
           </div>
         </div>
       </div>
