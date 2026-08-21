@@ -7,6 +7,7 @@ import {
   bootstrapAuth,
   verifyOtp as apiVerifyOtp,
   clearProspectSession,
+  hasStaffSession,
   type AuthUser,
 } from "@/lib/api";
 
@@ -166,14 +167,16 @@ export default function AccountProvider({ children }: { children: React.ReactNod
   // le type "user" (jamais admin) et le drapeau isProspect. Les données ne sont
   // JAMAIS servies par ce compte — elles passent par le token prospect (lib/api).
   //
-  // PURGE du token staff résiduel (retour Alexis 2026-08-20) : entrer dans le funnel
-  // prospect est une intention EXPLICITE d'être prospect. Sans cette purge, un token
-  // interne subsistant fait primer la session staff (garde lib/api) → le prospect est
-  // ignoré, puis à l'expiration du token (15 min) le dashboard renvoie vers la PORTE
-  // ADMIN (/login → /connexion-admin). apiLogout ne touche QUE les tokens staff
-  // (gsi_access/refresh/user) ; la session prospect posée juste avant est préservée.
+  // ⚠️ RÉGRESSION 2026-08-21 CORRIGÉE : un STAFF (admin/commercial) qui teste le funnel
+  // avec son email NE DOIT PAS perdre sa session ni son rôle. L'ancienne version faisait
+  // `apiLogout()` (purge le token staff) + basculait le compte en prospect → le staff
+  // perdait `isAdmin` et se retrouvait BLOQUÉ hors de /admin (Kevin). On ne purge plus rien
+  // (l'anti-fuite prospect→porte-admin est déjà couvert par `hasStaffSession()` dans les
+  // gardes /login /admin /dashboard) : si une session staff existe, elle PRIME (garde
+  // lib/api) et on NO-OP ici. Le passage prospect ne s'applique qu'à un vrai visiteur
+  // SANS session staff (un prospect n'a jamais de token authStore refresh/user).
   function loginAsProspect(next: Account) {
-    apiLogout();
+    if (hasStaffSession()) return;
     applyAccount({ ...next, type: "user", isProspect: true });
   }
 
