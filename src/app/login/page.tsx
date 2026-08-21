@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "@/components/AccountProvider";
-import { hasStaffSession } from "@/lib/api";
 
 /**
  * Point d'entrée de reconnexion interne (commercial + admin).
@@ -27,11 +26,17 @@ export default function LoginPage() {
       router.replace("/dashboard");
       return;
     }
-    // /connexion-admin UNIQUEMENT si une session STAFF existe (token authStore). Sinon
-    // → funnel. Un prospect (aucun token staff), même expiré, ne voit JAMAIS la porte
-    // admin (racine du leak Alexis/Ben 2026-08-20 : le signal getProspectSession() était
-    // effacé au 401 d'expiration → on tombait dans le else /connexion-admin).
-    router.replace(hasStaffSession() ? "/connexion-admin" : "/");
+    // Non connecté → formulaire de login staff (/connexion-admin), TOUJOURS.
+    //
+    // ⚠️ RÉGRESSION 2026-08-21 CORRIGÉE : la version précédente gardait cette route
+    // derrière `hasStaffSession()` (« /connexion-admin seulement si session staff »),
+    // créant un chicken-and-egg : pour se CONNECTER (donc sans session) on était renvoyé
+    // au funnel → la porte admin devenait inatteignable (Kevin bloqué hors admin ; et le
+    // retour post-reset-password cassé). L'anti-leak prospect ne vit PAS ici : /login
+    // n'est JAMAIS une cible de redirection auto pour un prospect (les gardes /dashboard
+    // et /admin envoient les sessions non-staff vers « / »). /login est le point d'entrée
+    // EXPLICITE du staff ; il doit donc toujours mener au formulaire de login.
+    router.replace("/connexion-admin");
   }, [hydrated, isLoggedIn, router]);
 
   return null;
