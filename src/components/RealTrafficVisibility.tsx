@@ -135,6 +135,20 @@ export default function RealTrafficVisibility({
   const [reloadNonce, setReloadNonce] = useState(0);
   const score = scoreProp ?? selfScore;
 
+  // Retour Alexis 24/08 : ouvrir sur Trafic dès que la courbe est dispo, MÊME si elle
+  // arrive APRÈS le montage (score self-fetché, ou geo_citations qui finit en poll).
+  // Le state initial (dérivé de scoreProp) tombait sur Visibilité au lancement et n'en
+  // repartait jamais. Ici on promeut Trafic une fois la courbe résolue présente, tant
+  // que l'utilisateur n'a pas choisi un onglet lui-même (setTabTouched).
+  const [tabTouched, setTabTouched] = useState(false);
+  const resolvedHasTraffic =
+    score?.status !== "locked" &&
+    Array.isArray((score?.rawData as { traffic_curve?: unknown[] } | null)?.traffic_curve) &&
+    (score!.rawData as { traffic_curve?: unknown[] }).traffic_curve!.length >= 2;
+  useEffect(() => {
+    if (!tabTouched && resolvedHasTraffic) setTab("traffic");
+  }, [resolvedHasTraffic, tabTouched]);
+
   // Fetch groupé (statuts des scores + données de visibilité) avec POLLING tant que
   // la visibilité (Haloscan) ou le trafic (Ahrefs) sont en cours de calcul. Un échec
   // HTTP transitoire ne bascule PAS en erreur : le poll retente (spinner). Cap de
@@ -316,7 +330,14 @@ export default function RealTrafficVisibility({
           }}
         />
       )}
-      <Shell tab={tab} setTab={setTab}>
+      <Shell
+        tab={tab}
+        setTab={(t) => {
+          // Choix explicite de l'utilisateur → on ne re-promeut plus Trafic automatiquement.
+          setTabTouched(true);
+          setTab(t);
+        }}
+      >
         {tab === "traffic" ? <TrafficPanel /> : <VisibilityPanel />}
       </Shell>
     </>
