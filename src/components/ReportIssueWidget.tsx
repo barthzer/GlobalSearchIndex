@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Button from "./Button";
 
-const CONTACT_EMAIL = "contact@awi.fr";
+const CONTACT_EMAIL = "contact@l-agenceweb.com";
 
 /**
  * Signalement d'erreur / retour utilisateur.
@@ -45,7 +45,7 @@ export default function ReportIssueWidget() {
     // TODO(backend): l'envoi est mocke — la confirmation s'affiche mais rien ne part.
     // Brancher un outil d'envoi d'email (SMTP, Resend, Brevo, webhook n8n...) :
     //   POST { message, page: window.location.href, email du compte connecte le cas echeant }
-    //   → email vers CONTACT_EMAIL (contact@awi.fr).
+    //   → email vers CONTACT_EMAIL (contact@l-agenceweb.com).
     // Garder l'ecran de confirmation uniquement si l'envoi a reussi (sinon afficher une erreur).
     setSent(true);
   }
