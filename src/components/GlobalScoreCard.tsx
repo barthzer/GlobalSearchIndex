@@ -34,9 +34,14 @@ function pillarSubject(label: string) {
  */
 export default function GlobalScoreCard({ delay = 0 }: { delay?: number }) {
   const [visible, setVisible] = useState(false);
+  const [forcePending, setForcePending] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), delay);
+    // Mock dev : ?global-pending=1 force l'état « en attente » pour le prévisualiser.
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("global-pending")) {
+      setForcePending(true);
+    }
     return () => clearTimeout(t);
   }, [delay]);
 
@@ -53,10 +58,77 @@ export default function GlobalScoreCard({ delay = 0 }: { delay?: number }) {
     .map((s) => `${pillarPhrase(s.label)} (${s.score}/100)`)
     .join(" et ");
 
+  // Tant que les 4 piliers ne sont pas tous calculés, le score global n'existe pas encore.
+  const missing = analyseScores.filter((s) => s.score === null);
+  const pending = forcePending || missing.length > 0;
+  const missingLabels = forcePending && missing.length === 0
+    ? ["SEO Sémantique"]
+    : missing.map((s) => s.label);
+
   // Même épaisseur visuelle que les demi-jauges des cartes de score (trait de 8).
   const radius = 82;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (globalScore / 100) * circumference;
+
+  if (pending) {
+    return (
+      <div
+        className="rounded-2xl border border-border-subtle backdrop-blur-[6px]"
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 600ms var(--ease-expo), transform 600ms var(--ease-expo)",
+        }}
+      >
+        <div
+          className="flex flex-col gap-6 rounded-[calc(1rem-1px)] p-5 md:flex-row md:items-center md:gap-10 md:p-6"
+          style={{ background: "linear-gradient(to right, var(--bg-card) 55%, rgba(238,86,206,0.25) 100%)" }}
+        >
+          {/* Anneau flouté + pastille d'attente, même langage que le score sémantique verrouillé */}
+          <div className="relative flex h-[180px] w-[180px] shrink-0 items-center justify-center self-center md:self-auto">
+            <div className="absolute inset-0 blur-[8px] opacity-40">
+              <svg viewBox="0 0 180 180" className="h-full w-full">
+                <defs>
+                  <linearGradient id="global-pending-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#6817F8" />
+                    <stop offset="100%" stopColor="#EE56CE" />
+                  </linearGradient>
+                </defs>
+                <circle cx="90" cy="90" r={radius} fill="none" stroke="var(--arc-bg)" strokeWidth={8} />
+                <circle
+                  cx="90" cy="90" r={radius} fill="none"
+                  stroke="url(#global-pending-grad)" strokeWidth={8} strokeLinecap="round"
+                  strokeDasharray={circumference} strokeDashoffset={circumference * 0.4}
+                  transform="rotate(-90 90 90)"
+                />
+              </svg>
+            </div>
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#6817F8]/20 to-[#EE56CE]/20">
+              <svg className="h-5 w-5 text-[#EE56CE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+            </div>
+          </div>
+
+          <div className="text-center sm:text-left">
+            <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-2.5">
+              <h2 className="text-[length:var(--text-body-lg)] font-medium text-text-heading">
+                Score global
+              </h2>
+              <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-500">
+                En attente de calcul
+              </span>
+            </div>
+            <p className="mt-2 max-w-[520px] text-[14px] font-light leading-relaxed text-text-secondary">
+              Votre score global est la moyenne de vos 4 piliers de visibilité. Il s&apos;affichera
+              automatiquement quand ils auront tous été calculés. Reste à calculer :{" "}
+              <strong className="font-medium text-text-primary">{missingLabels.join(", ")}</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
