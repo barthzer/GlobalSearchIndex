@@ -132,7 +132,12 @@ export default function GlobalScoreCard({ delay = 0 }: { delay?: number }) {
           </div>
         </div>
 
-        {/* Lecture du score : où vous en êtes, ce qui porte, ce qui freine */}
+        {/* Lecture du score : où vous en êtes, ce qui porte, ce qui freine.
+            TODO(backend): ce texte est genere par une regle simple (meilleur pilier + 2 plus faibles).
+            En production, creer un prompt d'interpretation (LLM) qui recoit les 4 scores + le score
+            global et redige cette synthese : meme structure (constat, point fort, points faibles,
+            ou sont les gains), 3-4 phrases max, ton non technique pour un dirigeant, pas de jargon.
+            Garder la version calculee ci-dessous comme fallback si la generation echoue. */}
         <p className="flex-1 text-[14px] font-light leading-relaxed text-text-secondary md:max-w-[520px]">
           Votre visibilité est <strong className="font-medium text-text-primary">bien engagée, mais encore inégale</strong>.{" "}
           {pillarSubject(bestPillar.label)} est le pilier le plus solide ({bestPillar.score}/100) et constitue
