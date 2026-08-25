@@ -10,7 +10,6 @@
     Variables à remplacer côté envoi (n8n / backend) :
       {{prenom}}          prénom du client
       {{entreprise}}      nom de l'entreprise analysée
-      {{score_global}}    score global /100
       {{report_url}}      lien vers le rapport
       {{rdv_url}}         lien de prise de rendez-vous expert
     Images hébergées par l'app (dossier public/emails/, servies sur https://gsi.aw-i.com/emails/) :
@@ -33,7 +32,7 @@
 <body style="margin:0; padding:0; background-color:#efeef2; -webkit-text-size-adjust:100%;">
   <!-- Préheader invisible (aperçu boîte de réception) -->
   <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
-    Votre analyse de visibilité est prête : SEO, moteurs IA et concurrence réunis dans votre rapport.
+    Votre analyse est terminée. Découvrez qui capte la visibilité sur votre marché.
   </div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#efeef2;">
@@ -54,21 +53,23 @@
           <tr>
             <td style="padding:48px 48px 8px 48px;" class="px">
               <h1 class="h1" style="margin:0 0 24px 0; font-family:Arial, Helvetica, sans-serif; font-size:32px; line-height:40px; color:#111111; font-weight:bold;">
-                Votre rapport est prêt.
+                Votre visibilité vient d'être mesurée.
               </h1>
               <p style="margin:0 0 20px 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#333333;">
                 Bonjour {{prenom}},
               </p>
               <p style="margin:0 0 20px 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#333333;">
-                Nous avons terminé l'analyse de la visibilité de <strong>{{entreprise}}</strong>.
-                Votre rapport réunit vos résultats SEO, votre présence dans les moteurs d'IA
-                (ChatGPT, Perplexity, Gemini...) et votre position face à vos concurrents.
+                L'analyse de <strong>{{entreprise}}</strong> est terminée. Votre score global
+                de visibilité est calculé, sur vos 4 piliers. Il vous attend dans le rapport.
+              </p>
+              <p style="margin:0 0 20px 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#333333;">
+                Chaque jour, vos clients posent leurs questions à Google et aux moteurs d'IA
+                (ChatGPT, Perplexity, Gemini...). Quelqu'un apparaît dans les réponses.
+                <strong>Votre rapport vous dit si c'est vous, ou vos concurrents.</strong>
               </p>
               <p style="margin:0 0 28px 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#333333;">
-                Votre score global de visibilité est de
-                <strong>{{score_global}}/100</strong>, calculé sur vos 4 piliers :
-                GEO, technique, sémantique et autorité. Le détail, pilier par pilier,
-                vous attend dans le rapport.
+                Vos résultats sont en ligne, pilier par pilier, avec les premières actions
+                à lancer déjà identifiées.
               </p>
             </td>
           </tr>
@@ -77,15 +78,15 @@
           <tr>
             <td style="padding:0 48px 40px 48px;" class="px">
               <!--[if mso]>
-              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{report_url}}" style="height:48px; v-text-anchor:middle; width:260px;" arcsize="50%" fillcolor="#6817F8" stroke="f">
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{report_url}}" style="height:48px; v-text-anchor:middle; width:260px;" arcsize="50%" fillcolor="#1a1a1a" stroke="f">
                 <w:anchorlock/>
-                <center style="color:#ffffff; font-family:Arial, sans-serif; font-size:15px; font-weight:bold;">Consulter mon rapport</center>
+                <center style="color:#ffffff; font-family:Arial, sans-serif; font-size:15px; font-weight:bold;">Découvrir mes résultats</center>
               </v:roundrect>
               <![endif]-->
               <!--[if !mso]><!-->
               <a href="{{report_url}}" target="_blank"
-                 style="display:inline-block; background-color:#6817F8; background-image:linear-gradient(90deg, #6817F8 0%, #EE56CE 100%); border-radius:999px; padding:15px 36px; font-family:Arial, Helvetica, sans-serif; font-size:15px; font-weight:bold; color:#ffffff; text-decoration:none;">
-                Consulter mon rapport&nbsp;&nbsp;&#8594;
+                 style="display:inline-block; background-color:#1a1a1a; background-image:linear-gradient(180deg, #1a1a1a 0%, #404040 100%); border-radius:999px; padding:15px 36px; font-family:Arial, Helvetica, sans-serif; font-size:15px; font-weight:bold; color:#ffffff; text-decoration:none;">
+                Découvrir mes résultats&nbsp;&nbsp;&#8594;
               </a>
               <!--<![endif]-->
             </td>
