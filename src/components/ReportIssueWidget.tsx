@@ -42,7 +42,11 @@ export default function ReportIssueWidget() {
   }, [open]);
 
   function handleSend() {
-    // TODO(backend): POST { message, page } vers l'endpoint de signalement.
+    // TODO(backend): l'envoi est mocke — la confirmation s'affiche mais rien ne part.
+    // Brancher un outil d'envoi d'email (SMTP, Resend, Brevo, webhook n8n...) :
+    //   POST { message, page: window.location.href, email du compte connecte le cas echeant }
+    //   → email vers CONTACT_EMAIL (contact@awi.fr).
+    // Garder l'ecran de confirmation uniquement si l'envoi a reussi (sinon afficher une erreur).
     setSent(true);
   }
 
