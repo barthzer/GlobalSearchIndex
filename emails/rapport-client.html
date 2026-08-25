@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>Votre rapport GSI est prêt</title>
+  <!--
+    Template email : réception du rapport par le client.
+    Variables à remplacer côté envoi (n8n / backend) :
+      {{prenom}}          prénom du client
+      {{entreprise}}      nom de l'entreprise analysée
+      {{score_global}}    score global /100
+      {{report_url}}      lien vers le rapport
+      {{rdv_url}}         lien de prise de rendez-vous expert
+    Images hébergées par l'app (dossier public/emails/, servies sur https://gsi.aw-i.com/emails/) :
+      hero-rapport.png    image d'en-tête 16:9
+      logo-awi.png        logo AWI du footer GSI (PNG 2x, affiché 24px de haut)
+    Compatibilité : tables + styles inline, bouton VML pour Outlook.
+  -->
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <style>
+    /* Clients qui supportent <style> : confort responsive uniquement, tout le critique est inline. */
+    @media only screen and (max-width: 620px) {
+      .container { width: 100% !important; }
+      .px { padding-left: 24px !important; padding-right: 24px !important; }
+      .h1 { font-size: 26px !important; line-height: 34px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#efeef2; -webkit-text-size-adjust:100%;">
+  <!-- Préheader invisible (aperçu boîte de réception) -->
+  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
+    Votre analyse de visibilité est prête : SEO, moteurs IA et concurrence réunis dans votre rapport.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#efeef2;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px; background-color:#ffffff;">
+
+          <!-- Image d'en-tête 16:9 -->
+          <tr>
+            <td>
+              <img src="https://gsi.aw-i.com/emails/hero-rapport.png" width="600" alt="Votre rapport de visibilité GlobalSearchIndex"
+                   style="display:block; width:100%; height:auto; border:0; outline:none;" />
+            </td>
+          </tr>
+
+          <!-- Corps -->
+          <tr>
+            <td style="padding:48px 48px 8px 48px;" class="px">
+              <h1 class="h1" style="margin:0 0 24px 0; font-family:Arial, Helvetica, sans-serif; font-size:32px; line-height:40px; color:#111111; font-weight:bold;">
+                Votre rapport est prêt.
+              </h1>
+              <p style="margin:0 0 20px 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#333333;">
+                Bonjour {{prenom}},
+              </p>
+              <p style="margin:0 0 20px 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#333333;">
+                Nous avons terminé l'analyse de la visibilité de <strong>{{entreprise}}</strong>.
+                Votre rapport réunit vos résultats SEO, votre présence dans les moteurs d'IA
+                (ChatGPT, Perplexity, Gemini...) et votre position face à vos concurrents.
+              </p>
+              <p style="margin:0 0 28px 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#333333;">
+                Votre score global de visibilité est de
+                <strong>{{score_global}}/100</strong>, calculé sur vos 4 piliers :
+                GEO, technique, sémantique et autorité. Le détail, pilier par pilier,
+                vous attend dans le rapport.
+              </p>
+            </td>
+          </tr>
+
+          <!-- CTA principal -->
+          <tr>
+            <td style="padding:0 48px 40px 48px;" class="px">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{report_url}}" style="height:48px; v-text-anchor:middle; width:260px;" arcsize="50%" fillcolor="#6817F8" stroke="f">
+                <w:anchorlock/>
+                <center style="color:#ffffff; font-family:Arial, sans-serif; font-size:15px; font-weight:bold;">Consulter mon rapport</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <a href="{{report_url}}" target="_blank"
+                 style="display:inline-block; background-color:#6817F8; background-image:linear-gradient(90deg, #6817F8 0%, #EE56CE 100%); border-radius:999px; padding:15px 36px; font-family:Arial, Helvetica, sans-serif; font-size:15px; font-weight:bold; color:#ffffff; text-decoration:none;">
+                Consulter mon rapport&nbsp;&nbsp;&#8594;
+              </a>
+              <!--<![endif]-->
+            </td>
+          </tr>
+
+          <!-- Accompagnement expert -->
+          <tr>
+            <td style="padding:0 48px 44px 48px;" class="px">
+              <div style="border-top:1px solid #e8e6ee; padding-top:28px;">
+                <p style="margin:0 0 6px 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:22px; color:#111111; font-weight:bold;">
+                  Envie d'aller plus loin ?
+                </p>
+                <p style="margin:0 0 14px 0; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:22px; color:#333333;">
+                  Un expert AWI peut décrypter vos résultats avec vous et vous proposer
+                  un plan d'action priorisé en 30 minutes.
+                </p>
+                <a href="{{rdv_url}}" target="_blank"
+                   style="font-family:Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; color:#6817F8; text-decoration:none;">
+                  Prendre rendez-vous&nbsp;&#8594;
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Bandeau final blanc avec logo AWI (le logo du footer GSI, exporté en PNG) -->
+          <tr>
+            <td style="background-color:#ffffff; border-top:1px solid #e8e6ee; padding:20px 48px;" class="px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="left" valign="middle">
+                    <img src="https://gsi.aw-i.com/emails/logo-awi.png" alt="AWI" width="95" height="24" style="display:block; height:24px; width:auto; border:0; outline:none;" />
+                  </td>
+                  <td align="right" valign="middle" style="font-family:Arial, Helvetica, sans-serif; font-size:12px; color:#111111;">
+                    <span style="font-weight:bold; font-size:14px;">GlobalSearchIndex</span><br />
+                    <span style="color:#8b849a;">by AWI</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Pied de page hors carte -->
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
+          <tr>
+            <td align="center" style="padding:24px 40px 8px 40px;" class="px">
+              <p style="margin:0 0 8px 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#8b849a;">
+                Vous recevez cet email car une analyse a été demandée pour {{entreprise}}
+                sur GlobalSearchIndex.
+              </p>
+              <p style="margin:0 0 8px 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#8b849a;">
+                Une question ? Écrivez-nous à
+                <a href="mailto:contact@awi.fr" style="color:#6817F8; text-decoration:none;">contact@awi.fr</a>
+              </p>
+              <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#aaa4b8;">
+                AWI &middot;
+                <a href="https://gsi.aw-i.com/mentions-legales" style="color:#aaa4b8; text-decoration:underline;">Mentions légales</a>
+                &middot;
+                <a href="https://gsi.aw-i.com/confidentialite" style="color:#aaa4b8; text-decoration:underline;">Confidentialité</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
