@@ -5,6 +5,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 import AccountProvider from "@/components/AccountProvider";
 import CreditProvider from "@/components/CreditProvider";
 import GenerationProvider from "@/components/GenerationProvider";
+import ReportIssueWidget from "@/components/ReportIssueWidget";
 import "./globals.css";
 
 const hankenGrotesk = Hanken_Grotesk({
@@ -60,7 +61,12 @@ export default function RootLayout({
         <ThemeProvider>
           <AccountProvider>
             <CreditProvider>
-              <GenerationProvider>{children}</GenerationProvider>
+              <GenerationProvider>
+                {children}
+                {/* Widget de signalement — présent sur toutes les pages (dans les
+                    providers pour lire l'email du compte via useAccount). */}
+                <ReportIssueWidget />
+              </GenerationProvider>
             </CreditProvider>
           </AccountProvider>
         </ThemeProvider>

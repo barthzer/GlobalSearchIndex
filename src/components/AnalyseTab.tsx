@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import {
   fetchProjectScores,
+  fetchGlobalScore,
   anyProcessing,
   citationsDisplay,
   aiCrawlerAccess,
   type ProjectScore,
   type ScoreDisplay,
+  type GlobalScoreResult,
 } from "@/lib/scores";
+import RealGlobalScoreCard from "./RealGlobalScoreCard";
 import RealScoreArc from "./RealScoreArc";
 import { scoreInfos, scoreIcons } from "@/app/dashboard/rapport/score-infos";
 import RealPageSpeed from "./RealPageSpeed";
@@ -49,6 +52,10 @@ export default function AnalyseTab({
   onSeeAllRecos?: () => void;
 }) {
   const [scores, setScores] = useState<ProjectScore[] | null>(null);
+  // Score global = agrégat SERVEUR des 4 piliers (source unique). Fetché en même
+  // temps que les scores pour rester synchrone au polling (jamais un global périmé
+  // face aux arcs).
+  const [globalScore, setGlobalScore] = useState<GlobalScoreResult | null>(null);
   const [error, setError] = useState(false);
   // Bump manuel (déblocage) → recharge immédiate + relance le polling.
   const [reloadCounter, setReloadCounter] = useState(0);
@@ -64,9 +71,15 @@ export default function AnalyseTab({
     let timer: ReturnType<typeof setTimeout> | undefined;
     async function load() {
       try {
-        const s = await fetchProjectScores(projectId);
+        // Scores + score global en parallèle (même cycle → jamais désynchronisés).
+        // Le global est SERVEUR : le front le lit, il ne recalcule pas la moyenne.
+        const [s, g] = await Promise.all([
+          fetchProjectScores(projectId),
+          fetchGlobalScore(projectId).catch(() => null),
+        ]);
         if (!active) return;
         setScores(s);
+        setGlobalScore(g);
         setError(false);
         setPollTick((t) => t + 1);
         // Polling tant qu'un score se calcule (l'écran dit que ça travaille).
@@ -76,6 +89,7 @@ export default function AnalyseTab({
       }
     }
     setScores(null);
+    setGlobalScore(null);
     setError(false);
     load();
     return () => {
@@ -100,6 +114,7 @@ export default function AnalyseTab({
   if (!scores) {
     return (
       <div className="flex flex-col gap-4">
+        <div className="h-32 animate-pulse rounded-2xl border border-border-subtle bg-bg-card" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ARC_SCORES.map((s) => (
             <div
@@ -122,6 +137,17 @@ export default function AnalyseTab({
 
   return (
     <>
+      {/* Score global en TÊTE (agrégat serveur des 4 piliers) : chiffre si les 4 sont
+          là, sinon carte de déblocage / attente honnête. Argument de déblocage de plus. */}
+      <div className="mb-4">
+        <RealGlobalScoreCard
+          result={globalScore}
+          scores={scores}
+          projectId={projectId}
+          onUnlocked={handleUnlocked}
+        />
+      </div>
+
       {processing && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-accent-pink/20 bg-accent-pink/[0.05] px-4 py-2.5 text-[13px] text-text-secondary">
           <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-pink/30 border-t-accent-pink" />

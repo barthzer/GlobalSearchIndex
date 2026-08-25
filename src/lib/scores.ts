@@ -103,6 +103,27 @@ export async function fetchProjectScores(
   return (await res.json()) as ProjectScore[];
 }
 
+// ── Score global (agrégat des 4 piliers) ────────────────────────────────────
+// Calculé SERVEUR (source unique `computeGlobalScore`) : le front LIT
+// { value, band, ready, missing }, il ne recalcule NI la moyenne NI les seuils
+// (invariant « 56 vs 12 »). ready=false → carte verrouillée + liste `missing`
+// (état d'attente honnête ; JAMAIS de moyenne partielle affichée comme un score
+// global). STRICT 4 piliers décidé côté serveur.
+export interface GlobalScoreResult {
+  value: number | null;
+  band: "critical" | "medium" | "good" | null;
+  ready: boolean;
+  missing: string[];
+}
+
+export async function fetchGlobalScore(
+  projectId: string,
+): Promise<GlobalScoreResult> {
+  const res = await apiFetch(`/projects/${projectId}/global-score`);
+  if (!res.ok) throw new Error(`global-score ${res.status}`);
+  return (await res.json()) as GlobalScoreResult;
+}
+
 /** true tant qu'un score est en cours → le front repolle. */
 export function anyProcessing(scores: ProjectScore[]): boolean {
   return scores.some(

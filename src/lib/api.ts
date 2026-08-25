@@ -143,6 +143,28 @@ export async function requestPublicCode(email: string, url?: string): Promise<vo
   }
 }
 
+/**
+ * Signalement d'erreur / retour utilisateur (widget flottant, toutes pages).
+ * Endpoint PUBLIC (le widget est présent sur le funnel anonyme). Renvoie true si
+ * l'envoi a réussi (HTTP 2xx) : le widget ne montre la confirmation QUE dans ce cas.
+ */
+export async function sendReportIssue(payload: {
+  message: string;
+  page?: string;
+  email?: string;
+}): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/public/report-issue`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export type VerifyPublicCodeResult =
   | { status: "processing" | "ready"; token: string; projectId: string }
   | { status: "cap_reached"; message: string };
@@ -177,6 +199,14 @@ interface PublicAnalysis {
     createdAt: string;
   };
   scores: unknown[];
+  // Score global agrégé SERVEUR (même règle que dashboard + PDF). Optionnel : un
+  // backend antérieur peut ne pas l'émettre → l'interception renvoie un repli sûr.
+  globalScore?: {
+    value: number | null;
+    band: "critical" | "medium" | "good" | null;
+    ready: boolean;
+    missing: string[];
+  };
 }
 
 let publicAnalysisCache: {
@@ -303,6 +333,16 @@ async function prospectInterception(
   if (/^\/projects\/[^/]+\/scores$/.test(pathname)) {
     const { scores } = await fetchPublicAnalysis(session.token);
     return jsonResponse(scores);
+  }
+
+  // Score global du prospect → champ `globalScore` de /public/analysis (même
+  // computeGlobalScore serveur que le commercial). Repli VERROUILLÉ si absent (backend
+  // antérieur) : jamais un faux chiffre, la carte reste en attente honnête.
+  if (/^\/projects\/[^/]+\/global-score$/.test(pathname)) {
+    const { globalScore } = await fetchPublicAnalysis(session.token);
+    return jsonResponse(
+      globalScore ?? { value: null, band: null, ready: false, missing: [] },
+    );
   }
 
   // Recos du prospect → endpoint public dédié (scopé au token, même contenu filtré
