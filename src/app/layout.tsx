@@ -4,6 +4,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 import AccountProvider from "@/components/AccountProvider";
 import CreditProvider from "@/components/CreditProvider";
 import GenerationProvider from "@/components/GenerationProvider";
+import ReportIssueWidget from "@/components/ReportIssueWidget";
 import "./globals.css";
 
 const hankenGrotesk = Hanken_Grotesk({
@@ -59,7 +60,10 @@ export default function RootLayout({
         <ThemeProvider>
           <AccountProvider>
             <CreditProvider>
-              <GenerationProvider>{children}</GenerationProvider>
+              <GenerationProvider>
+                {children}
+                <ReportIssueWidget />
+              </GenerationProvider>
             </CreditProvider>
           </AccountProvider>
         </ThemeProvider>
