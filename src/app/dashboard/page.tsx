@@ -8,6 +8,7 @@ import Button from "@/components/Button";
 import CompanyLogo from "@/components/CompanyLogo";
 import ScoreArc from "@/components/ScoreArc";
 import GeoScoreCard from "@/components/GeoScoreCard";
+import GlobalScoreCard from "@/components/GlobalScoreCard";
 import SEOEngineModal from "@/components/SEOEngineModal";
 import ExpertModal from "@/components/ExpertModal";
 import AWILogo from "@/components/AWILogo";
@@ -501,6 +502,11 @@ export default function DashboardPage() {
             </>
             ) : activeTabSafe === "analyse" ? (
             <>
+            {/* Score global : moyenne des 4 piliers, en tête de vue */}
+            <div className="mb-4">
+              <GlobalScoreCard delay={200} />
+            </div>
+
             {/* Encart GEO dédié — au-dessus des autres scores */}
             <div className="mb-4">
               <GeoScoreCard info={scoreInfos.geo} delay={280} />
