@@ -40,6 +40,9 @@ export default function RealScoreArc({
   processing = false,
   projectId,
   onUnlocked,
+  adjustable = false,
+  adjustmentsRemaining = null,
+  onExpertClick,
 }: {
   label: string;
   icon: ReactNode;
@@ -60,6 +63,14 @@ export default function RealScoreArc({
   projectId?: string;
   /** Appelé après un déblocage réussi → le parent recharge les scores (POST=repoll). */
   onUnlocked?: () => void;
+  /** Sémantique COMPLETED mais insuffisant (aucun mot-clé top 100) : propose « Ajuster
+   *  les mots-clés » (rouvre la modale pré-remplie). Le déblocage est fini, il reste
+   *  l'ajustement (retour Kevin 2026-08-26). */
+  adjustable?: boolean;
+  /** Ajustements restants (prospect). null = pas de cap (commercial). 0 = épuisé → expert. */
+  adjustmentsRemaining?: number | null;
+  /** CTA expert (affiché quand les ajustements sont épuisés). */
+  onExpertClick?: () => void;
 }) {
   const [visible, setVisible] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -223,23 +234,57 @@ export default function RealScoreArc({
   // ② NON SCORABLE → message, JAMAIS un chiffre (état absent de la maquette
   // d'origine : ajouté ICI dans son design system, sans réinventer).
   if (!display.scorable || display.value == null) {
+    // Sémantique terminal-insuffisant : on rend le message ACTIONNABLE (bouton « Ajuster »
+    // qui rouvre la modale pré-remplie). Épuisé (prospect à 0) → on oriente vers l'expert,
+    // pas un mur (le plafond devient un point de conversion, retour Kevin 2026-08-26).
+    const showAdjust = adjustable && !!projectId;
+    const exhausted = showAdjust && adjustmentsRemaining === 0;
+    const remainingSuffix =
+      adjustmentsRemaining != null
+        ? ` (${adjustmentsRemaining} essai${adjustmentsRemaining > 1 ? "s" : ""} restant${adjustmentsRemaining > 1 ? "s" : ""})`
+        : "";
     return (
       <>
         {infoModal}
+        {showUnlock && projectId && (
+          <SemanticUnlockModal
+            projectId={projectId}
+            onClose={() => setShowUnlock(false)}
+            onSubmit={() => {
+              setShowUnlock(false);
+              onUnlocked?.();
+            }}
+            submitLabel="Relancer avec ces mots-clés"
+          />
+        )}
         <div
           className="group relative flex flex-col rounded-2xl border border-border-subtle bg-bg-card p-5 backdrop-blur-[6px] md:p-6"
           style={animStyle}
         >
           {header}
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 py-6 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-6 text-center">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-card-inner-bg">
               <svg className="h-5 w-5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
               </svg>
             </div>
             <p className="max-w-[16rem] text-[13px] leading-relaxed text-text-muted">
-              {display.message ?? "Non calculable"}
+              {exhausted
+                ? "Vous avez utilisé vos ajustements. Un expert peut vous aider à identifier les bons mots-clés."
+                : (display.message ?? "Non calculable")}
             </p>
+            {showAdjust &&
+              (exhausted ? (
+                onExpertClick && (
+                  <Button variant="primary" onClick={onExpertClick}>
+                    Parler à un expert
+                  </Button>
+                )
+              ) : (
+                <Button variant="primary" onClick={() => setShowUnlock(true)}>
+                  {`Ajuster les mots-clés${remainingSuffix}`}
+                </Button>
+              ))}
           </div>
         </div>
       </>

@@ -207,6 +207,21 @@ interface PublicAnalysis {
     ready: boolean;
     missing: string[];
   };
+  /** Ajustements sémantiques restants pour ce prospect (cap 2). Absent = ancien backend. */
+  semanticAdjustmentsRemaining?: number;
+}
+
+export async function fetchSemanticAdjustmentsRemaining(
+  projectId: string,
+): Promise<number | null> {
+  try {
+    const res = await apiFetch(`/projects/${projectId}/semantic-adjustments`);
+    if (!res.ok) return null; // commercial sans endpoint / erreur → pas de cap
+    const data = (await res.json()) as { remaining?: number | null };
+    return data.remaining ?? null;
+  } catch {
+    return null;
+  }
 }
 
 let publicAnalysisCache: {
@@ -343,6 +358,14 @@ async function prospectInterception(
     return jsonResponse(
       globalScore ?? { value: null, band: null, ready: false, missing: [] },
     );
+  }
+
+  // Ajustements sémantiques restants du prospect → champ de /public/analysis (cap 2).
+  if (/^\/projects\/[^/]+\/semantic-adjustments$/.test(pathname)) {
+    const { semanticAdjustmentsRemaining } = await fetchPublicAnalysis(
+      session.token,
+    );
+    return jsonResponse({ remaining: semanticAdjustmentsRemaining ?? null });
   }
 
   // Recos du prospect → endpoint public dédié (scopé au token, même contenu filtré

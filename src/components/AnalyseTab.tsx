@@ -11,6 +11,7 @@ import {
   type ScoreDisplay,
   type GlobalScoreResult,
 } from "@/lib/scores";
+import { fetchSemanticAdjustmentsRemaining } from "@/lib/api";
 import RealGlobalScoreCard from "./RealGlobalScoreCard";
 import RealScoreArc from "./RealScoreArc";
 import { scoreInfos, scoreIcons } from "@/app/dashboard/rapport/score-infos";
@@ -56,6 +57,8 @@ export default function AnalyseTab({
   // temps que les scores pour rester synchrone au polling (jamais un global périmé
   // face aux arcs).
   const [globalScore, setGlobalScore] = useState<GlobalScoreResult | null>(null);
+  // Ajustements sémantiques restants (prospect, cap 2 ; null = commercial illimité).
+  const [adjustmentsRemaining, setAdjustmentsRemaining] = useState<number | null>(null);
   const [error, setError] = useState(false);
   // Bump manuel (déblocage) → recharge immédiate + relance le polling.
   const [reloadCounter, setReloadCounter] = useState(0);
@@ -73,13 +76,15 @@ export default function AnalyseTab({
       try {
         // Scores + score global en parallèle (même cycle → jamais désynchronisés).
         // Le global est SERVEUR : le front le lit, il ne recalcule pas la moyenne.
-        const [s, g] = await Promise.all([
+        const [s, g, adj] = await Promise.all([
           fetchProjectScores(projectId),
           fetchGlobalScore(projectId).catch(() => null),
+          fetchSemanticAdjustmentsRemaining(projectId).catch(() => null),
         ]);
         if (!active) return;
         setScores(s);
         setGlobalScore(g);
+        setAdjustmentsRemaining(adj);
         setError(false);
         setPollTick((t) => t + 1);
         // Polling tant qu'un score se calcule (l'écran dit que ça travaille).
@@ -226,6 +231,16 @@ export default function AnalyseTab({
               processing={sc?.status === "processing" || sc?.status === "pending"}
               projectId={projectId}
               onUnlocked={handleUnlocked}
+              // Sémantique COMPLETED mais insuffisant → bouton « Ajuster les mots-clés »
+              // (rouvre la modale pré-remplie). Compteur prospect (null = commercial illimité).
+              adjustable={
+                type === "semantic" &&
+                sc?.status === "completed" &&
+                sc.display?.scorable === false &&
+                sc.display?.value == null
+              }
+              adjustmentsRemaining={type === "semantic" ? adjustmentsRemaining : null}
+              onExpertClick={onExpertClick}
             />
           );
         })}
