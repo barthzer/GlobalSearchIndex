@@ -60,6 +60,18 @@ export default function RealGlobalScoreCard({
     !!projectId &&
     (statusOf("semantic") === "locked" || statusOf("geo_citations") === "locked");
 
+  // Terminal-insuffisant (retour Kevin 2026-08-26, neurones.net) : le SEO Sémantique est
+  // COMPLETED mais sans /100 (aucun mot-clé top 100). Il n'est NI processing NI locked →
+  // il tomberait dans le « en attente » trompeur, qui promet un calcul automatique qui
+  // n'arrivera JAMAIS seul (le pilier est fini). On le détecte pour dire le constat + l'action
+  // (ajuster les mots-clés), au lieu d'une fausse attente. Le display serveur porte déjà
+  // scorable/value : le front LIT, il ne recalcule pas de seuils.
+  const semanticScore = scores.find((s) => s.scoreType === "semantic");
+  const semanticTerminalInsufficient =
+    semanticScore?.status === "completed" &&
+    semanticScore.display?.scorable === false &&
+    semanticScore.display?.value == null;
+
   const header = (
     <div className="flex items-center gap-2.5">
       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-card-inner-bg text-text-primary/80">
@@ -173,8 +185,23 @@ export default function RealGlobalScoreCard({
     );
   }
 
-  // ④ ATTENTE honnête (aucun déblocage possible, rien en cours : ex. un pilier en
-  // données insuffisantes) → on dit ce qu'il manque, SANS bouton mort.
+  // ⑤ TERMINAL-INSUFFISANT (SEO Sémantique fini mais sans note) → constat + action
+  // (le bouton « Ajuster » vit sur la carte Sémantique). PAS « en attente » : rien n'arrive
+  // seul. Wording validé Kevin.
+  if (semanticTerminalInsufficient) {
+    return (
+      <div className="flex flex-col items-start gap-3 rounded-2xl border border-border-subtle bg-bg-card p-5 md:p-6">
+        {header}
+        <p className="max-w-xl text-[13px] leading-relaxed text-text-secondary">
+          Votre score d&apos;ensemble attend le SEO Sémantique. Ajustez vos
+          mots-clés depuis la carte Sémantique.
+        </p>
+      </div>
+    );
+  }
+
+  // ④ ATTENTE honnête (aucun déblocage possible, rien en cours) → on dit ce qu'il manque,
+  // SANS bouton mort. (Le cas « données insuffisantes » sémantique est géré en ⑤ ci-dessus.)
   return (
     <div className="flex flex-col items-start gap-3 rounded-2xl border border-border-subtle bg-bg-card p-5 md:p-6">
       {header}
