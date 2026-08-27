@@ -11,8 +11,8 @@ export default function ExpertCtaBanner({
   onExpertClick,
   className = "",
   title = "Un expert AWI décrypte vos résultats",
-  body = "Transformez votre diagnostic en plan d'action priorisé pour gagner rapidement en visibilité.",
-  cta = "Demandez votre plan d'action",
+  body = "15 minutes offertes avec un expert pour transformer votre diagnostic en plan d'action priorisé.",
+  cta = "Bénéficier de 15 min avec un expert",
 }: {
   onExpertClick: () => void;
   className?: string;

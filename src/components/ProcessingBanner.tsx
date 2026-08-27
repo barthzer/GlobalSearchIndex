@@ -75,10 +75,9 @@ export default function ProcessingBanner() {
       </span>
 
       <p className="flex-1 text-[13px] font-light leading-snug text-text-primary">
-        <span className="font-medium">Votre rapport est en cours de finalisation...</span>{" "}
-        L&apos;analyse complète peut prendre de quelques minutes à 2 h selon la taille de
-        votre site. Les données s&apos;actualisent en temps réel : vous pouvez déjà
-        consulter les premiers résultats, inutile de patienter.
+        <span className="font-medium">Votre rapport finalise ses derniers calculs.</span>{" "}
+        Vous pouvez déjà explorer vos premiers résultats. Les données complètes arrivent
+        d&apos;ici ~30 min.
       </p>
 
       <button
