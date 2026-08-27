@@ -130,6 +130,10 @@ export default function ReportTokenPage() {
   const { project, scores, recommendations } = data;
   const initial = (project.companyName || project.domain).charAt(0).toUpperCase();
   const recos = recommendations?.recommendations ?? [];
+  // Gate expert-first : le serveur a déjà tronqué le payload à 4 + lockedCount (le reste
+  // n'est pas dans la réponse réseau). lockedCount pilote le teaser.
+  const lockedCount =
+    (recommendations as { lockedCount?: number } | null | undefined)?.lockedCount ?? 0;
 
   return (
     <main className="min-h-screen bg-bg-primary px-4 py-10 md:py-16">
@@ -332,15 +336,15 @@ export default function ReportTokenPage() {
               Recommandations stratégiques
             </h2>
             <div className="flex flex-col gap-3">
-              {recos.slice(0, 4).map((reco: ReportReco, i) => (
+              {recos.map((reco: ReportReco, i) => (
                 <RealRecommendationCard
                   key={i}
                   index={i}
                   rec={{ ...reco, pillar: reco.pilier } as Reco}
                 />
               ))}
-              {recos.length > 4 && (
-                <ExpertGate count={recos.length - 4} onExpertClick={() => setShowExpert(true)} />
+              {lockedCount > 0 && (
+                <ExpertGate count={lockedCount} onExpertClick={() => setShowExpert(true)} />
               )}
             </div>
             <ExpertCtaBanner

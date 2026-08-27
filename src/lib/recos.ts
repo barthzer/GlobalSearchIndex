@@ -35,6 +35,9 @@ export interface Reco {
 export interface RecoContent {
   recommendations: Reco[];
   cta?: string;
+  /** Gate expert-first : nombre de recos masquées côté serveur (payload prospect tronqué
+   *  à 4). 0/absent = tout est reçu (commercial). Le front rend le teaser d'après ça. */
+  lockedCount?: number;
 }
 
 // Récupère les recommandations d'un projet via apiFetch (même canal que le reste

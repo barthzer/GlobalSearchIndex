@@ -6,7 +6,6 @@ import { fetchProjectScores, anyProcessing } from "@/lib/scores";
 import RealRecommendationCard from "./RealRecommendationCard";
 import RecoCardStack from "./RecoCardStack";
 import ExpertCtaBanner from "./ExpertCtaBanner";
-import { useAccount } from "./AccountProvider";
 
 function Heading() {
   return (
@@ -144,10 +143,10 @@ export default function RealRecommendations({
   // Barth (retour Alexis 2026-08-13). Affichés uniquement en vue complète (pas aperçu).
   const [fPriority, setFPriority] = useState<string>("all");
   const [fType, setFType] = useState<string>("all");
-  // Le gate expert ne concerne QUE le prospect (levier de conversion). Le commercial
-  // voit TOUT en clair (décision Kevin 2026-08-27, diffère de la maquette Barth où
-  // tout le monde est gaté).
-  const { isProspect } = useAccount();
+  // L'audience est décidée CÔTÉ SERVEUR : le payload prospect est déjà tronqué à 4 +
+  // lockedCount (le commercial reçoit tout, lockedCount 0). Le front rend ce qu'il reçoit
+  // — plus de check isProspect ici (décision Kevin 2026-08-27 : « l'audience détermine le
+  // payload, le front rend ce qu'il reçoit »).
 
   useEffect(() => {
     let active = true;
@@ -210,27 +209,32 @@ export default function RealRecommendations({
     body = <GeneratingState />;
   } else {
     const recos = content!.recommendations;
+    // GATE EXPERT : le SERVEUR a déjà tronqué le payload prospect à 4 + lockedCount (le
+    // reste n'est même pas dans la réponse réseau). Le front rend ce qu'il reçoit — aucun
+    // re-slice, aucun check d'audience côté front (le serveur décide). gated = il reste des
+    // recos masquées. Le commercial reçoit tout (lockedCount 0) → aucun gate.
+    const lockedCount = content!.lockedCount ?? 0;
+    const gated = !preview && lockedCount > 0;
+    // Filtres + compteur : vue complète NON gatée (commercial). Le prospect n'a que 4 recos
+    // → filtrer n'a pas de sens, on montre les 4 + le teaser.
+    const showControls = !preview && !gated;
     // Type = piliers réellement présents dans les recos (axe = libellé dynamique).
     const typeOptions = Array.from(
       new Set(recos.map((r) => (r.pillar || r.axe || "").trim()).filter(Boolean)),
     );
-    // Aperçu : 3 premières, sans filtre. Vue complète : filtrable Priorité + Type.
     const shown = preview
       ? recos.slice(0, 3)
-      : recos.filter(
-          (r) =>
-            (fPriority === "all" || r.impact === fPriority) &&
-            (fType === "all" || (r.pillar || r.axe) === fType),
-        );
-    // GATE EXPERT (vue complète, PROSPECT uniquement) : 4 recos en clair, le reste teasé
-    // derrière le contact expert. Le commercial voit TOUT en clair (décision Kevin 27/08).
-    const gated = !preview && isProspect;
-    const clearRecos = gated ? shown.slice(0, 4) : shown;
-    const gatedCount = gated ? Math.max(0, shown.length - 4) : 0;
+      : showControls
+        ? recos.filter(
+            (r) =>
+              (fPriority === "all" || r.impact === fPriority) &&
+              (fType === "all" || (r.pillar || r.axe) === fType),
+          )
+        : recos; // gated : les 4 recos reçues, sans filtre
     body = (
       <section>
         <Heading />
-        {!preview && (
+        {showControls && (
           <div className="mb-5 flex flex-wrap items-center gap-2.5">
             <RecoDropdown
               label="Priorité"
@@ -261,12 +265,14 @@ export default function RealRecommendations({
         <div className="relative">
           {shown.length > 0 ? (
             <div className="flex flex-col gap-3">
-              {clearRecos.map((r, i) => (
+              {shown.map((r, i) => (
                 <RealRecommendationCard key={i} rec={r} index={i} delay={480 + i * 60} />
               ))}
-              {/* Prospect + plus de 4 recos → teaser gate expert (silhouettes floutées +
-                  pile animée + CTA). Le contenu gaté n'est JAMAIS rendu (anti-fuite). */}
-              {gatedCount > 0 && <ExpertGate count={gatedCount} onExpertClick={onExpertClick} />}
+              {/* Prospect avec des recos masquées → teaser gate expert (silhouettes floutées
+                  + pile animée + CTA). Le contenu gaté n'est même PAS dans le payload. */}
+              {gated && lockedCount > 0 && (
+                <ExpertGate count={lockedCount} onExpertClick={onExpertClick} />
+              )}
             </div>
           ) : (
             <div className="rounded-xl border border-border-subtle bg-bg-card p-8 text-center text-[14px] text-text-secondary">
