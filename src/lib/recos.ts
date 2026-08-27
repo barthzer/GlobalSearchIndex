@@ -60,9 +60,13 @@ export async function fetchRecommendations(
   const data = (await res.json()) as {
     recommendations?: Reco[];
     cta?: string;
+    lockedCount?: number;
   };
   return {
     recommendations: data.recommendations ?? [],
     cta: data.cta,
+    // lockedCount : porté par /public/recommendations (prospect) → active le masque
+    // (4 en clair + reste flouté). Absent côté commercial (endpoint interne) = 0 = tout.
+    lockedCount: data.lockedCount,
   };
 }
