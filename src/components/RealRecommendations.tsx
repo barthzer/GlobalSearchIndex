@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { fetchRecommendations, type RecoContent } from "@/lib/recos";
 import { fetchProjectScores, anyProcessing } from "@/lib/scores";
 import RealRecommendationCard from "./RealRecommendationCard";
-import SemanticUnlockModal from "./SemanticUnlockModal";
+import RecoCardStack from "./RecoCardStack";
+import ExpertCtaBanner from "./ExpertCtaBanner";
 import { useAccount } from "./AccountProvider";
 
 function Heading() {
@@ -50,37 +51,43 @@ function BlurredCards() {
   );
 }
 
-// État VERROUILLÉ (maquette Alexis 2026-08-11) : cartes floutées + cadenas + CTA
-// « Débloquer les recommandations » (même formulaire de déblocage que les autres
-// scores). Tant que l'analyse n'est pas débloquée, le plan d'action reste verrouillé.
-function LockedState({ onUnlock }: { onUnlock: () => void }) {
+// TEASER GATE EXPERT (modèle expert-first validé Alexis 2026-08-27, design Barth GSI-Front) :
+// posé SOUS les 4 recos en clair, il floute un fond de SILHOUETTES (pas les vraies recos
+// 5+ → aucune fuite du contenu gaté dans le DOM : notre logique derrière son pixel) et
+// superpose une pile de mini-cartes animée + le CTA « Échanger avec un expert ». Remplace
+// l'ancien verrou « Débloquer » (le gate n'est plus le déblocage sémantique).
+export function ExpertGate({ count, onExpertClick }: { count: number; onExpertClick?: () => void }) {
   return (
-    <section>
-      <Heading />
-      <div className="relative">
-        <BlurredCards />
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-pink/10 text-accent-pink">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-            </svg>
-          </span>
-          <p className="max-w-xs text-[13.5px] font-light leading-relaxed text-text-secondary">
-            Vos recommandations seront débloquées quand tous vos scores seront calculés.
+    <div className="relative">
+      {/* Fond flouté = silhouettes (jamais les vraies recos). */}
+      <div className="pointer-events-none flex select-none flex-col gap-3 blur-[7px]" aria-hidden>
+        <CardSkeleton titleWidth="72%" />
+        {count > 1 && <CardSkeleton titleWidth="60%" />}
+        {count > 2 && <CardSkeleton titleWidth="68%" />}
+      </div>
+      {/* Voile de lisibilité + encart d'accès sticky (RecoCardStack + CTA expert). */}
+      <div
+        className="pointer-events-none absolute inset-0 z-10 px-4"
+        style={{ background: "linear-gradient(to bottom, transparent 0%, var(--bg-primary) 96%)" }}
+      >
+        <div className="pointer-events-auto sticky top-28 mx-auto flex w-fit max-w-[560px] flex-col items-center gap-5 px-4 py-6 text-center">
+          <RecoCardStack />
+          <p className="max-w-[440px] text-[18px] font-medium leading-snug tracking-[-0.2px] text-text-primary md:text-[20px]">
+            Échangez avec un de nos experts pour accéder à l&apos;ensemble des recommandations.
           </p>
           <button
-            onClick={onUnlock}
+            onClick={onExpertClick}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#6817F8] to-[#EE56CE] px-5 py-2.5 text-[13px] font-medium text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
             style={{ transitionTimingFunction: "var(--ease-out)" }}
           >
-            Débloquer les recommandations
+            Échanger avec un expert
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
             </svg>
           </button>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -115,30 +122,31 @@ export default function RealRecommendations({
   projectId,
   preview = false,
   onSeeAll,
+  onExpertClick,
 }: {
   projectId: string;
   /** Aperçu (onglet Analyse / Home) : 3 recos + fondu + CTA « voir tout ». */
   preview?: boolean;
   /** Cible du CTA « voir tout » (bascule vers l'onglet Recommandations). */
   onSeeAll?: () => void;
+  /** Ouvre la modale expert (lead). Gate du modèle expert-first : au-delà de 4 recos,
+   *  le prospect passe par le contact expert (plus le déblocage sémantique). */
+  onExpertClick?: () => void;
 }) {
   // undefined = chargement initial ; sinon le contenu (liste éventuellement vide).
   const [content, setContent] = useState<RecoContent | undefined>(undefined);
-  // null = inconnu (avant 1er fetch) ; true = geo_citations verrouillé (analyse non débloquée).
-  const [geoLocked, setGeoLocked] = useState<boolean | null>(null);
   // Retour COMEX 21/08 (#12) : gater l'AFFICHAGE (pas la génération) tant qu'un score
   // auto n'est pas finalisé, pour ne pas montrer des recos partielles qui « sautent »
   // quand le dernier score arrive. La génération LLM continue en fond côté serveur.
   const [autoRunning, setAutoRunning] = useState(false);
   const [error, setError] = useState(false);
-  const [showUnlock, setShowUnlock] = useState(false);
-  const [reloadNonce, setReloadNonce] = useState(0);
   // Filtres Priorité (via impact) + Type (via pilier/axe) — parité VF, absents du
   // Barth (retour Alexis 2026-08-13). Affichés uniquement en vue complète (pas aperçu).
   const [fPriority, setFPriority] = useState<string>("all");
   const [fType, setFType] = useState<string>("all");
-  // Le verrou recos ne concerne QUE le prospect (levier de conversion). Le commercial
-  // voit toujours les recos, même analyse non débloquée (décision Kevin 2026-08-11).
+  // Le gate expert ne concerne QUE le prospect (levier de conversion). Le commercial
+  // voit TOUT en clair (décision Kevin 2026-08-27, diffère de la maquette Barth où
+  // tout le monde est gaté).
   const { isProspect } = useAccount();
 
   useEffect(() => {
@@ -147,25 +155,22 @@ export default function RealRecommendations({
     let interval = POLL_START_MS;
     async function load() {
       try {
-        // Scores (statut geo_citations = verrou de l'analyse) + recos, en parallèle.
+        // Scores (pour détecter un calcul auto en cours) + recos, en parallèle.
         const [scores, c] = await Promise.all([
           fetchProjectScores(projectId).catch(() => null),
           fetchRecommendations(projectId),
         ]);
         if (!active) return;
-        const geo = scores?.find((s) => s.scoreType === "geo_citations") ?? null;
-        const locked = geo?.status === "locked";
         // Un score auto encore pending/processing → on attend sa finalisation avant
         // d'afficher les recos (les scores 'locked' sémantique/geo sont ignorés par
         // anyProcessing, donc l'attente du formulaire sémantique ne bloque pas l'affichage).
         const running = scores ? anyProcessing(scores) : false;
         setAutoRunning(running);
-        setGeoLocked(locked);
         setContent(c);
         setError(false);
-        // Poll tant que : un score auto tourne OU verrouillé (détecter le déblocage) OU
-        // recos pas encore là. Lecture du stocké (aucun recalcul serveur), backoff doux.
-        if (running || locked || c.recommendations.length === 0) {
+        // Poll tant que : un score auto tourne OU recos pas encore là. Lecture du stocké
+        // (aucun recalcul serveur), backoff doux.
+        if (running || c.recommendations.length === 0) {
           timer = setTimeout(load, interval);
           interval = Math.min(interval + 3000, POLL_MAX_MS);
         }
@@ -174,7 +179,6 @@ export default function RealRecommendations({
       }
     }
     setContent(undefined);
-    setGeoLocked(null);
     setAutoRunning(false);
     setError(false);
     load();
@@ -182,7 +186,7 @@ export default function RealRecommendations({
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [projectId, reloadNonce]);
+  }, [projectId]);
 
   const isEmpty = !content || content.recommendations.length === 0;
 
@@ -196,10 +200,6 @@ export default function RealRecommendations({
         </p>
       </section>
     );
-  } else if (geoLocked && isProspect) {
-    // VERROUILLÉ (prospect uniquement) → cadenas + CTA de déblocage. Le commercial
-    // voit les recos directement (pas de verrou).
-    body = <LockedState onUnlock={() => setShowUnlock(true)} />;
   } else if (autoRunning) {
     // Un score auto se calcule encore → flou de génération, on n'affiche pas de recos
     // partielles susceptibles d'être régénérées à l'arrivée du dernier score (#12).
@@ -222,6 +222,11 @@ export default function RealRecommendations({
             (fPriority === "all" || r.impact === fPriority) &&
             (fType === "all" || (r.pillar || r.axe) === fType),
         );
+    // GATE EXPERT (vue complète, PROSPECT uniquement) : 4 recos en clair, le reste teasé
+    // derrière le contact expert. Le commercial voit TOUT en clair (décision Kevin 27/08).
+    const gated = !preview && isProspect;
+    const clearRecos = gated ? shown.slice(0, 4) : shown;
+    const gatedCount = gated ? Math.max(0, shown.length - 4) : 0;
     body = (
       <section>
         <Heading />
@@ -256,9 +261,12 @@ export default function RealRecommendations({
         <div className="relative">
           {shown.length > 0 ? (
             <div className="flex flex-col gap-3">
-              {shown.map((r, i) => (
+              {clearRecos.map((r, i) => (
                 <RealRecommendationCard key={i} rec={r} index={i} delay={480 + i * 60} />
               ))}
+              {/* Prospect + plus de 4 recos → teaser gate expert (silhouettes floutées +
+                  pile animée + CTA). Le contenu gaté n'est JAMAIS rendu (anti-fuite). */}
+              {gatedCount > 0 && <ExpertGate count={gatedCount} onExpertClick={onExpertClick} />}
             </div>
           ) : (
             <div className="rounded-xl border border-border-subtle bg-bg-card p-8 text-center text-[14px] text-text-secondary">
@@ -287,31 +295,21 @@ export default function RealRecommendations({
             </button>
           </div>
         ) : (
-          content!.cta && (
-            <div className="mt-5 mb-8 rounded-2xl border border-accent-pink/20 bg-accent-pink/[0.05] p-5 text-[13.5px] leading-relaxed text-text-secondary">
-              {content!.cta}
-            </div>
-          )
+          // Bannière expert « 15 min offertes » (design Barth, wording confirmé Alexis 27/08),
+          // posée juste après la liste/le flou — c'est là que le CTA a le plus de sens.
+          <ExpertCtaBanner
+            onExpertClick={onExpertClick ?? (() => {})}
+            className="mt-8"
+            title="Priorisez ce plan d'action avec un expert"
+            body="15 minutes offertes avec un consultant AWI pour séquencer ces recommandations sur 90 jours selon votre impact business."
+            cta="Bénéficier de 15 min avec un expert"
+          />
         )}
       </section>
     );
   }
 
-  return (
-    <>
-      {showUnlock && (
-        <SemanticUnlockModal
-          projectId={projectId}
-          onClose={() => setShowUnlock(false)}
-          onSubmit={() => {
-            setShowUnlock(false);
-            setReloadNonce((n) => n + 1);
-          }}
-        />
-      )}
-      {body}
-    </>
-  );
+  return body;
 }
 
 // Menu déroulant de filtre (Priorité / Type) — calqué sur la VF (RecommendationsView).

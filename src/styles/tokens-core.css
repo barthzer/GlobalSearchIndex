@@ -71,6 +71,40 @@
   animation: fade-up var(--motion-slow) var(--ease-expo) both;
 }
 
+/* Pile de mini-cartes « recommandations » (teaser recos gatées) — porté au pixel de la
+   maquette Barth (GSI-Front) : la carte du fond passe au premier plan en boucle. */
+@keyframes reco-cycle {
+  0%, 36% {
+    transform: translate(-50%, 0) scale(1) rotate(-2.5deg);
+    opacity: 1;
+    z-index: 2;
+  }
+  46% {
+    transform: translate(-50%, -20px) scale(1.02) rotate(-7deg);
+    opacity: 0;
+    z-index: 2;
+  }
+  46.1% {
+    transform: translate(-50%, 24px) scale(0.86) rotate(5deg);
+    opacity: 0;
+    z-index: 1;
+  }
+  58%, 86% {
+    transform: translate(-50%, 14px) scale(0.9) rotate(3.5deg);
+    opacity: 0.55;
+    z-index: 1;
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1) rotate(-2.5deg);
+    opacity: 1;
+    z-index: 2;
+  }
+}
+
+.animate-reco-cycle {
+  animation: reco-cycle 7s ease-in-out infinite;
+}
+
 .animate-glow-pulse {
   animation: glow-pulse 3s ease-in-out infinite;
 }

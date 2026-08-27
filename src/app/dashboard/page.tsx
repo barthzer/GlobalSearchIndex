@@ -466,7 +466,10 @@ export default function DashboardPage() {
                 onExpertClick={() => setShowExpert(true)}
               />
             ) : activeTabSafe === "recommandations" ? (
-              <RealRecommendations projectId={currentGeneration.id} />
+              <RealRecommendations
+                projectId={currentGeneration.id}
+                onExpertClick={() => setShowExpert(true)}
+              />
             ) : (
               <NotorieteTab projectId={currentGeneration.id} clientName={currentGeneration.name} />
             )}

@@ -5,6 +5,8 @@ import RealScoreArc from "@/components/RealScoreArc";
 import RealGeoScoreCard, { type PlatformBreakdown } from "@/components/RealGeoScoreCard";
 import RealPageSpeed from "@/components/RealPageSpeed";
 import RealRecommendationCard from "@/components/RealRecommendationCard";
+import { ExpertGate } from "@/components/RealRecommendations";
+import ExpertCtaBanner from "@/components/ExpertCtaBanner";
 import ExpertModal from "@/components/ExpertModal";
 import NotorieteInsightsView from "@/components/notoriete/NotorieteInsightsView";
 import ConcurrenceTab from "@/components/concurrence/ConcurrenceTab";
@@ -320,39 +322,34 @@ export default function ReportTokenPage() {
           );
         })()}
 
-        {/* Recommandations — déjà filtrées audience prospect côté serveur. Retour
-            Alexis 21/08 : MÊME présentation que l'app (RealRecommendationCard) au lieu
-            d'un rendu inline divergent. `pilier` → `pillar` pour le contrat de la carte. */}
+        {/* Recommandations — GATE EXPERT (modèle expert-first, décision Kevin 27/08 :
+            TOUT partage est gaté ; le PDF reste le livrable complet). 4 en clair, le reste
+            teasé derrière le contact expert. Fond flouté = silhouettes (jamais les vraies
+            recos 5+ → rien à lire dans l'inspecteur). `pilier` → `pillar` pour la carte. */}
         {recos.length > 0 && (
           <section className="mt-10">
             <h2 className="mb-5 text-xl font-medium tracking-tight text-text-primary">
               Recommandations stratégiques
             </h2>
             <div className="flex flex-col gap-3">
-              {recos.map((reco: ReportReco, i) => (
+              {recos.slice(0, 4).map((reco: ReportReco, i) => (
                 <RealRecommendationCard
                   key={i}
                   index={i}
                   rec={{ ...reco, pillar: reco.pilier } as Reco}
                 />
               ))}
-            </div>
-            {/* CTA contact — retour Alexis 21/08 : lien vers « Parler à un expert »
-                (ExpertModal, formulaire lead public). Toujours proposé au prospect. */}
-            <div className="mt-6 rounded-2xl border border-accent-pink/20 bg-accent-pink/[0.05] p-5 text-center">
-              {recommendations?.cta && (
-                <p className="text-[14px] font-light leading-relaxed text-text-secondary">
-                  {recommendations.cta}
-                </p>
+              {recos.length > 4 && (
+                <ExpertGate count={recos.length - 4} onExpertClick={() => setShowExpert(true)} />
               )}
-              <button
-                type="button"
-                onClick={() => setShowExpert(true)}
-                className={`inline-flex items-center gap-2 rounded-full bg-accent-pink px-5 py-2.5 text-[13px] font-medium text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97] ${recommendations?.cta ? "mt-4" : ""}`}
-              >
-                Parler à un expert
-              </button>
             </div>
+            <ExpertCtaBanner
+              onExpertClick={() => setShowExpert(true)}
+              className="mt-8"
+              title="Priorisez ce plan d'action avec un expert"
+              body="15 minutes offertes avec un consultant AWI pour séquencer ces recommandations sur 90 jours selon votre impact business."
+              cta="Bénéficier de 15 min avec un expert"
+            />
           </section>
         )}
 
