@@ -255,6 +255,9 @@ export default function RealScoreArc({
               onUnlocked?.();
             }}
             submitLabel="Relancer avec ces mots-clés"
+            // Ajustement : on ouvre DIRECTEMENT sur les mots-clés (le label le dit) ; le
+            // « Retour » reste dispo pour aussi changer les concurrents si le panel était mauvais.
+            initialStep={2}
           />
         )}
         <div

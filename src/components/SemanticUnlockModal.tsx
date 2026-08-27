@@ -15,6 +15,10 @@ interface SemanticUnlockModalProps {
   competitorsOnly?: boolean;
   /** Libellé du bouton final (mode competitorsOnly). */
   submitLabel?: string;
+  /** Étape d'ouverture (défaut 1 = Concurrents). Un AJUSTEMENT « Ajuster les mots-clés »
+   *  ouvre directement l'étape 2 (mots-clés) — le « Retour » reste dispo pour aussi
+   *  changer les concurrents si le panel était mauvais (retour Kevin 2026-08-27). */
+  initialStep?: 1 | 2;
 }
 
 type Item = { value: string; checked: boolean };
@@ -55,13 +59,13 @@ function itemsFromStore(values: string[], min: number, max: number): Item[] {
   return items;
 }
 
-export default function SemanticUnlockModal({ onClose, onSubmit, projectId, competitorsOnly = false, submitLabel }: SemanticUnlockModalProps) {
+export default function SemanticUnlockModal({ onClose, onSubmit, projectId, competitorsOnly = false, submitLabel, initialStep = 1 }: SemanticUnlockModalProps) {
   // Lecture du store une seule fois au montage (pré-remplissage lié au benchmark).
   const stored = useRef<SemanticInputs>(getSemanticInputs(projectId)).current;
   const compInit = stored.competitors.length ? itemsFromStore(stored.competitors, 3, COMP_MAX) : emptyItems(3);
   const kwInit = stored.keywords.length ? itemsFromStore(stored.keywords, 5, KW_MAX) : emptyItems(5);
 
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2>(initialStep);
   const [competitors, setCompetitors] = useState<Item[]>(compInit);
   const [keywords, setKeywords] = useState<Item[]>(kwInit);
   const [error, setError] = useState("");
