@@ -4,32 +4,43 @@ import Button from "./Button";
 import { asset } from "@/lib/asset";
 
 /**
- * Bannière CTA expert pleine largeur (contenu à gauche, image experts à droite).
- * Réutilisée en bas des vues client (analyse, concurrence…).
+ * Bannière CTA expert. Deux variantes :
+ * - `banner` (défaut) : pleine largeur, contenu à gauche + image experts à droite (bas des
+ *   vues analyse/concurrence…).
+ * - `sidebar` : carte verticale étroite (encart de l'onglet Accueil, retour Alexis 27/08) —
+ *   même contenu (avatars, +500 clients, titre, CTA, avis Google) empilé, CTA pleine
+ *   largeur, sans l'image experts (pas de place en colonne).
  */
 export default function ExpertCtaBanner({
   onExpertClick,
   className = "",
+  variant = "banner",
   title = "Un expert AWI décrypte vos résultats",
   body = "15 minutes offertes avec un expert pour transformer votre diagnostic en plan d'action priorisé.",
   cta = "Bénéficier de 15 min avec un expert",
 }: {
   onExpertClick: () => void;
   className?: string;
+  variant?: "banner" | "sidebar";
   title?: string;
   body?: string;
   cta?: string;
 }) {
+  const sidebar = variant === "sidebar";
   return (
     <div
-      className={`animate-fade-up relative flex flex-col overflow-hidden rounded-2xl lg:flex-row lg:items-stretch ${className}`}
+      className={`animate-fade-up relative flex flex-col overflow-hidden rounded-2xl ${sidebar ? "" : "lg:flex-row lg:items-stretch"} ${className}`}
       style={{
         background:
           `linear-gradient(180deg, rgba(20,4,18,0.10) 0%, rgba(20,4,18,0.45) 100%), url('${asset("/expert-card-bg-wide.jpg")}') center/cover no-repeat, radial-gradient(120% 80% at 50% 0%, rgba(236,77,203,0.3) 0%, transparent 55%), linear-gradient(160deg, #2b0826 0%, #46103c 100%)`,
       }}
     >
-      {/* Contenu — à gauche, 48px de padding vertical & horizontal */}
-      <div className="relative z-10 flex flex-1 flex-col justify-center gap-3 px-8 py-8 lg:py-12 lg:pl-12 lg:pr-6">
+      {/* Contenu empilé (banner : padding large + à gauche ; sidebar : padding compact) */}
+      <div
+        className={`relative z-10 flex flex-1 flex-col gap-3 ${
+          sidebar ? "p-6 md:p-8" : "justify-center px-8 py-8 lg:py-12 lg:pl-12 lg:pr-6"
+        }`}
+      >
         <div className="flex items-center gap-2">
           <div className="flex shrink-0 -space-x-2">
             {[asset("/consultant1.png"), asset("/consultant2.png"), asset("/consultant3.png")].map((src) => (
@@ -42,10 +53,10 @@ export default function ExpertCtaBanner({
         </div>
 
         <h3 className="text-[24px] font-semibold leading-tight tracking-[-0.4px] text-white">{title}</h3>
-        <p className="text-[15px] font-light leading-relaxed text-white/75 md:max-w-[440px]">{body}</p>
+        <p className={`text-[15px] font-light leading-relaxed text-white/75 ${sidebar ? "" : "md:max-w-[440px]"}`}>{body}</p>
 
         <div>
-          <Button variant="primary" onClick={onExpertClick}>
+          <Button variant="primary" fullWidth={sidebar} onClick={onExpertClick}>
             {cta}
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -66,14 +77,16 @@ export default function ExpertCtaBanner({
         </div>
       </div>
 
-      {/* Image experts — à droite, padding 48 à droite, collée en bas */}
-      <div className="hidden shrink-0 self-stretch lg:flex lg:w-[440px] lg:items-end lg:justify-end lg:pr-12">
-        <img
-          src={asset("/expertswidedivcta.png")}
-          alt=""
-          className="pointer-events-none max-h-full w-auto max-w-full object-contain object-bottom"
-        />
-      </div>
+      {/* Image experts — à droite (banner uniquement ; pas de place en sidebar) */}
+      {!sidebar && (
+        <div className="hidden shrink-0 self-stretch lg:flex lg:w-[440px] lg:items-end lg:justify-end lg:pr-12">
+          <img
+            src={asset("/expertswidedivcta.png")}
+            alt=""
+            className="pointer-events-none max-h-full w-auto max-w-full object-contain object-bottom"
+          />
+        </div>
+      )}
     </div>
   );
 }

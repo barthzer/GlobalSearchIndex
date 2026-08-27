@@ -40,9 +40,19 @@ export default function GlobalScorePreview() {
 
         <section className="mt-10">
           <h2 className="mb-2 text-[13px] font-medium text-text-secondary">
-            Carte expert — props par défaut (wording aligné Barth)
+            Carte expert — variante bannière (bas des vues analyse/concurrence)
           </h2>
           <ExpertCtaBanner onExpertClick={() => {}} />
+        </section>
+
+        <section className="mt-10">
+          <h2 className="mb-2 text-[13px] font-medium text-text-secondary">
+            Carte expert — variante sidebar (encart onglet Accueil, option B / #250)
+          </h2>
+          {/* Largeur ~348px = la vraie colonne sidebar de l'onglet Accueil */}
+          <div className="w-[348px] max-w-full">
+            <ExpertCtaBanner variant="sidebar" onExpertClick={() => {}} />
+          </div>
         </section>
       </div>
     </main>

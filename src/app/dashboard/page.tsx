@@ -406,46 +406,14 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                {/* RDV CTA sticky sidebar */}
-                <div
-                  className="animate-fade-up relative sticky top-6 self-start overflow-hidden rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]"
-                  style={{
-                    animationDelay: "500ms",
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 20px 40px -15px rgba(0,0,0,0.15)",
-                  }}
-                >
-                  <div className="relative p-6 md:p-8">
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.06] bg-gradient-to-br from-[#6817F8]/15 to-[#EE56CE]/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
-                      <svg className="h-5 w-5 text-accent-pink" viewBox="0 0 512 512" fill="currentColor">
-                        <path d="m255.5 226.2c-16.9 0-30 13.1-29.9 29.8.3 16.8 13.9 30.2 30.7 30.3 16.2.1 29.3-13 29.4-29.2 0-.2 0-.4 0-.6.2-16.6-13-30.2-29.6-30.4-.2.1-.4.1-.6.1z"/>
-                        <path d="m256 0c-141.4 0-256 114.6-256 256s114.6 256 256 256 256-114.6 256-256-114.6-256-256-256zm135.6 144.5c-21.8 56.1-43.9 112-65.8 168-2.2 6.1-6.9 10.8-12.9 13.1-56.1 22-112.3 44.1-168.4 66.2-1.9.7-3.8 1.2-5.7 1.6-15 .1-23.4-12.8-18.3-26 11-28.5 22.3-56.9 33.5-85.3 10.8-27.4 21.5-54.7 32.2-82.2 2.5-6.5 6.6-11.1 13.1-13.6 55.8-21.8 111.6-43.7 167.4-65.7 12.1-4.8 23.3 0 26 11.6.7 4.1.4 8.4-1.1 12.3z"/>
-                      </svg>
-                    </div>
-                    <p className="text-[length:var(--text-body-lg)] font-medium leading-relaxed text-text-primary">
-                      Ces 4 leviers montrent un potentiel de gain immédiat sur votre visibilité organique.
-                    </p>
-                    <p className="mt-3 text-[length:var(--text-body)] font-light leading-relaxed text-text-secondary">
-                      Je vous propose un{" "}
-                      {/* Retour Alexis 21/08 : la phrase devient cliquable vers le formulaire expert. */}
-                      <button
-                        type="button"
-                        onClick={() => setShowExpert(true)}
-                        className="font-medium text-accent-pink underline underline-offset-2 transition-colors duration-150 hover:text-accent-pink/80"
-                      >
-                        rendez-vous de 30 minutes
-                      </button>{" "}
-                      pour cadrer un plan d&apos;action priorisé sur 90 jours et identifier les chantiers à lancer en premier.
-                    </p>
-                    <div className="mt-6">
-                      <Button variant="primary" fullWidth onClick={() => setShowExpert(true)}>
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
-                        </svg>
-                        Prendre RDV
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                {/* Encart expert sticky (retour Alexis 27/08, option B / frame #250) : carte
+                    « Un expert AWI décrypte vos résultats » en version verticale (avatars,
+                    +500 clients, avis Google). Composant partagé ExpertCtaBanner. */}
+                <ExpertCtaBanner
+                  variant="sidebar"
+                  className="sticky top-6 self-start"
+                  onExpertClick={() => setShowExpert(true)}
+                />
               </section>
             </>
             ) : activeTabSafe === "analyse" ? (
