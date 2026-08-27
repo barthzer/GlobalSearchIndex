@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { GlobalScoreResult, ProjectScore } from "@/lib/scores";
 import { bandLabel } from "@/lib/scoreLabel";
 import SemanticUnlockModal from "./SemanticUnlockModal";
@@ -13,11 +13,21 @@ import Button from "./Button";
 // dit ce qu'il manque. Le déblocage concurrentiel (sémantique + citabilité IA) devient
 // un argument de plus : même CTA que le verrou d'un pilier, langage Barth.
 
-const BAND_GRADIENT: Record<"critical" | "medium" | "good", string> = {
-  critical: "from-[#ef4444] to-[#f97316]",
-  medium: "from-[#f97316] to-[#eab308]",
-  good: "from-[#22c55e] to-[#4ade80]",
+// Dégradé de l'ARC (stops hex) — même palette par bande que les jauges piliers
+// (RealScoreArc), pour que le score global se lise comme une 5ᵉ jauge cohérente.
+const ARC_BAND_GRADIENT: Record<
+  "critical" | "medium" | "good",
+  { start: string; end: string }
+> = {
+  critical: { start: "#ef4444", end: "#f97316" },
+  medium: { start: "#f97316", end: "#eab308" },
+  good: { start: "#22c55e", end: "#4ade80" },
 };
+const ARC_NEUTRAL = { start: "#9ca3af", end: "#cbd5e1" };
+
+// Tracé d'arc identique à RealScoreArc (porté au pixel de la maquette Barth).
+const ARC_PATH =
+  "M4 90.3301C4 67.4339 13.0955 45.4755 29.2855 29.2855C45.4756 13.0955 67.434 4 90.3302 4C113.226 4 135.185 13.0955 151.375 29.2855C167.565 45.4755 176.66 67.4339 176.66 90.3301";
 
 // Phrase d'ensemble par bande (langage business, validé contre les mots-tics IA).
 function globalInterpretation(band: "critical" | "medium" | "good"): string {
@@ -40,6 +50,17 @@ export default function RealGlobalScoreCard({
   onUnlocked?: () => void;
 }) {
   const [showUnlock, setShowUnlock] = useState(false);
+  // Id de dégradé UNIQUE par instance (évite la collision SVG si plusieurs cartes
+  // coexistent — cf. maquette/preview ; en prod il n'y a qu'une carte globale, mais
+  // on reste défensif). Colons de useId retirés (id SVG propre). Hook AVANT tout return.
+  const gradientId = `global-arc${useId().replace(/:/g, "")}`;
+  // Animation d'entrée de l'arc (même feel que les jauges piliers). Le hook vit AVANT
+  // tout early return (ordre des hooks stable, cf. règle React).
+  const [arcVisible, setArcVisible] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setArcVisible(true), 80);
+    return () => clearTimeout(t);
+  }, []);
 
   // Chargement : squelette, jamais un vide (le COMEX ne doit rien voir de cassé).
   if (!result || !scores) {
@@ -90,37 +111,59 @@ export default function RealGlobalScoreCard({
     </div>
   );
 
-  // ① PRÊT : les 4 piliers portent un /100 → on affiche le chiffre + la bande serveur.
+  // ① PRÊT : les 4 piliers portent un /100 → jauge/arc (même traitement graphique que
+  // les 4 piliers, choix Kevin 2026-08-27) + bande + phrase, tout SERVEUR. Le front rend,
+  // il ne recalcule NI la moyenne NI les seuils (invariant « 56 vs 12 »).
   if (result.ready && result.value != null) {
     const band = result.band;
     const value = result.value;
+    const radius = 86.33;
+    const circumference = Math.PI * radius;
+    const pct = Math.min(Math.max(value, 0), 100) / 100;
+    const offset = circumference - pct * circumference;
+    const col = band ? ARC_BAND_GRADIENT[band] : ARC_NEUTRAL;
     return (
-      <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-border-subtle bg-bg-card p-5 md:flex-row md:items-center md:p-6">
-        <div className="flex-1">
+      <div className="flex flex-col items-center gap-5 rounded-2xl border border-border-subtle bg-bg-card p-5 md:flex-row md:gap-8 md:p-6">
+        {/* Jauge à gauche (chiffre dans l'arc), portée au pixel de RealScoreArc. */}
+        <div className="relative shrink-0">
+          <svg viewBox="0 0 181 95" className="h-24 w-44">
+            <path d={ARC_PATH} fill="none" stroke="var(--arc-bg)" strokeWidth="8" strokeLinecap="round" />
+            <path
+              d={ARC_PATH}
+              fill="none"
+              stroke={`url(#${gradientId})`}
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={arcVisible ? offset : circumference}
+              style={{ transition: "stroke-dashoffset 1.2s var(--ease-in-out)" }}
+            />
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor={col.start} />
+                <stop offset="100%" stopColor={col.end} />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div className="absolute inset-0 flex items-end justify-center">
+            <span className="text-3xl font-bold tabular-nums text-text-primary">{value}</span>
+            <span className="mb-1 text-sm text-text-muted">/100</span>
+          </div>
+        </div>
+        {/* Titre + bande + phrase d'ensemble à droite. */}
+        <div className="flex-1 text-center md:text-left">
           {header}
+          {band && (
+            <span
+              className={`mt-3 inline-block whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium ${bandLabel(band).chip}`}
+            >
+              {bandLabel(band).label}
+            </span>
+          )}
           {band && (
             <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-text-secondary">
               {globalInterpretation(band)}
             </p>
-          )}
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-baseline">
-            <span
-              className={`bg-gradient-to-br bg-clip-text text-5xl font-bold tabular-nums text-transparent ${
-                band ? BAND_GRADIENT[band] : "from-slate-400 to-slate-300"
-              }`}
-            >
-              {value}
-            </span>
-            <span className="ml-0.5 text-lg text-text-muted">/100</span>
-          </div>
-          {band && (
-            <span
-              className={`whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium ${bandLabel(band).chip}`}
-            >
-              {bandLabel(band).label}
-            </span>
           )}
         </div>
       </div>
