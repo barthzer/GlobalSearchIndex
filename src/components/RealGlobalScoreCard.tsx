@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import type { ReactNode } from "react";
 import type { GlobalScoreResult, ProjectScore } from "@/lib/scores";
 import { bandLabel } from "@/lib/scoreLabel";
 import SemanticUnlockModal from "./SemanticUnlockModal";
@@ -13,9 +14,9 @@ import Button from "./Button";
 // dit ce qu'il manque. Le déblocage concurrentiel (sémantique + citabilité IA) devient
 // un argument de plus : même CTA que le verrou d'un pilier, langage Barth.
 
-// Dégradé de l'ARC (stops hex) — même palette par bande que les jauges piliers
-// (RealScoreArc), pour que le score global se lise comme une 5ᵉ jauge cohérente.
-const ARC_BAND_GRADIENT: Record<
+// Dégradé de l'anneau (stops hex) par bande — repris au pixel de la maquette Barth
+// (GSI-Front, GlobalScoreCard). L'éclair central reprend le même dégradé.
+const BAND_GRADIENT: Record<
   "critical" | "medium" | "good",
   { start: string; end: string }
 > = {
@@ -23,13 +24,41 @@ const ARC_BAND_GRADIENT: Record<
   medium: { start: "#f97316", end: "#eab308" },
   good: { start: "#22c55e", end: "#4ade80" },
 };
-const ARC_NEUTRAL = { start: "#9ca3af", end: "#cbd5e1" };
+const NEUTRAL_GRADIENT = { start: "#9ca3af", end: "#cbd5e1" };
 
-// Tracé d'arc identique à RealScoreArc (porté au pixel de la maquette Barth).
-const ARC_PATH =
-  "M4 90.3301C4 67.4339 13.0955 45.4755 29.2855 29.2855C45.4756 13.0955 67.434 4 90.3302 4C113.226 4 135.185 13.0955 151.375 29.2855C167.565 45.4755 176.66 67.4339 176.66 90.3301";
+// Éclair central de l'anneau (repère visuel du score global) — tracé maquette Barth.
+const BOLT_PATH =
+  "M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z";
 
-// Phrase d'ensemble par bande (langage business, validé contre les mots-tics IA).
+// Libellé lisible de chaque pilier (scoreType → label) + formulation pour la phrase de
+// synthèse (meilleur pilier + 2 plus faibles). Structure de la maquette Barth.
+const PILLAR_LABEL: Partial<Record<ProjectScore["scoreType"], string>> = {
+  seo_technical: "SEO Technique",
+  geo_citations: "GEO",
+  semantic: "SEO Sémantique",
+  notoriete: "Autorité",
+};
+const PILLAR_PHRASES: Record<string, string> = {
+  "SEO Technique": "votre SEO technique",
+  "SEO Sémantique": "votre SEO sémantique",
+  GEO: "votre visibilité GEO dans les moteurs d'IA",
+  Autorité: "l'autorité de votre site",
+};
+const pillarPhrase = (label: string) => PILLAR_PHRASES[label] ?? label;
+const pillarSubject = (label: string) => {
+  const p = pillarPhrase(label);
+  return p.charAt(0).toUpperCase() + p.slice(1);
+};
+// Ouverture de la phrase selon la bande — NOTRE décision (band-aware) : jamais un
+// « bien engagée » plaqué sur un score critique. Le reste de la phrase = structure Barth.
+const BAND_OPENING: Record<"critical" | "medium" | "good", string> = {
+  critical: "encore fragile",
+  medium: "bien engagée, mais encore inégale",
+  good: "solide et homogène",
+};
+
+// Phrase d'ensemble par bande — REPLI si les valeurs par pilier ne sont pas dispo
+// (validé contre les mots-tics IA). Le texte riche best/weakest prime dès qu'on a les piliers.
 function globalInterpretation(band: "critical" | "medium" | "good"): string {
   if (band === "good")
     return "Position d'ensemble excellente. Vos quatre piliers tirent dans le même sens : l'enjeu est de tenir cette avance.";
@@ -111,59 +140,161 @@ export default function RealGlobalScoreCard({
     </div>
   );
 
-  // ① PRÊT : les 4 piliers portent un /100 → jauge/arc (même traitement graphique que
-  // les 4 piliers, choix Kevin 2026-08-27) + bande + phrase, tout SERVEUR. Le front rend,
-  // il ne recalcule NI la moyenne NI les seuils (invariant « 56 vs 12 »).
+  // État d'attente commun (anneau flouté + horloge, dégradé violet→rose) — design Barth.
+  // Réutilisé pour « en cours » (③) et « attente honnête » (④), avec chip + texte propres.
+  const renderPending = (chip: string, body: ReactNode) => {
+    const radius = 82;
+    const circumference = 2 * Math.PI * radius;
+    const pendGrad = `${gradientId}-pending`;
+    return (
+      <div
+        className="rounded-2xl border border-border-subtle backdrop-blur-[6px]"
+        style={{
+          opacity: arcVisible ? 1 : 0,
+          transform: arcVisible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 600ms var(--ease-expo), transform 600ms var(--ease-expo)",
+        }}
+      >
+        <div
+          className="flex flex-col gap-6 rounded-[calc(1rem-1px)] p-5 md:flex-row md:items-center md:gap-10 md:p-6"
+          style={{ background: "linear-gradient(to right, var(--bg-card) 55%, rgba(238,86,206,0.25) 100%)" }}
+        >
+          <div className="relative flex h-[180px] w-[180px] shrink-0 items-center justify-center self-center md:self-auto">
+            <div className="absolute inset-0 opacity-40 blur-[8px]">
+              <svg viewBox="0 0 180 180" className="h-full w-full">
+                <defs>
+                  <linearGradient id={pendGrad} x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#6817F8" />
+                    <stop offset="100%" stopColor="#EE56CE" />
+                  </linearGradient>
+                </defs>
+                <circle cx="90" cy="90" r={radius} fill="none" stroke="var(--arc-bg)" strokeWidth={8} />
+                <circle cx="90" cy="90" r={radius} fill="none" stroke={`url(#${pendGrad})`} strokeWidth={8} strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={circumference * 0.4} transform="rotate(-90 90 90)" />
+              </svg>
+            </div>
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#6817F8]/20 to-[#EE56CE]/20">
+              <svg className="h-5 w-5 text-[#EE56CE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+            </div>
+          </div>
+          <div className="text-center sm:text-left">
+            <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-2.5">
+              <h2 className="text-[length:var(--text-body-lg)] font-medium text-text-heading">Score global</h2>
+              <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-500">
+                {chip}
+              </span>
+            </div>
+            <p className="mt-2 max-w-[520px] text-[14px] font-light leading-relaxed text-text-secondary">{body}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ① PRÊT : les 4 piliers portent un /100 → GRAND ANNEAU 180px + éclair central (design
+  // Barth GSI-Front, choix Kevin 2026-08-27) + bande + phrase de synthèse. Tout SERVEUR :
+  // le front LIT value/band, il ne recalcule NI la moyenne NI les seuils (invariant « 56 vs 12 »).
   if (result.ready && result.value != null) {
     const band = result.band;
     const value = result.value;
-    const radius = 86.33;
-    const circumference = Math.PI * radius;
+    const radius = 82;
+    const circumference = 2 * Math.PI * radius;
     const pct = Math.min(Math.max(value, 0), 100) / 100;
     const offset = circumference - pct * circumference;
-    const col = band ? ARC_BAND_GRADIENT[band] : ARC_NEUTRAL;
+    const col = band ? BAND_GRADIENT[band] : NEUTRAL_GRADIENT;
+    const ringGrad = `${gradientId}-ring`;
+    const boltGrad = `${gradientId}-bolt`;
+
+    // Phrase de synthèse : meilleur pilier + 2 plus faibles, depuis les VRAIES valeurs
+    // serveur (structure Barth, notre donnée). Repli band-aware si valeurs indispo.
+    const audited = scores
+      .filter((s) => PILLAR_LABEL[s.scoreType] && typeof s.display?.value === "number")
+      .map((s) => ({ label: PILLAR_LABEL[s.scoreType] as string, score: s.display?.value as number }))
+      .sort((a, b) => b.score - a.score);
+    const best = audited[0];
+    const weakest = audited.slice(-2).reverse();
+    const weakList = weakest.map((s) => `${pillarPhrase(s.label)} (${s.score}/100)`).join(" et ");
+
     return (
-      <div className="flex flex-col items-center gap-5 rounded-2xl border border-border-subtle bg-bg-card p-5 md:flex-row md:gap-8 md:p-6">
-        {/* Jauge à gauche (chiffre dans l'arc), portée au pixel de RealScoreArc. */}
-        <div className="relative shrink-0">
-          <svg viewBox="0 0 181 95" className="h-24 w-44">
-            <path d={ARC_PATH} fill="none" stroke="var(--arc-bg)" strokeWidth="8" strokeLinecap="round" />
-            <path
-              d={ARC_PATH}
-              fill="none"
-              stroke={`url(#${gradientId})`}
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={arcVisible ? offset : circumference}
-              style={{ transition: "stroke-dashoffset 1.2s var(--ease-in-out)" }}
-            />
-            <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor={col.start} />
-                <stop offset="100%" stopColor={col.end} />
-              </linearGradient>
-            </defs>
-          </svg>
-          <div className="absolute inset-0 flex items-end justify-center">
-            <span className="text-3xl font-bold tabular-nums text-text-primary">{value}</span>
-            <span className="mb-1 text-sm text-text-muted">/100</span>
+      <div
+        className="rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]"
+        style={{
+          opacity: arcVisible ? 1 : 0,
+          transform: arcVisible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 600ms var(--ease-expo), transform 600ms var(--ease-expo)",
+        }}
+      >
+        <div className="flex flex-col gap-6 p-5 md:flex-row md:items-center md:gap-10 md:p-6">
+          {/* Grand anneau + titre + bande */}
+          <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:gap-6 sm:text-left md:shrink-0">
+            <div className="relative h-[180px] w-[180px] shrink-0">
+              <svg viewBox="0 0 180 180" className="h-full w-full">
+                <defs>
+                  <linearGradient id={ringGrad} x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor={col.start} />
+                    <stop offset="100%" stopColor={col.end} />
+                  </linearGradient>
+                </defs>
+                <circle cx="90" cy="90" r={radius} fill="none" stroke="var(--arc-bg)" strokeWidth={8} />
+                <circle
+                  cx="90"
+                  cy="90"
+                  r={radius}
+                  fill="none"
+                  stroke={`url(#${ringGrad})`}
+                  strokeWidth={8}
+                  strokeLinecap="round"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={arcVisible ? offset : circumference}
+                  transform="rotate(-90 90 90)"
+                  style={{ transition: "stroke-dashoffset 1200ms var(--ease-expo)" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5">
+                {/* Éclair au dégradé du score */}
+                <span className="flex h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: "var(--arc-bg)" }}>
+                  <svg className="h-5 w-5" viewBox="0 0 24 24">
+                    <defs>
+                      <linearGradient id={boltGrad} x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor={col.start} />
+                        <stop offset="100%" stopColor={col.end} />
+                      </linearGradient>
+                    </defs>
+                    <path fill={`url(#${boltGrad})`} d={BOLT_PATH} />
+                  </svg>
+                </span>
+                <span className="flex items-baseline">
+                  <span className="text-3xl font-bold leading-none tabular-nums text-text-primary">{value}</span>
+                  <span className="ml-0.5 text-sm text-text-muted">/100</span>
+                </span>
+              </div>
+            </div>
+            <div>
+              <h2 className="text-[length:var(--text-body-lg)] font-medium text-text-heading">Score global</h2>
+              {band && (
+                <span className={`mt-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${bandLabel(band).chip}`}>
+                  {bandLabel(band).label}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-        {/* Titre + bande + phrase d'ensemble à droite. */}
-        <div className="flex-1 text-center md:text-left">
-          {header}
-          {band && (
-            <span
-              className={`mt-3 inline-block whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium ${bandLabel(band).chip}`}
-            >
-              {bandLabel(band).label}
-            </span>
-          )}
-          {band && (
-            <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-text-secondary">
-              {globalInterpretation(band)}
+
+          {/* Lecture du score : meilleur pilier + ce qui freine. Structure Barth, donnée réelle. */}
+          {band && best && audited.length >= 3 ? (
+            <p className="flex-1 text-[14px] font-light leading-relaxed text-text-secondary md:max-w-[520px]">
+              Votre visibilité est <strong className="font-medium text-text-primary">{BAND_OPENING[band]}</strong>.{" "}
+              {pillarSubject(best.label)} est le pilier le plus solide ({best.score}/100) et constitue un socle sain
+              pour progresser. À l&apos;inverse, {weakList}{" "}
+              {weakest.length > 1 ? "tirent" : "tire"}{" "}votre moyenne vers le bas : c&apos;est là que se trouvent vos{" "}
+              <strong className="font-medium text-text-primary">gains de visibilité les plus rapides</strong>.
             </p>
+          ) : (
+            band && (
+              <p className="flex-1 text-[14px] font-light leading-relaxed text-text-secondary md:max-w-[520px]">
+                {globalInterpretation(band)}
+              </p>
+            )
           )}
         </div>
       </div>
@@ -214,17 +345,22 @@ export default function RealGlobalScoreCard({
     );
   }
 
-  // ③ EN COURS : un pilier se calcule (pas de verrou actionnable) → attente active,
-  // jamais un chiffre prématuré.
+  // ③ EN COURS : un pilier se calcule (pas de verrou actionnable) → anneau flouté + horloge
+  // (design d'attente Barth), jamais un chiffre prématuré. On dit ce qui reste à calculer.
   if (anyProcessing) {
-    return (
-      <div className="flex items-center gap-4 rounded-2xl border border-border-subtle bg-bg-card p-5 md:p-6">
-        <div className="flex-1">{header}</div>
-        <div className="flex items-center gap-3 text-[13px] text-text-secondary">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-pink/30 border-t-accent-pink" />
-          Calcul en cours des piliers restants…
-        </div>
-      </div>
+    return renderPending(
+      "Calcul en cours",
+      <>
+        Votre score global est la moyenne de vos 4 piliers de visibilité. Il s&apos;affichera
+        automatiquement quand ils auront tous été calculés
+        {result.missing.length > 0 ? (
+          <>
+            . Reste à calculer :{" "}
+            <strong className="font-medium text-text-primary">{result.missing.join(", ")}</strong>
+          </>
+        ) : null}
+        .
+      </>,
     );
   }
 
@@ -243,15 +379,14 @@ export default function RealGlobalScoreCard({
     );
   }
 
-  // ④ ATTENTE honnête (aucun déblocage possible, rien en cours) → on dit ce qu'il manque,
-  // SANS bouton mort. (Le cas « données insuffisantes » sémantique est géré en ⑤ ci-dessus.)
-  return (
-    <div className="flex flex-col items-start gap-3 rounded-2xl border border-border-subtle bg-bg-card p-5 md:p-6">
-      {header}
-      <p className="max-w-xl text-[13px] leading-relaxed text-text-muted">
-        Votre score global sera calculé une fois les 4 piliers disponibles.
-        En attente : {missingList}.
-      </p>
-    </div>
+  // ④ ATTENTE honnête (aucun déblocage possible, rien en cours) → anneau flouté d'attente
+  // (design Barth), on dit ce qu'il manque, SANS bouton mort. (Le cas « données insuffisantes »
+  // sémantique est géré en ⑤ ci-dessus.)
+  return renderPending(
+    "En attente",
+    <>
+      Votre score global sera calculé une fois les 4 piliers disponibles. En attente :{" "}
+      <strong className="font-medium text-text-primary">{missingList}</strong>.
+    </>,
   );
 }
