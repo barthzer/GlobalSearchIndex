@@ -61,6 +61,15 @@ export default function ReportTokenPage() {
   // (ExpertModal poste sur /public/leads, sans auth) — utilisable en contexte prospect.
   const [showExpert, setShowExpert] = useState(false);
 
+  // Ouverture auto de la modale expert quand on arrive via le bouton « Prendre rendez-vous »
+  // de l'email (lien rapport + ?expert=1). Le prospect retombe sur SON analyse, voit ses
+  // scores, et le formulaire lead s'ouvre — mieux qu'un agenda nu (décision Kevin 27/08).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("expert") === "1" || p.get("rdv") === "1") setShowExpert(true);
+  }, []);
+
   useEffect(() => {
     const token =
       typeof window !== "undefined"
