@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import Button from "./Button";
 import { getSemanticInputs, saveSemanticInputs, type SemanticInputs } from "@/lib/semanticInputs";
 import { apiFetch } from "@/lib/api";
+import SemanticVolumeWarning, { type VolumeWarning } from "./SemanticVolumeWarning";
 
 interface SemanticUnlockModalProps {
   onClose: () => void;
@@ -76,9 +77,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
   // le prospect peut toujours « Lancer quand même ». Le pool site est gratuit via le cache
   // serveur agressif.
   const [checkingVolumes, setCheckingVolumes] = useState(false);
-  const [volumeWarnings, setVolumeWarnings] = useState<
-    { keyword: string; volume: number | null; level: string }[] | null
-  >(null);
+  const [volumeWarnings, setVolumeWarnings] = useState<VolumeWarning[] | null>(null);
   // Éditer un mot-clé après un avertissement l'invalide → re-vérif au prochain lancement.
   useEffect(() => {
     setVolumeWarnings(null);
@@ -378,9 +377,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
         body: JSON.stringify({ keywords: kws }),
       });
       if (res.ok) {
-        const data = (await res.json()) as {
-          results: { keyword: string; volume: number | null; level: string }[];
-        };
+        const data = (await res.json()) as { results: VolumeWarning[] };
         const flagged = (data.results ?? []).filter(
           (r) => r.level === "low" || r.level === "unknown",
         );
@@ -633,32 +630,7 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
                   </p>
                 )}
 
-                {/* Avertissement volume (non bloquant). UX/wording final À FOURNIR PAR BARTH
-                    (Alexis fait l'UX des messages d'erreur) — placeholder fonctionnel. */}
-                {volumeWarnings && volumeWarnings.length > 0 && (
-                  <div className="mt-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-3.5 text-left">
-                    <p className="flex items-center gap-1.5 text-[13px] font-medium text-amber-400">
-                      <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                      </svg>
-                      Volume de recherche faible sur certains mots-clés
-                    </p>
-                    <p className="mt-1.5 text-[12px] leading-relaxed text-text-secondary">
-                      Ces mots-clés sont peu (ou pas) recherchés — votre score sémantique risque
-                      d&apos;être peu représentatif. Ajustez-les, ou lancez quand même.
-                    </p>
-                    <ul className="mt-2 flex flex-col gap-1">
-                      {volumeWarnings.map((w) => (
-                        <li key={w.keyword} className="flex items-center justify-between gap-3 text-[12px]">
-                          <span className="truncate text-text-primary">{w.keyword}</span>
-                          <span className={`shrink-0 ${w.level === "unknown" ? "text-red-400" : "text-amber-400"}`}>
-                            {w.level === "unknown" ? "volume introuvable" : `~${w.volume} rech./mois`}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {volumeWarnings && <SemanticVolumeWarning warnings={volumeWarnings} />}
 
                 <div className="mt-3">
                   <Button variant="primary" type="submit" fullWidth disabled={aiBusy !== null || submitting || checkingVolumes}>
