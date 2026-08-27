@@ -71,6 +71,19 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Pré-validation volume (retour Alexis 27/08) : à la VALIDATION (avant lancement), on
+  // vérifie le volume des mots-clés → avertit AVANT de consommer l'essai. Non bloquant :
+  // le prospect peut toujours « Lancer quand même ». Le pool site est gratuit via le cache
+  // serveur agressif.
+  const [checkingVolumes, setCheckingVolumes] = useState(false);
+  const [volumeWarnings, setVolumeWarnings] = useState<
+    { keyword: string; volume: number | null; level: string }[] | null
+  >(null);
+  // Éditer un mot-clé après un avertissement l'invalide → re-vérif au prochain lancement.
+  useEffect(() => {
+    setVolumeWarnings(null);
+  }, [keywords]);
+
   const [aiBusy, setAiBusy] = useState<null | "comp" | "kw">(null);
   const [compLoading, setCompLoading] = useState<boolean[]>(() => Array(compInit.length).fill(false));
   const [kwLoading, setKwLoading] = useState<boolean[]>(() => Array(kwInit.length).fill(false));
@@ -336,16 +349,52 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
     setStep(2);
   }
 
-  function handleStep2(e: React.FormEvent) {
+  function launch() {
+    persistAndSubmit({
+      competitors: competitors.filter((c) => c.checked).map((c) => c.value.trim()),
+      keywords: keywords.filter((k) => k.checked).map((k) => k.value.trim()),
+    });
+  }
+
+  async function handleStep2(e: React.FormEvent) {
     e.preventDefault();
     if (kwChecked < KW_MIN) {
       setError(`Sélectionnez au moins ${KW_MIN} mots-clés.`);
       return;
     }
-    persistAndSubmit({
-      competitors: competitors.filter((c) => c.checked).map((c) => c.value.trim()),
-      keywords: keywords.filter((k) => k.checked).map((k) => k.value.trim()),
-    });
+    // Déjà averti et l'utilisateur relance → il a « passé outre » : on lance.
+    if (volumeWarnings !== null) {
+      launch();
+      return;
+    }
+    // Pré-validation volume (~2s) AVANT de consommer l'essai. Fail-open : un incident
+    // (SEO Engine down, timeout) ne bloque JAMAIS le déblocage.
+    setError("");
+    setCheckingVolumes(true);
+    const kws = keywords.filter((k) => k.checked).map((k) => k.value.trim());
+    try {
+      const res = await apiFetch(`/projects/${projectId}/keyword-volumes`, {
+        method: "POST",
+        body: JSON.stringify({ keywords: kws }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          results: { keyword: string; volume: number | null; level: string }[];
+        };
+        const flagged = (data.results ?? []).filter(
+          (r) => r.level === "low" || r.level === "unknown",
+        );
+        if (flagged.length > 0) {
+          setVolumeWarnings(flagged);
+          setCheckingVolumes(false);
+          return; // avertit — l'utilisateur ajuste (édite) ou relance (= passe outre)
+        }
+      }
+    } catch {
+      // fail-open : on ne bloque jamais sur un incident volume
+    }
+    setCheckingVolumes(false);
+    launch();
   }
 
   function renderRow(
@@ -584,9 +633,42 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
                   </p>
                 )}
 
+                {/* Avertissement volume (non bloquant). UX/wording final À FOURNIR PAR BARTH
+                    (Alexis fait l'UX des messages d'erreur) — placeholder fonctionnel. */}
+                {volumeWarnings && volumeWarnings.length > 0 && (
+                  <div className="mt-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-3.5 text-left">
+                    <p className="flex items-center gap-1.5 text-[13px] font-medium text-amber-400">
+                      <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                      </svg>
+                      Volume de recherche faible sur certains mots-clés
+                    </p>
+                    <p className="mt-1.5 text-[12px] leading-relaxed text-text-secondary">
+                      Ces mots-clés sont peu (ou pas) recherchés — votre score sémantique risque
+                      d&apos;être peu représentatif. Ajustez-les, ou lancez quand même.
+                    </p>
+                    <ul className="mt-2 flex flex-col gap-1">
+                      {volumeWarnings.map((w) => (
+                        <li key={w.keyword} className="flex items-center justify-between gap-3 text-[12px]">
+                          <span className="truncate text-text-primary">{w.keyword}</span>
+                          <span className={`shrink-0 ${w.level === "unknown" ? "text-red-400" : "text-amber-400"}`}>
+                            {w.level === "unknown" ? "volume introuvable" : `~${w.volume} rech./mois`}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <div className="mt-3">
-                  <Button variant="primary" type="submit" fullWidth disabled={aiBusy !== null || submitting}>
-                    {submitting ? "Lancement…" : "Calculer mon score sémantique"}
+                  <Button variant="primary" type="submit" fullWidth disabled={aiBusy !== null || submitting || checkingVolumes}>
+                    {checkingVolumes
+                      ? "Vérification des volumes…"
+                      : submitting
+                        ? "Lancement…"
+                        : volumeWarnings
+                          ? "Lancer quand même"
+                          : "Calculer mon score sémantique"}
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                     </svg>
