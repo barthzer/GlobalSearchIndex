@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fetchRecommendations, type RecoContent } from "@/lib/recos";
+import { fetchRecommendations, type RecoContent, type Reco } from "@/lib/recos";
 import { fetchProjectScores, anyProcessing } from "@/lib/scores";
 import RealRecommendationCard from "./RealRecommendationCard";
 import RecoCardStack from "./RecoCardStack";
@@ -55,14 +55,23 @@ function BlurredCards() {
 // 5+ → aucune fuite du contenu gaté dans le DOM : notre logique derrière son pixel) et
 // superpose une pile de mini-cartes animée + le CTA « Échanger avec un expert ». Remplace
 // l'ancien verrou « Débloquer » (le gate n'est plus le déblocage sémantique).
-export function ExpertGate({ count, onExpertClick }: { count: number; onExpertClick?: () => void }) {
+export function ExpertGate({
+  recos,
+  startIndex = 0,
+  onExpertClick,
+}: {
+  recos: Reco[];
+  startIndex?: number;
+  onExpertClick?: () => void;
+}) {
   return (
     <div className="relative">
-      {/* Fond flouté = silhouettes (jamais les vraies recos). */}
+      {/* Fond flouté = les VRAIES recos (Option 1, Alexis+Kevin 27/08 : « en transparent
+          les vraies »). Flou cosmétique, lisible réseau — tradeoff produit assumé. */}
       <div className="pointer-events-none flex select-none flex-col gap-3 blur-[7px]" aria-hidden>
-        <CardSkeleton titleWidth="72%" />
-        {count > 1 && <CardSkeleton titleWidth="60%" />}
-        {count > 2 && <CardSkeleton titleWidth="68%" />}
+        {recos.map((r, i) => (
+          <RealRecommendationCard key={i} rec={r} index={startIndex + i} delay={0} />
+        ))}
       </div>
       {/* Voile de lisibilité + encart d'accès sticky (RecoCardStack + CTA expert). */}
       <div
@@ -209,14 +218,15 @@ export default function RealRecommendations({
     body = <GeneratingState />;
   } else {
     const recos = content!.recommendations;
-    // GATE EXPERT : le SERVEUR a déjà tronqué le payload prospect à 4 + lockedCount (le
-    // reste n'est même pas dans la réponse réseau). Le front rend ce qu'il reçoit — aucun
-    // re-slice, aucun check d'audience côté front (le serveur décide). gated = il reste des
-    // recos masquées. Le commercial reçoit tout (lockedCount 0) → aucun gate.
+    // GATE EXPERT (Option 1, Alexis+Kevin 27/08) : le SERVEUR envoie TOUTES les recos +
+    // lockedCount. Le prospect voit `visibleCount` recos en clair et le reste FLOUTÉ, mais
+    // ce sont les VRAIES (« en transparent les vraies »). gated = il reste des recos
+    // floutées. Le commercial reçoit tout (lockedCount 0) → aucun gate.
     const lockedCount = content!.lockedCount ?? 0;
     const gated = !preview && lockedCount > 0;
-    // Filtres + compteur : vue complète NON gatée (commercial). Le prospect n'a que 4 recos
-    // → filtrer n'a pas de sens, on montre les 4 + le teaser.
+    const visibleCount = Math.max(0, recos.length - lockedCount); // recos en clair
+    // Filtres + compteur : vue complète NON gatée (commercial). En gate prospect, filtrer
+    // n'a pas de sens → on montre les `visibleCount` claires + le reste flouté.
     const showControls = !preview && !gated;
     // Type = piliers réellement présents dans les recos (axe = libellé dynamique).
     const typeOptions = Array.from(
@@ -230,7 +240,7 @@ export default function RealRecommendations({
               (fPriority === "all" || r.impact === fPriority) &&
               (fType === "all" || (r.pillar || r.axe) === fType),
           )
-        : recos; // gated : les 4 recos reçues, sans filtre
+        : recos.slice(0, visibleCount); // gated : seules les claires ; le reste flouté sous le gate
     body = (
       <section>
         <Heading />
@@ -268,10 +278,14 @@ export default function RealRecommendations({
               {shown.map((r, i) => (
                 <RealRecommendationCard key={i} rec={r} index={i} delay={480 + i * 60} />
               ))}
-              {/* Prospect avec des recos masquées → teaser gate expert (silhouettes floutées
-                  + pile animée + CTA). Le contenu gaté n'est même PAS dans le payload. */}
+              {/* Prospect : les recos au-delà de `visibleCount` sont les VRAIES, floutées,
+                  sous le teaser gate (pile animée + CTA). Flou cosmétique (Option 1). */}
               {gated && lockedCount > 0 && (
-                <ExpertGate count={lockedCount} onExpertClick={onExpertClick} />
+                <ExpertGate
+                  recos={recos.slice(visibleCount)}
+                  startIndex={visibleCount}
+                  onExpertClick={onExpertClick}
+                />
               )}
             </div>
           ) : (

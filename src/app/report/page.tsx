@@ -335,25 +335,28 @@ export default function ReportTokenPage() {
           );
         })()}
 
-        {/* Recommandations — GATE EXPERT (modèle expert-first, décision Kevin 27/08 :
-            TOUT partage est gaté ; le PDF reste le livrable complet). 4 en clair, le reste
-            teasé derrière le contact expert. Fond flouté = silhouettes (jamais les vraies
-            recos 5+ → rien à lire dans l'inspecteur). `pilier` → `pillar` pour la carte. */}
-        {recos.length > 0 && (
+        {/* Recommandations — GATE EXPERT (Option 1, Alexis+Kevin 27/08) : `visibleCount`
+            recos en clair, le reste FLOUTÉ mais ce sont les VRAIES (« en transparent »).
+            Flou cosmétique (tradeoff assumé). Le PDF reste le livrable complet.
+            `pilier` → `pillar` pour la carte. */}
+        {recos.length > 0 && (() => {
+          const visibleCount = Math.max(0, recos.length - lockedCount);
+          const toReco = (r: ReportReco) => ({ ...r, pillar: r.pilier }) as Reco;
+          return (
           <section className="mt-10">
             <h2 className="mb-5 text-xl font-medium tracking-tight text-text-primary">
               Recommandations stratégiques
             </h2>
             <div className="flex flex-col gap-3">
-              {recos.map((reco: ReportReco, i) => (
-                <RealRecommendationCard
-                  key={i}
-                  index={i}
-                  rec={{ ...reco, pillar: reco.pilier } as Reco}
-                />
+              {recos.slice(0, visibleCount).map((reco: ReportReco, i) => (
+                <RealRecommendationCard key={i} index={i} rec={toReco(reco)} />
               ))}
               {lockedCount > 0 && (
-                <ExpertGate count={lockedCount} onExpertClick={() => setShowExpert(true)} />
+                <ExpertGate
+                  recos={recos.slice(visibleCount).map(toReco)}
+                  startIndex={visibleCount}
+                  onExpertClick={() => setShowExpert(true)}
+                />
               )}
             </div>
             <ExpertCtaBanner
@@ -364,7 +367,8 @@ export default function ReportTokenPage() {
               cta="Bénéficier de 15 min avec un expert"
             />
           </section>
-        )}
+          );
+        })()}
 
         {/* Branding GSI, aucune navigation interne */}
         <footer className="mt-12 border-t border-border-subtle pt-6 text-center">
