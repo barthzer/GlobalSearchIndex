@@ -279,28 +279,35 @@ export default function RealRecommendations({
               Aucune recommandation ne correspond à ces filtres.
             </div>
           )}
-          {/* Aperçu : fondu bas comme la maquette. */}
+          {/* Aperçu : fondu bas + pile de mini-cartes animée + CTA dégradé posés sur la
+              3e reco (design Barth GSI-Front, retour Alexis 27/08). */}
           {preview && recos.length > shown.length && (
-            <div
-              className="pointer-events-none absolute bottom-0 left-0 right-0 h-40"
-              style={{ background: "linear-gradient(to bottom, transparent 0%, var(--bg-primary) 100%)" }}
-            />
+            <>
+              <div
+                className="pointer-events-none absolute bottom-0 left-0 right-0 h-40"
+                style={{ background: "linear-gradient(to bottom, transparent 0%, var(--bg-primary) 100%)" }}
+              />
+              <div
+                className="animate-fade-up absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2"
+                style={{ animationDelay: "800ms" }}
+              >
+                <RecoCardStack />
+                <button
+                  onClick={onSeeAll}
+                  className="relative z-10 -mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#6817F8] to-[#EE56CE] px-5 py-2.5 text-[13px] font-medium text-white shadow-[0_12px_32px_-10px_rgba(104,23,248,0.45)] transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
+                  style={{ transitionTimingFunction: "var(--ease-out)" }}
+                >
+                  Voir toutes les recommandations
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                  </svg>
+                </button>
+              </div>
+            </>
           )}
         </div>
 
-        {preview ? (
-          <div className="mt-4 flex justify-center">
-            <button
-              onClick={onSeeAll}
-              className="inline-flex items-center gap-2 text-[13px] font-medium text-text-secondary transition-colors hover:text-text-primary"
-            >
-              Voir toutes les recommandations
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-              </svg>
-            </button>
-          </div>
-        ) : (
+        {!preview && (
           // Bannière expert « 15 min offertes » (design Barth, wording confirmé Alexis 27/08),
           // posée juste après la liste/le flou — c'est là que le CTA a le plus de sens.
           <ExpertCtaBanner

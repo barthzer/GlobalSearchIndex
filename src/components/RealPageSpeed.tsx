@@ -176,6 +176,9 @@ export default function RealPageSpeed({
   status?: string | null;
 }) {
   const [device, setDevice] = useState<DeviceType>("mobile");
+  // Accordéon réduit par défaut (design Barth, retour Alexis 27/08) — s'applique au
+  // rendu AVEC données ; les états « en cours » / « non disponible » restent déployés.
+  const [open, setOpen] = useState(false);
   const [activeInfo, setActiveInfo] = useState<
     { info: React.ComponentProps<typeof ScoreInfoModal>["info"]; icon: React.ReactNode } | null
   >(null);
@@ -230,23 +233,43 @@ export default function RealPageSpeed({
   );
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]">
+    <div className="rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]">
       {activeInfo && (
         <ScoreInfoModal info={activeInfo.info} icon={activeInfo.icon} onClose={() => setActiveInfo(null)} />
       )}
 
-      {/* En-tête + toggle Mobile / Bureau (si la donnée desktop existe) */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 pt-4 md:px-6">
+      {/* Accordéon PageSpeed — réduit par défaut (design Barth AU PIXEL, retour Alexis
+          27/08). Le header « Google PageSpeed Insights » devient le bouton toggle + chevron ;
+          le toggle Mobile/Bureau descend dans le contenu repliable, séparé par un border-t. */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-5 py-4 md:px-6"
+        aria-expanded={open}
+      >
         <Header />
-        {hasDesktop && (
-          <div className="flex gap-0">
-            <DeviceTab k="mobile" label="Mobile" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-            <DeviceTab k="desktop" label="Bureau" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25A2.25 2.25 0 0 1 5.25 3h13.5A2.25 2.25 0 0 1 21 5.25Z" />
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-5 px-5 pb-5 pt-3 md:px-6">
+        <svg
+          className="h-4 w-4 text-text-muted transition-transform duration-300"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transitionTimingFunction: "var(--ease-out)" }}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+      <div
+        className="grid transition-[grid-template-rows] duration-300"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr", transitionTimingFunction: "var(--ease-out)" }}
+      >
+        <div className={open ? "" : "overflow-hidden"}>
+          <div className="border-t border-border-subtle">
+            {/* Toggle Mobile / Bureau (dans le contenu repliable) */}
+            {hasDesktop && (
+              <div className="flex gap-0 px-5 pt-3 md:px-6">
+                <DeviceTab k="mobile" label="Mobile" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                <DeviceTab k="desktop" label="Bureau" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25A2.25 2.25 0 0 1 5.25 3h13.5A2.25 2.25 0 0 1 21 5.25Z" />
+              </div>
+            )}
+            <div className="flex flex-col gap-5 px-5 pb-5 pt-3 md:px-6">
         {/* Arcs de score Lighthouse (autant que SEO Engine en renvoie) */}
         {cats.length > 0 && (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
@@ -321,6 +344,9 @@ export default function RealPageSpeed({
             </InsightNote>
           </div>
         )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
