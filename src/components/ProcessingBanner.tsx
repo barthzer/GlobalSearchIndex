@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import { useGeneration } from "./GenerationProvider";
 import { fetchProjectScores, anyProcessing } from "@/lib/scores";
+import LottieGlyph from "./LottieGlyph";
+import globeAnim from "@/lotties/globe.json";
+import magnifierAnim from "@/lotties/magnifier.json";
+import barChartAnim from "@/lotties/bar-chart.json";
+import fileTextAnim from "@/lotties/file-text.json";
 
 /**
  * Bandeau sticky d'attente (réf. Rox "no actions remaining" banner) : prévient le
@@ -12,6 +17,40 @@ import { fetchProjectScores, anyProcessing } from "@/lib/scores";
  * (statut dérivé des scores serveur) : dès que tout est prêt, il disparaît.
  */
 const DISMISS_KEY = "gsi:processing-banner:dismissed";
+
+/**
+ * Cycle de mini-pictos représentant les 4 étapes de l'analyse (site, mots-clés,
+ * moteurs d'IA, concurrents), en boucle de 14 s. Design Barth (GSI-Front, lot 28/08) :
+ * lotties Lordicon locaux, recolorés charte, très ralentis, chacun joué une fois par cycle.
+ */
+export function ProcessingCycleIcon({ className = "h-7 w-7" }: { className?: string }) {
+  const anims = [globeAnim, magnifierAnim, barChartAnim, fileTextAnim];
+  const items: { bg: string; icon: React.ReactNode }[] = anims.map((data, i) => ({
+    bg: i % 2 === 0 ? "bg-accent-purple/10" : "bg-accent-pink/10",
+    icon: (
+      <LottieGlyph
+        animationData={data}
+        speed={0.45}
+        playOnceEvery={14000}
+        startDelay={i * 3500 + 400}
+        className="h-[74%] w-[74%]"
+      />
+    ),
+  }));
+  return (
+    <span className={`relative flex shrink-0 items-center justify-center ${className}`}>
+      {items.map((item, i) => (
+        <span
+          key={i}
+          className={`animate-banner-cycle absolute inset-0 flex items-center justify-center rounded-lg ${item.bg}`}
+          style={{ animationDelay: `${i * 3.5}s` }}
+        >
+          {item.icon}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 export default function ProcessingBanner() {
   const { selected } = useGeneration();
@@ -68,17 +107,13 @@ export default function ProcessingBanner() {
       className="animate-fade-up sticky top-3 z-[6] mb-5 flex items-center gap-3 rounded-xl border border-accent-pink/20 bg-bg-card/90 px-4 py-3 backdrop-blur-xl"
       role="status"
     >
-      {/* Spinner */}
-      <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
-        <span className="absolute h-4 w-4 rounded-full border-2 border-accent-pink/20" />
-        <span className="absolute h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-accent-pink" />
-      </span>
+      {/* Cycle de mini-pictos : les 4 étapes de l'analyse tournent en boucle (design Barth) */}
+      <ProcessingCycleIcon />
 
       <p className="flex-1 text-[13px] font-light leading-snug text-text-primary">
-        <span className="font-medium">Votre rapport est en cours de finalisation...</span>{" "}
-        L&apos;analyse complète peut prendre de quelques minutes à 2 h selon la taille de
-        votre site. Les données s&apos;actualisent en temps réel : vous pouvez déjà
-        consulter les premiers résultats, inutile de patienter.
+        <span className="font-medium">Votre rapport finalise ses derniers calculs.</span>{" "}
+        Vous pouvez déjà explorer vos premiers résultats. Les données complètes
+        s&apos;actualisent au fil de l&apos;analyse.
       </p>
 
       <button

@@ -215,3 +215,139 @@ input[type="date"] {
 [data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
+
+/* === Animations écran d'analyse (lot Barth GSI-Front feat/signalement, 28/08) : av-* (steps feed),
+   banner-cycle (bandeau calcul), skeleton-shimmer, pillar-loading, ring-indeterminate, contour
+   .card-ray. Portées telles quelles ; ai-field-glow/score-computing-glow déjà présentes. === */
+/* Balayage de scan sur la mini-fenêtre (lecture du site) :
+   départ lent, accélération au milieu, ralenti en fin de course */
+@keyframes av-scan {
+  0% { transform: translateY(-18px); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateY(58px); opacity: 0; }
+}
+.animate-av-scan { animation: av-scan 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+
+/* Tags mots-clés : un seul ressort à la fois (fenêtre d'1/3 de cycle chacun) */
+@keyframes av-pop {
+  0%, 33%, 100% { opacity: 0.25; transform: scale(0.94); }
+  8%, 25% { opacity: 1; transform: scale(1); }
+}
+.animate-av-pop { animation: av-pop 3.3s ease-in-out infinite; }
+
+/* Points de frappe des bulles IA */
+@keyframes av-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+.animate-av-dot { animation: av-dot 1s ease-in-out infinite; }
+
+/* Barres du comparatif concurrents qui poussent */
+@keyframes av-bar {
+  0% { transform: scaleY(0.15); }
+  55%, 85% { transform: scaleY(1); }
+  100% { transform: scaleY(0.15); }
+}
+.animate-av-bar {
+  animation: av-bar 2.4s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+/* Repère « Vous » : suit le sommet de la barre client (52px, scaleY 0.15 → 1) */
+@keyframes av-bar-label {
+  0% { transform: translate(-50%, 44px); }
+  55%, 85% { transform: translate(-50%, 0); }
+  100% { transform: translate(-50%, 44px); }
+}
+.animate-av-bar-label {
+  animation: av-bar-label 2.4s ease-in-out infinite;
+}
+
+/* Bandeau de calcul : cycle de mini-pictos (chaque item visible ~1/4 du cycle) */
+@keyframes banner-cycle {
+  0% { opacity: 0; transform: translateY(4px) scale(0.9); }
+  5%, 22% { opacity: 1; transform: translateY(0) scale(1); }
+  27%, 100% { opacity: 0; transform: translateY(-4px) scale(0.9); }
+}
+.animate-banner-cycle {
+  animation: banner-cycle 14s ease-in-out infinite;
+  opacity: 0;
+}
+
+/* Skeleton : reflet qui balaye les barres pendant le chargement */
+@keyframes skeleton-shimmer {
+  0% { background-position: 130% 0; }
+  100% { background-position: -30% 0; }
+}
+.animate-skeleton-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    var(--arc-bg) 20%,
+    rgba(255, 255, 255, 0.45) 50%,
+    var(--arc-bg) 80%
+  );
+  background-size: 250% 100%;
+  animation: skeleton-shimmer 2.8s ease-in-out infinite;
+}
+
+/* Barres piliers en chargement : lueur qui remonte la piste (teinte du skeleton) */
+@keyframes pillar-loading {
+  0% { transform: translateY(150%); }
+  100% { transform: translateY(-110%); }
+}
+.animate-pillar-loading {
+  animation: pillar-loading 2.8s ease-in-out infinite;
+}
+
+/* Anneau du score global en cours de calcul : arc indéterminé qui tourne */
+@keyframes ring-indeterminate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-ring-indeterminate {
+  animation: ring-indeterminate 3s linear infinite;
+  transform-origin: center;
+  transform-box: view-box;
+}
+
+/* Contour animé de la carte score global (rayons qui parcourent la bordure,
+   repris du CTA Matchstone, adapté aux accents de la charte) */
+@property --gsi-spin {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes gsi-ray-spin {
+  to { --gsi-spin: 360deg; }
+}
+
+.card-ray {
+  position: relative;
+}
+.card-ray::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 1rem;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--gsi-spin),
+    transparent 0deg,
+    rgba(236, 77, 203, 0.9) 14deg,
+    rgba(236, 77, 203, 0.25) 30deg,
+    transparent 50deg,
+    transparent 180deg,
+    rgba(236, 77, 203, 0.7) 194deg,
+    rgba(236, 77, 203, 0.2) 210deg,
+    transparent 230deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: gsi-ray-spin 6s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
