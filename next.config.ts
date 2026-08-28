@@ -12,15 +12,16 @@ import type { NextConfig } from "next";
 // `asset()` (src/lib/asset.ts) préfixe les chemins d'assets bruts (<img>, favicon,
 // backgrounds) que Next ne préfixe pas automatiquement (contrairement à <Link>/router).
 //
-// ⚠️⚠️ BUILD PROD = DEUX overrides OBLIGATOIRES. Le `pnpm build` par défaut vise
-//    STAGING (basePath /barth-staging + .env.production force l'API /api-staging).
-//    Pour la PROD il FAUT aussi forcer l'URL d'API, sinon le front prod parle à
-//    l'API staging (funnel misrouté, sessions/liens magiques cassés — arrivé 02/08
-//    ET 28/08) :
-//      NEXT_PUBLIC_BASE_PATH=/diagnostic-gratuit \
-//      NEXT_PUBLIC_API_URL=https://gsi.aw-i.com/api pnpm build
-//    Garde-fou : scripts/check-api-target.mjs (post-build, câblé dans `build`)
-//    échoue un build prod qui contient encore api-staging.
+// ⚠️ DEUX CIBLES EXPLICITES (package.json) — plus AUCUN build implicite (refonte
+//    28/08, après 2 incidents 02/08 + 28/08 de front prod pointant sur l'API staging) :
+//      pnpm build:staging  → NEXT_PUBLIC_BASE_PATH=/barth-staging     + API /api-staging
+//      pnpm build:prod     → NEXT_PUBLIC_BASE_PATH=/diagnostic-gratuit + API /api
+//    Chaque commande porte SES DEUX variables (basePath + URL d'API) en dur. Le
+//    `pnpm build` nu échoue avec un message (pas de défaut silencieux). Plus de
+//    .env.production (supprimé : c'était un fichier « production » qui pointait vers
+//    staging = piège permanent).
+//    Garde-fou : scripts/check-api-target.mjs (post-build) détecte la cible depuis le
+//    out/ compilé et échoue un build PROD contenant encore api-staging.
 //
 // ⚠️ TOUJOURS builder avec `next build --webpack` (turbopack produit des chunks
 //    instables `..js` qui cassent l'hydratation — voir package.json).

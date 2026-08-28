@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/check-vendor-leak.mjs && node scripts/check-mock-leak.mjs && next build --webpack && node scripts/check-api-target.mjs",
+    "build": "echo '\\n\\x1b[31mPas de build implicite.\\x1b[0m Choisis explicitement la cible :\\n  pnpm build:staging  -> /barth-staging     + API /api-staging\\n  pnpm build:prod     -> /diagnostic-gratuit + API /api\\n' && exit 1",
+    "build:staging": "node scripts/check-vendor-leak.mjs && node scripts/check-mock-leak.mjs && NEXT_PUBLIC_BASE_PATH=/barth-staging NEXT_PUBLIC_API_URL=https://gsi.aw-i.com/api-staging next build --webpack && node scripts/check-api-target.mjs",
+    "build:prod": "node scripts/check-vendor-leak.mjs && node scripts/check-mock-leak.mjs && NEXT_PUBLIC_BASE_PATH=/diagnostic-gratuit NEXT_PUBLIC_API_URL=https://gsi.aw-i.com/api next build --webpack && node scripts/check-api-target.mjs",
     "start": "next start",
     "lint": "eslint",
     "check:vendor-leak": "node scripts/check-vendor-leak.mjs",
