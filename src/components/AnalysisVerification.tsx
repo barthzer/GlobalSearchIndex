@@ -6,16 +6,16 @@ import Button from "./Button";
 import { requestPublicCode, verifyPublicCode, setProspectSession, clearProspectSession } from "@/lib/api";
 import { useAccount } from "./AccountProvider";
 import { accountFieldsFromLead, type OnboardingLead } from "@/lib/lead";
+import AnalysisStepsFeed, { ANALYSIS_STEPS } from "./AnalysisStepsFeed";
 
 const CODE_LENGTH = 6;
 const CODE_TTL = 10 * 60; // 10 minutes, en secondes
 
-const STEPS = [
-  "Analyse des balises et du maillage technique...",
-  "Clustering sémantique par intention de recherche...",
-  "Scan de visibilité sur les LLM...",
-  "Évaluation du profil de backlinks...",
-];
+// Étapes = ANALYSIS_STEPS (design Barth) : langage dirigeant décrivant le LANCEMENT
+// (« Lecture de votre site », « Interrogation des moteurs d'IA »), jamais des résultats
+// ni du jargon. Garde-fou Kevin 28/08 : à la seconde 2, on décrit ce qui démarre, pas
+// une analyse « terminée » (le crawl n'a pas commencé). La vraie attente d'une heure est
+// portée par le ProcessingBanner du dashboard (branché scores), pas par ces 7 s décoratives.
 
 interface AnalysisVerificationProps {
   url: string;
@@ -85,7 +85,7 @@ export default function AnalysisVerification({ url, email, lead, onComplete, onC
         setTimeout(() => onComplete(reusedRef.current), 300);
       }
       setProgress(cur);
-      setActiveStep(Math.min(Math.floor(cur / 25), STEPS.length - 1));
+      setActiveStep(Math.min(Math.floor(cur / 25), ANALYSIS_STEPS.length - 1));
     }, interval);
     return () => clearInterval(timer);
   }, [verified, onComplete]);
@@ -314,9 +314,10 @@ export default function AnalysisVerification({ url, email, lead, onComplete, onC
                     <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
                 </span>
-                <h2 className="text-[22px] font-medium tracking-[-0.4px] text-text-primary">Code valide, analyse en cours</h2>
+                <h2 className="text-[22px] font-medium tracking-[-0.4px] text-text-primary">Code validé, on prépare votre espace</h2>
                 <p className="mt-2 text-[14px] font-light leading-relaxed text-text-secondary">
-                  Votre bilan de visibilité se prépare. Il s&apos;affiche dans un instant.
+                  On vous emmène dans votre espace. Vos premiers résultats vous y
+                  attendent, l&apos;analyse complète se poursuit.
                 </p>
               </div>
             )}
@@ -371,37 +372,8 @@ export default function AnalysisVerification({ url, email, lead, onComplete, onC
               </p>
             )}
 
-            {/* Étapes */}
-            <div className="flex w-full flex-col gap-3">
-              {STEPS.map((step, i) => {
-                const isActive = verified && i === activeStep;
-                const isDone = verified && i < activeStep;
-                return (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 transition-all duration-300"
-                    style={{
-                      opacity: !verified ? 0.25 : isDone ? 0.4 : isActive ? 1 : 0.2,
-                      transform: isActive ? "translateX(4px)" : "none",
-                      transitionTimingFunction: "var(--ease-out)",
-                    }}
-                  >
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center">
-                      {isDone ? (
-                        <svg className="h-4 w-4 text-accent-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                      ) : isActive ? (
-                        <div className="h-2 w-2 rounded-full bg-accent-purple animate-pulse" />
-                      ) : (
-                        <div className="h-1.5 w-1.5 rounded-full bg-text-muted" />
-                      )}
-                    </div>
-                    <span className="text-sm text-text-secondary">{step}</span>
-                  </div>
-                );
-              })}
-            </div>
+            {/* Étapes : cartes animées qui montrent ce qui se passe, sans jargon (design Barth) */}
+            <AnalysisStepsFeed verified={verified} activeStep={activeStep} />
 
             {/* Barre de progression */}
             <div className="mt-8 h-1 w-full overflow-hidden rounded-full bg-black/[0.06]">
