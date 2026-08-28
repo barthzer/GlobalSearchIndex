@@ -10,7 +10,7 @@ import ExpertCtaBanner from "@/components/ExpertCtaBanner";
 import ExpertModal from "@/components/ExpertModal";
 import NotorieteInsightsView from "@/components/notoriete/NotorieteInsightsView";
 import ConcurrenceTab from "@/components/concurrence/ConcurrenceTab";
-import { type Reco } from "@/lib/recos";
+import { type Reco, parseRecoContent } from "@/lib/recos";
 import ReportTrafficVisibility, {
   type ReportTrafficPoint,
 } from "@/components/ReportTrafficVisibility";
@@ -138,11 +138,11 @@ export default function ReportTokenPage() {
 
   const { project, scores, recommendations } = data;
   const initial = (project.companyName || project.domain).charAt(0).toUpperCase();
-  const recos = recommendations?.recommendations ?? [];
-  // Gate expert-first : le serveur a déjà tronqué le payload à 4 + lockedCount (le reste
-  // n'est pas dans la réponse réseau). lockedCount pilote le teaser.
-  const lockedCount =
-    (recommendations as { lockedCount?: number } | null | undefined)?.lockedCount ?? 0;
+  // Point de lecture UNIQUE (parseRecoContent) : même enveloppe {recommendations, cta,
+  // lockedCount} que le dashboard → lockedCount ne peut plus diverger entre les 2 chemins.
+  const parsed = parseRecoContent<ReportReco>(recommendations);
+  const recos = parsed.recommendations;
+  const lockedCount = parsed.lockedCount ?? 0;
 
   return (
     <main className="min-h-screen bg-bg-primary px-4 py-10 md:py-16">

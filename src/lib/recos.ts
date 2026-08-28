@@ -45,6 +45,32 @@ export interface RecoContent {
 // dans lib/api.ts). 404 = recos pas encore générées → RecoContent vide (jamais un
 // throw : le composant affiche un état « non disponibles »). Les autres erreurs
 // (5xx, réseau) remontent pour déclencher l'état d'erreur explicite.
+/**
+ * POINT DE LECTURE UNIQUE de l'enveloppe recos `{recommendations, cta, lockedCount}`.
+ * TOUT chemin qui consomme un payload recos (dashboard via fetchRecommendations, rapport
+ * prospect via report.ts, badge Header) DOIT passer par ici — jamais de ré-extraction
+ * manuelle. Sinon un chemin oublie `lockedCount` et le masque diverge (bug 28/08 : le
+ * dashboard ne masquait pas alors que /report oui). Générique sur l'item (Reco côté
+ * dashboard, ReportReco côté rapport) : seule l'ENVELOPPE est normalisée ici, le mapping
+ * d'item (pilier→pillar) reste au caller. Voir [[feedback_two_paths_must_agree]].
+ */
+export function parseRecoContent<T = Reco>(raw: unknown): {
+  recommendations: T[];
+  cta?: string;
+  lockedCount?: number;
+} {
+  const d = (raw ?? {}) as {
+    recommendations?: T[];
+    cta?: string;
+    lockedCount?: number;
+  };
+  return {
+    recommendations: d.recommendations ?? [],
+    cta: d.cta,
+    lockedCount: d.lockedCount,
+  };
+}
+
 export async function fetchRecommendations(
   projectId: string,
 ): Promise<RecoContent> {
@@ -57,16 +83,5 @@ export async function fetchRecommendations(
   if (!res.ok) {
     throw new Error(`recommendations ${res.status}`);
   }
-  const data = (await res.json()) as {
-    recommendations?: Reco[];
-    cta?: string;
-    lockedCount?: number;
-  };
-  return {
-    recommendations: data.recommendations ?? [],
-    cta: data.cta,
-    // lockedCount : porté par /public/recommendations (prospect) → active le masque
-    // (4 en clair + reste flouté). Absent côté commercial (endpoint interne) = 0 = tout.
-    lockedCount: data.lockedCount,
-  };
+  return parseRecoContent<Reco>(await res.json());
 }
