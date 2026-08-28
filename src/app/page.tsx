@@ -508,10 +508,24 @@ export default function LandingPage() {
   // Session prospect expirée : le dashboard renvoie ici avec ?expired=1 (au lieu d'un
   // atterrissage silencieux ou d'une porte admin). Message clair → le prospect relance
   // son analyse. Flag retiré de l'URL une fois lu (pas de bannière collante au reload).
-  const [expiredNotice, setExpiredNotice] = useState(false);
+  // Deux origines : session prospect expirée (?expired=1) et lien magique périmé/invalide
+  // (?magic_expired=1, email « analyse prête »). Dans les deux cas un message clair, jamais
+  // un écran d'erreur. Le lien magique périmé ouvre EN PLUS le login : le prospect a déjà
+  // un espace, il le retrouve en se reconnectant (pas besoin de relancer une analyse).
+  const [expiredNotice, setExpiredNotice] = useState<string | null>(null);
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("expired") === "1") {
-      setExpiredNotice(true);
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("magic_expired") === "1") {
+      setExpiredNotice(
+        "Ce lien d’accès a expiré. Connectez-vous pour retrouver votre espace et vos résultats.",
+      );
+      setShowLogin(true);
+      const clean = window.location.pathname + window.location.hash;
+      window.history.replaceState(null, "", clean);
+    } else if (q.get("expired") === "1") {
+      setExpiredNotice(
+        "Votre session a expiré. Relancez votre analyse ci-dessous pour retrouver votre bilan.",
+      );
       const clean = window.location.pathname + window.location.hash;
       window.history.replaceState(null, "", clean);
     }
@@ -567,9 +581,9 @@ export default function LandingPage() {
           <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
-          <span>Votre session a expiré. Relancez votre analyse ci-dessous pour retrouver votre bilan.</span>
+          <span>{expiredNotice}</span>
           <button
-            onClick={() => setExpiredNotice(false)}
+            onClick={() => setExpiredNotice(null)}
             aria-label="Fermer"
             className="ml-1 shrink-0 text-amber-600 transition-colors hover:text-amber-900"
           >

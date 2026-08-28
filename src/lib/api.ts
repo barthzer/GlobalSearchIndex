@@ -189,6 +189,30 @@ export async function verifyPublicCode(
   return (await res.json()) as VerifyPublicCodeResult;
 }
 
+// Lien magique (email « analyse prête ») : échange le token magique contre une session
+// prospect. Le token part en BODY (jamais en query/URL → hors logs). 401 = expiré/invalide
+// (throw → le front redirige proprement vers le login). Scope strict au projectId côté serveur.
+export async function exchangeMagicToken(
+  magic: string,
+): Promise<{ token: string; projectId: string; email: string }> {
+  const res = await fetch(`${API_BASE}/public/session-from-magic`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ magic }),
+  });
+  if (res.status === 401) {
+    throw new Error("Lien expiré ou invalide.");
+  }
+  if (!res.ok) {
+    throw new Error("Connexion impossible pour le moment.");
+  }
+  return (await res.json()) as {
+    token: string;
+    projectId: string;
+    email: string;
+  };
+}
+
 // Projet + scores scopés au token prospect (aucun id en paramètre : le projet
 // vient du token). Mis en cache pendant le polling pour éviter N appels.
 interface PublicAnalysis {

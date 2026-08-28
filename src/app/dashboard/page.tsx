@@ -21,7 +21,13 @@ import ConcurrenceTab from "@/components/concurrence/ConcurrenceTab";
 import { useAccount } from "@/components/AccountProvider";
 import { useGeneration } from "@/components/GenerationProvider";
 import { exportProjectPdf } from "@/lib/report-actions";
-import { getProspectSession, hasStaffSession } from "@/lib/api";
+import {
+  getProspectSession,
+  hasStaffSession,
+  setProspectSession,
+  clearProspectSession,
+  exchangeMagicToken,
+} from "@/lib/api";
 import NotWiredNotice from "@/components/NotWiredNotice";
 import AnalyseTab from "@/components/AnalyseTab";
 import NotorieteTab from "@/components/NotorieteTab";
@@ -30,9 +36,48 @@ import RealRecommendations from "@/components/RealRecommendations";
 import ExpertCtaBanner from "@/components/ExpertCtaBanner";
 
 export default function DashboardPage() {
-  const { isAdmin, isLoggedIn, isProspect, hydrated } = useAccount();
+  const { isAdmin, isLoggedIn, isProspect, hydrated, loginAsProspect } =
+    useAccount();
   const router = useRouter();
   const { selected: currentGeneration, collapsed, loading } = useGeneration();
+
+  // Lien magique (email « analyse prête ») : le token arrive dans le FRAGMENT d'URL
+  // (#magic=…), jamais dans la query — le fragment n'est pas transmis au serveur, donc
+  // jamais dans les logs nginx/serveur (exigence Kevin 28/08). On l'échange contre une
+  // vraie session prospect, on efface le fragment immédiatement, puis on ouvre l'espace.
+  // Initialisé à true si un token est présent au chargement → la garde de redirection
+  // ci-dessous ne se déclenche PAS avant la fin de l'échange (sinon on éjecterait le
+  // prospect vers le login au moment précis où on établit sa session).
+  const [magicPending, setMagicPending] = useState(
+    () => typeof window !== "undefined" && /[#&]magic=/.test(window.location.hash),
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const match = /[#&]magic=([^&]+)/.exec(window.location.hash);
+    if (!match) return;
+    const magic = decodeURIComponent(match[1]);
+    // Efface le token du fragment AVANT tout appel réseau : aucune trace dans l'URL
+    // affichée ni dans l'historique du navigateur (une URL avec jeton = session qui traîne).
+    history.replaceState(
+      null,
+      "",
+      window.location.pathname + window.location.search,
+    );
+    void (async () => {
+      try {
+        const { token, projectId, email } = await exchangeMagicToken(magic);
+        clearProspectSession();
+        setProspectSession({ token, projectId });
+        loginAsProspect({ type: "user", name: email, email });
+        setMagicPending(false);
+      } catch {
+        // Lien périmé/invalide → retour propre au funnel avec un message clair,
+        // jamais un écran d'erreur (spec Kevin : « pas un écran d'erreur »).
+        router.replace("/?magic_expired=1");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Destination quand la session est perdue, décidée par un signal FIABLE qui survit à
   // l'expiration du token (retours Alexis/Ben 2026-08-20 : un prospect en libre accès
@@ -43,6 +88,9 @@ export default function DashboardPage() {
   // prospect → funnel. Jamais un non-staff vers /connexion-admin.
   useEffect(() => {
     if (!hydrated) return;
+    // Un échange de lien magique est en cours : ne pas rediriger tant que la session
+    // n'est pas posée (sinon éjection vers le login au moment de la connexion).
+    if (magicPending) return;
     // Prospect dont le token a expiré (session prospect disparue) mais dont le compte
     // d'affichage persiste : isLoggedIn resterait true → dashboard cassé. On le renvoie
     // au funnel AVEC un message clair, jamais une porte admin ni un écran vide.
@@ -53,7 +101,7 @@ export default function DashboardPage() {
     if (!isLoggedIn) {
       router.replace(hasStaffSession() ? "/login" : "/");
     }
-  }, [hydrated, isLoggedIn, isProspect, router]);
+  }, [hydrated, isLoggedIn, isProspect, router, magicPending]);
   const [showSEOEngine, setShowSEOEngine] = useState(false);
   const [showExpert, setShowExpert] = useState(false);
   const [showActions, setShowActions] = useState(false);
