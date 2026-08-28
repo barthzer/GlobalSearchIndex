@@ -66,7 +66,8 @@ export default function AnimationsStyleGuide() {
             <ProcessingCycleIcon />
             <p className="flex-1 text-[13px] font-light leading-snug text-text-primary">
               <span className="font-medium">Votre rapport finalise ses derniers calculs.</span>{" "}
-              Vous pouvez déjà explorer vos premiers résultats. Les données complètes arrivent d&apos;ici ~30 min.
+              Vous pouvez déjà explorer vos premiers résultats. Les données complètes
+              s&apos;actualisent au fil de l&apos;analyse.
             </p>
           </div>
         </div>

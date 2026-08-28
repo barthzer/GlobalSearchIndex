@@ -218,7 +218,7 @@ export default function RealGlobalScoreCard({
 
     return (
       <div
-        className="rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]"
+        className="card-ray rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]"
         style={{
           opacity: arcVisible ? 1 : 0,
           transform: arcVisible ? "translateY(0)" : "translateY(12px)",
@@ -345,22 +345,60 @@ export default function RealGlobalScoreCard({
     );
   }
 
-  // ③ EN COURS : un pilier se calcule (pas de verrou actionnable) → anneau flouté + horloge
-  // (design d'attente Barth), jamais un chiffre prématuré. On dit ce qui reste à calculer.
+  // ③ EN COURS : un pilier se calcule (pas de verrou actionnable) → DESIGN CALCUL de Barth
+  // (contour animé .card-ray + anneau indéterminé rose qui tourne + chip ambre « En cours de
+  // calcul »), jamais un chiffre prématuré. NOTRE texte conservé (ce qui reste à calculer).
   if (anyProcessing) {
-    return renderPending(
-      "Calcul en cours",
-      <>
-        Votre score global est la moyenne de vos 4 piliers de visibilité. Il s&apos;affichera
-        automatiquement quand ils auront tous été calculés
-        {result.missing.length > 0 ? (
-          <>
-            . Reste à calculer :{" "}
-            <strong className="font-medium text-text-primary">{result.missing.join(", ")}</strong>
-          </>
-        ) : null}
-        .
-      </>,
+    const radius = 82;
+    const circumference = 2 * Math.PI * radius;
+    return (
+      <div
+        className="card-ray rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]"
+        style={{
+          opacity: arcVisible ? 1 : 0,
+          transform: arcVisible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 600ms var(--ease-expo), transform 600ms var(--ease-expo)",
+        }}
+      >
+        <div className="flex flex-col gap-6 p-5 md:flex-row md:items-center md:gap-10 md:p-6">
+          <div className="relative h-[180px] w-[180px] shrink-0 self-center md:self-auto">
+            <svg viewBox="0 0 180 180" className="h-full w-full">
+              <circle cx="90" cy="90" r={radius} fill="none" stroke="var(--arc-bg)" strokeWidth={8} />
+              {/* Arc indéterminé qui tourne (rose brand) : le score n'est pas encore prêt. */}
+              <circle
+                className="animate-ring-indeterminate"
+                cx="90"
+                cy="90"
+                r={radius}
+                fill="none"
+                stroke="var(--accent-pink)"
+                strokeWidth={8}
+                strokeLinecap="round"
+                strokeDasharray={`${circumference * 0.28} ${circumference * 0.72}`}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-500">
+                En cours de calcul
+              </span>
+            </div>
+          </div>
+          <div className="text-center sm:text-left">
+            <h2 className="text-[length:var(--text-body-lg)] font-medium text-text-heading">Score global</h2>
+            <p className="mt-2 max-w-[520px] text-[14px] font-light leading-relaxed text-text-secondary">
+              Votre score global est la moyenne de vos 4 piliers de visibilité. Il s&apos;affichera
+              automatiquement quand ils auront tous été calculés
+              {result.missing.length > 0 ? (
+                <>
+                  . Reste à calculer :{" "}
+                  <strong className="font-medium text-text-primary">{result.missing.join(", ")}</strong>
+                </>
+              ) : null}
+              .
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 
