@@ -59,6 +59,13 @@ export default function DashboardPage() {
   const [showActions, setShowActions] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("analyse");
   const [psOpen, setPsOpen] = useState(false);
+  // Ouverture auto de la modale expert via ?expert=1 (bouton « Prendre rendez-vous » de
+  // l'email « analyse prête » → espace prospect, correction Alexis 28/08). Comme /report.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("expert") === "1" || p.get("rdv") === "1") setShowExpert(true);
+  }, []);
   const sidebarWidth = isAdmin ? (collapsed ? "80px" : "292px") : "0px";
 
   // Analyse gratuite déjà utilisée : verify-code a rendu un rapport EXISTANT
