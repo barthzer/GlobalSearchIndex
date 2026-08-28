@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/check-vendor-leak.mjs && node scripts/check-mock-leak.mjs && next build --webpack",
+    "build": "node scripts/check-vendor-leak.mjs && node scripts/check-mock-leak.mjs && next build --webpack && node scripts/check-api-target.mjs",
     "start": "next start",
     "lint": "eslint",
-    "check:vendor-leak": "node scripts/check-vendor-leak.mjs"
+    "check:vendor-leak": "node scripts/check-vendor-leak.mjs",
+    "check:api-target": "node scripts/check-api-target.mjs"
   },
   "dependencies": {
     "@next/font": "^14.2.15",

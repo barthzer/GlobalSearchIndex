@@ -5,12 +5,22 @@ import type { NextConfig } from "next";
 //
 // basePath PILOTÉ PAR ENV (`NEXT_PUBLIC_BASE_PATH`) — un seul point de vérité pour
 // l'URL libre accès :
-//   • non défini      → "/barth-staging" (staging, comportement par défaut)
-//   • "" (vide)       → racine "/"        (bascule PROD : `NEXT_PUBLIC_BASE_PATH= pnpm build`)
+//   • non défini      → "/barth-staging" (staging, comportement PAR DÉFAUT)
+//   • "/diagnostic-gratuit" → PROD
 //   • autre slug      → ce slug
 // La valeur résolue est réinjectée dans le bundle (`env`) pour que le helper
 // `asset()` (src/lib/asset.ts) préfixe les chemins d'assets bruts (<img>, favicon,
 // backgrounds) que Next ne préfixe pas automatiquement (contrairement à <Link>/router).
+//
+// ⚠️⚠️ BUILD PROD = DEUX overrides OBLIGATOIRES. Le `pnpm build` par défaut vise
+//    STAGING (basePath /barth-staging + .env.production force l'API /api-staging).
+//    Pour la PROD il FAUT aussi forcer l'URL d'API, sinon le front prod parle à
+//    l'API staging (funnel misrouté, sessions/liens magiques cassés — arrivé 02/08
+//    ET 28/08) :
+//      NEXT_PUBLIC_BASE_PATH=/diagnostic-gratuit \
+//      NEXT_PUBLIC_API_URL=https://gsi.aw-i.com/api pnpm build
+//    Garde-fou : scripts/check-api-target.mjs (post-build, câblé dans `build`)
+//    échoue un build prod qui contient encore api-staging.
 //
 // ⚠️ TOUJOURS builder avec `next build --webpack` (turbopack produit des chunks
 //    instables `..js` qui cassent l'hydratation — voir package.json).
