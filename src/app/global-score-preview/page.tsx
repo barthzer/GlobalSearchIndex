@@ -79,10 +79,10 @@ const waitingResult: GlobalScoreResult = {
   missing: ["SEO Sémantique"],
 } as unknown as GlobalScoreResult;
 
-// ⑤ NON-MESURABLE — SEO Sémantique fini mais sans /100 (terminal-insuffisant).
+// ⑤ NON-MESURABLE Sémantique — SEO Sémantique fini mais sans /100 (terminal-insuffisant).
 const insufficientScores: ProjectScore[] = [
   s("seo_technical", "completed", 79),
-  s("authority", "completed", 48),
+  s("notoriete", "completed", 48),
   s("geo_citations", "completed", 55),
   s("semantic", "completed", null, false),
 ];
@@ -91,6 +91,21 @@ const insufficientResult: GlobalScoreResult = {
   band: null,
   ready: false,
   missing: ["SEO Sémantique"],
+} as unknown as GlobalScoreResult;
+
+// ⑤bis NON-MESURABLE GEO — GEO terminal « trop peu de concurrents » (cas fyn-patrimoine
+// 31/08) : geo_citations completed mais sans /100 → constat honnête, PAS « en attente ».
+const geoTerminalScores: ProjectScore[] = [
+  s("seo_technical", "completed", 69),
+  s("notoriete", "completed", 41),
+  s("semantic", "completed", 61),
+  s("geo_citations", "completed", null, false),
+];
+const geoTerminalResult: GlobalScoreResult = {
+  value: null,
+  band: null,
+  ready: false,
+  missing: ["GEO"],
 } as unknown as GlobalScoreResult;
 
 export default function GlobalScorePreview() {
@@ -131,9 +146,16 @@ export default function GlobalScorePreview() {
 
         <section className="mt-10">
           <h2 className="mb-2 text-[13px] font-medium text-text-secondary">
-            ⑤ Non-mesurable (SEO Sémantique sans /100, terminal-insuffisant)
+            ⑤ Non-mesurable — SEO Sémantique sans /100 (terminal-insuffisant)
           </h2>
           <RealGlobalScoreCard result={insufficientResult} scores={insufficientScores} />
+        </section>
+
+        <section className="mt-10">
+          <h2 className="mb-2 text-[13px] font-medium text-text-secondary">
+            ⑤bis Non-mesurable — GEO terminal « trop peu de concurrents » (cas fyn-patrimoine)
+          </h2>
+          <RealGlobalScoreCard result={geoTerminalResult} scores={geoTerminalScores} />
         </section>
 
         <section className="mt-12">

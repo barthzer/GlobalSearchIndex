@@ -116,11 +116,19 @@ export default function RealGlobalScoreCard({
   // n'arrivera JAMAIS seul (le pilier est fini). On le détecte pour dire le constat + l'action
   // (ajuster les mots-clés), au lieu d'une fausse attente. Le display serveur porte déjà
   // scorable/value : le front LIT, il ne recalcule pas de seuils.
+  // Terminal-insuffisant = pilier COMPLETED mais sans /100 (scorable=false, value null) :
+  // il n'est NI processing NI locked → sans traitement dédié il tomberait dans le « en
+  // attente » trompeur (promet un calcul auto qui n'arrivera JAMAIS seul). Vrai pour le
+  // Sémantique (aucun mot-clé top 100) ET le GEO (ex. panel « trop peu de concurrents »,
+  // fyn-patrimoine 31/08). Le display serveur porte scorable/value : le front LIT.
+  const isTerminalInsufficient = (sc?: ProjectScore) =>
+    sc?.status === "completed" &&
+    sc.display?.scorable === false &&
+    sc.display?.value == null;
   const semanticScore = scores.find((s) => s.scoreType === "semantic");
-  const semanticTerminalInsufficient =
-    semanticScore?.status === "completed" &&
-    semanticScore.display?.scorable === false &&
-    semanticScore.display?.value == null;
+  const geoScore = scores.find((s) => s.scoreType === "geo_citations");
+  const semanticTerminalInsufficient = isTerminalInsufficient(semanticScore);
+  const geoTerminalInsufficient = isTerminalInsufficient(geoScore);
 
   const header = (
     <div className="flex items-center gap-2.5">
@@ -402,17 +410,21 @@ export default function RealGlobalScoreCard({
     );
   }
 
-  // ⑤ TERMINAL-INSUFFISANT (SEO Sémantique fini mais sans note) → constat + action
-  // (le bouton « Ajuster » vit sur la carte Sémantique). PAS « en attente » : rien n'arrive
-  // seul. Wording validé Kevin.
-  if (semanticTerminalInsufficient) {
+  // ⑤ TERMINAL-INSUFFISANT (Sémantique et/ou GEO finis mais sans note) → CONSTAT honnête,
+  // PAS « en attente » : rien n'arrive seul (le pilier est fini). Chaque pilier a son action :
+  // Sémantique → ajuster les mots-clés (carte Sémantique) ; GEO → non mesurable en l'état
+  // (panel de concurrents insuffisant), détail sur la carte GEO. Wording validé Kevin.
+  if (semanticTerminalInsufficient || geoTerminalInsufficient) {
+    const body =
+      semanticTerminalInsufficient && geoTerminalInsufficient
+        ? "Votre score d'ensemble attend le SEO Sémantique et la visibilité GEO. Le SEO Sémantique : ajustez vos mots-clés depuis la carte Sémantique. La visibilité GEO n'est pas mesurable en l'état — voir le détail sur la carte GEO."
+        : geoTerminalInsufficient
+          ? "Votre score d'ensemble attend la visibilité GEO, non mesurable en l'état (panel de concurrents insuffisant dans votre secteur). Le détail est sur la carte GEO."
+          : "Votre score d'ensemble attend le SEO Sémantique. Ajustez vos mots-clés depuis la carte Sémantique.";
     return (
       <div className="flex flex-col items-start gap-3 rounded-2xl border border-border-subtle bg-bg-card p-5 md:p-6">
         {header}
-        <p className="max-w-xl text-[13px] leading-relaxed text-text-secondary">
-          Votre score d&apos;ensemble attend le SEO Sémantique. Ajustez vos
-          mots-clés depuis la carte Sémantique.
-        </p>
+        <p className="max-w-xl text-[13px] leading-relaxed text-text-secondary">{body}</p>
       </div>
     );
   }
