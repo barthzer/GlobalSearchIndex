@@ -127,8 +127,13 @@ export default function RealGlobalScoreCard({
     sc.display?.value == null;
   const semanticScore = scores.find((s) => s.scoreType === "semantic");
   const geoScore = scores.find((s) => s.scoreType === "geo_citations");
+  const seoScore = scores.find((s) => s.scoreType === "seo_technical");
   const semanticTerminalInsufficient = isTerminalInsufficient(semanticScore);
   const geoTerminalInsufficient = isTerminalInsufficient(geoScore);
+  // SEO Technique sans /100 = crawl 'degraded' (incomplet). DIFFÉRENT du GEO/Sémantique :
+  // c'est RELANÇABLE (un re-crawl peut produire un vrai score) → message « relance conseillée »,
+  // jamais « non mesurable ». Aligné sur la carte SEO Technique qui propose déjà une relance.
+  const seoTechDegraded = isTerminalInsufficient(seoScore);
 
   const header = (
     <div className="flex items-center gap-2.5">
@@ -410,17 +415,30 @@ export default function RealGlobalScoreCard({
     );
   }
 
-  // ⑤ TERMINAL-INSUFFISANT (Sémantique et/ou GEO finis mais sans note) → CONSTAT honnête,
-  // PAS « en attente » : rien n'arrive seul (le pilier est fini). Chaque pilier a son action :
-  // Sémantique → ajuster les mots-clés (carte Sémantique) ; GEO → non mesurable en l'état
-  // (panel de concurrents insuffisant), détail sur la carte GEO. Wording validé Kevin.
-  if (semanticTerminalInsufficient || geoTerminalInsufficient) {
+  // ⑤ TERMINAL-INSUFFISANT (un ou plusieurs piliers finis mais sans note) → CONSTAT honnête,
+  // PAS « en attente » : rien n'arrive seul. Chaque pilier a SON action honnête :
+  //  - SEO Technique 'degraded' → analyse incomplète, RELANCE conseillée (relançable) ;
+  //  - SEO Sémantique → ajuster les mots-clés (carte Sémantique) ;
+  //  - GEO → non mesurable en l'état (panel de concurrents insuffisant), voir la carte GEO.
+  // Gère les combinaisons (ex. un projet peut en cumuler plusieurs). Wording validé Kevin.
+  if (seoTechDegraded || semanticTerminalInsufficient || geoTerminalInsufficient) {
+    const parts: string[] = [];
+    if (seoTechDegraded)
+      parts.push(
+        "le SEO Technique, dont l'analyse a été incomplète (une relance est conseillée)",
+      );
+    if (semanticTerminalInsufficient)
+      parts.push(
+        "le SEO Sémantique (ajustez vos mots-clés depuis la carte Sémantique)",
+      );
+    if (geoTerminalInsufficient)
+      parts.push(
+        "la visibilité GEO, non mesurable en l'état faute d'un panel de concurrents suffisant (voir la carte GEO)",
+      );
     const body =
-      semanticTerminalInsufficient && geoTerminalInsufficient
-        ? "Votre score d'ensemble attend le SEO Sémantique et la visibilité GEO. Le SEO Sémantique : ajustez vos mots-clés depuis la carte Sémantique. La visibilité GEO n'est pas mesurable en l'état — voir le détail sur la carte GEO."
-        : geoTerminalInsufficient
-          ? "Votre score d'ensemble attend la visibilité GEO, non mesurable en l'état (panel de concurrents insuffisant dans votre secteur). Le détail est sur la carte GEO."
-          : "Votre score d'ensemble attend le SEO Sémantique. Ajustez vos mots-clés depuis la carte Sémantique.";
+      parts.length === 1
+        ? `Votre score d'ensemble attend ${parts[0]}.`
+        : `Votre score d'ensemble est en pause : il attend ${parts.join(" ; ")}.`;
     return (
       <div className="flex flex-col items-start gap-3 rounded-2xl border border-border-subtle bg-bg-card p-5 md:p-6">
         {header}

@@ -108,6 +108,34 @@ const geoTerminalResult: GlobalScoreResult = {
   missing: ["GEO"],
 } as unknown as GlobalScoreResult;
 
+// ⑤ter SEO TECHNIQUE degraded — crawl incomplet → score null, RELANCE conseillée (relançable).
+const seoDegradedScores: ProjectScore[] = [
+  s("seo_technical", "completed", null, false),
+  s("notoriete", "completed", 41),
+  s("semantic", "completed", 61),
+  s("geo_citations", "completed", 55),
+];
+const seoDegradedResult: GlobalScoreResult = {
+  value: null,
+  band: null,
+  ready: false,
+  missing: ["SEO Technique"],
+} as unknown as GlobalScoreResult;
+
+// CUMUL — 3 piliers terminaux (cas blackpearlparis : SEO Tech degraded + Sémantique + GEO).
+const multiTerminalScores: ProjectScore[] = [
+  s("seo_technical", "completed", null, false),
+  s("notoriete", "completed", 41),
+  s("semantic", "completed", null, false),
+  s("geo_citations", "completed", null, false),
+];
+const multiTerminalResult: GlobalScoreResult = {
+  value: null,
+  band: null,
+  ready: false,
+  missing: ["SEO Technique", "SEO Sémantique", "GEO"],
+} as unknown as GlobalScoreResult;
+
 export default function GlobalScorePreview() {
   return (
     <main className="min-h-screen bg-bg-primary px-6 py-12 text-text-primary">
@@ -156,6 +184,20 @@ export default function GlobalScorePreview() {
             ⑤bis Non-mesurable — GEO terminal « trop peu de concurrents » (cas fyn-patrimoine)
           </h2>
           <RealGlobalScoreCard result={geoTerminalResult} scores={geoTerminalScores} />
+        </section>
+
+        <section className="mt-10">
+          <h2 className="mb-2 text-[13px] font-medium text-text-secondary">
+            ⑤ter SEO Technique « degraded » (crawl incomplet) → relance conseillée (cas osia/van-it)
+          </h2>
+          <RealGlobalScoreCard result={seoDegradedResult} scores={seoDegradedScores} />
+        </section>
+
+        <section className="mt-10">
+          <h2 className="mb-2 text-[13px] font-medium text-text-secondary">
+            Cumul — 3 piliers terminaux (cas blackpearlparis)
+          </h2>
+          <RealGlobalScoreCard result={multiTerminalResult} scores={multiTerminalScores} />
         </section>
 
         <section className="mt-12">
