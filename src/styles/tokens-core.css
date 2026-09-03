@@ -351,3 +351,61 @@ input[type="date"] {
   pointer-events: none;
   z-index: 1;
 }
+
+/* ──────────────── Refonte 3 piliers (2026-09-03) ────────────────
+   Classes additives requises par le kit de primitives PillarParts (blocs
+   SEO / Autorité / GEO consolidés). Portées verbatim de la réf design Barth,
+   elles ne référencent que des vars déjà définies (--border-subtle, --bg-card,
+   --card-inner-bg, --text-primary, --motion-fast, --ease-out). Aucune de nos
+   keyframes/identité métier n'est touchée. */
+
+/* Encart à contour : en light le contour structure, en dark on le remplace
+   par un fond légèrement plus clair (le trait ressort mal en dark). */
+.surface-outline {
+  border: 1px solid var(--border-subtle);
+}
+[data-theme="dark"] .surface-outline {
+  border-color: transparent;
+  background-color: rgba(255, 255, 255, 0.045);
+}
+
+/* Survol d'un élément de surface (boutons « i », croix, boutons discrets) :
+   s'assombrit en light, s'éclaircit en dark. */
+.hover-surface {
+  transition: background-color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+}
+.hover-surface:hover {
+  background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  border-color: color-mix(in srgb, var(--text-primary) 20%, transparent);
+  color: var(--text-primary);
+}
+
+/* Badge d'icône en relief : dégradé circulaire, liseré clair intérieur et
+   contour discret. Toutes les pastilles d'icônes des blocs piliers. */
+.icon-badge {
+  background:
+    radial-gradient(
+      circle at 32% 24%,
+      color-mix(in srgb, var(--bg-card) 65%, #ffffff) 0%,
+      var(--card-inner-bg) 78%
+    ),
+    var(--bg-card);
+  box-shadow:
+    inset 0 0 0 1.2px rgba(255, 255, 255, 0.7),
+    0 1px 3px -1px rgba(20, 6, 31, 0.1);
+  border: 1px solid var(--border-subtle);
+}
+[data-theme="dark"] .icon-badge {
+  background:
+    radial-gradient(
+      circle at 32% 24%,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.02) 78%
+    ),
+    var(--card-inner-bg);
+  box-shadow:
+    inset 0 0 0 1.2px rgba(255, 255, 255, 0.08),
+    0 1px 3px -1px rgba(0, 0, 0, 0.35);
+}
