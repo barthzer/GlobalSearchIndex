@@ -43,7 +43,7 @@
   --text-input: rgba(255, 255, 255, 0.5);
 
   /* Composants spécifiques */
-  --arc-bg: #2E1856; /* fond des ScoreArc */
+  --arc-bg: #26262d; /* fond des ScoreArc — neutre Barth (grey-200 dark), pas mauve */
   --label-col-bg: rgba(255, 255, 255, 0.06);
 
   /* Ombres */
@@ -89,7 +89,7 @@
   --text-input: rgba(26, 16, 37, 0.45);
 
   /* Composants spécifiques */
-  --arc-bg: #e8e0f0;
+  --arc-bg: #e8e8e8; /* fond des ScoreArc — neutre Barth (grey-200 light), pas mauve */
   --label-col-bg: #ffffff;
 
   /* Ombres (atténuées en light) */
