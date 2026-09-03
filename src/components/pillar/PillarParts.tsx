@@ -1,9 +1,40 @@
 "use client";
 
 import { bandLabel, type ScoreBand } from "@/lib/scoreLabel";
+import RankTrophy from "../RankTrophy";
 
 /** Bande serveur (display.band) — l'unique source de vérité couleur. */
 type Band = "critical" | "medium" | "good";
+
+/**
+ * Badge de rang à côté de la jauge (trophée médaille + « rang / total ») — design
+ * Barth (SeoScoreCard / AutoriteScoreCard). À N'ALIMENTER QU'AVEC UN RANG RÉEL
+ * (ex. rang benchmark concurrents de l'Autorité) : jamais un rang mock inventé.
+ */
+export function RankBadge({
+  rank,
+  outOf,
+  size = "lg",
+}: {
+  rank: number;
+  outOf: number;
+  size?: "lg" | "sm";
+}) {
+  const big = size === "lg";
+  return (
+    <div
+      className={`surface-outline inline-flex shrink-0 items-center rounded-xl bg-bg-card ${
+        big ? "gap-2.5 px-3 py-2" : "gap-2 px-2.5 py-1.5"
+      }`}
+    >
+      <RankTrophy rank={rank} size={big ? 26 : 22} />
+      <span className="flex items-baseline">
+        <span className={`font-bold tabular-nums text-text-primary ${big ? "text-xl" : "text-base"}`}>{rank}</span>
+        <span className={`ml-1 text-text-muted ${big ? "text-sm" : "text-[12px]"}`}>/ {outOf}</span>
+      </span>
+    </div>
+  );
+}
 
 /**
  * Couleur d'un score depuis sa BANDE SERVEUR (jamais un seuil recalculé côté

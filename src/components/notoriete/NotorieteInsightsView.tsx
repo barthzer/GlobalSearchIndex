@@ -21,7 +21,7 @@ import {
 } from "@/lib/notoriete";
 import BenchmarkSection from "./BenchmarkSection";
 import type { CompetitorRow as BarthCompetitorRow } from "./data";
-import { ScoreGauge, PillarHeader, SubCard } from "../pillar/PillarParts";
+import { ScoreGauge, PillarHeader, SubCard, RankBadge } from "../pillar/PillarParts";
 
 type Band = "critical" | "medium" | "good";
 
@@ -149,6 +149,11 @@ export default function NotorieteInsightsView({
             </span>
             <span className="text-[12px] font-medium text-text-secondary">Autorité média</span>
           </div>
+        )}
+        {/* Trophée de rang — VRAI rang benchmark concurrents (jamais un mock).
+            Affiché uniquement quand le benchmark est débloqué et classé. */}
+        {bench.unlocked && bench.rank > 0 && bench.total > 0 && (
+          <RankBadge rank={bench.rank} outOf={bench.total} />
         )}
         <p className="flex-1 text-center text-[16px] font-light leading-relaxed text-text-secondary md:text-left">
           {composite == null && !authorityProcessing
