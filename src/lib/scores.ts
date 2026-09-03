@@ -116,12 +116,24 @@ export interface GlobalScoreResult {
   missing: string[];
 }
 
+/**
+ * Score SEO composite (moyenne Technique + Sémantique), calculé SERVEUR. Même
+ * forme que GlobalScoreResult. Exposé additivement par /global-score (`.seo`) :
+ * l'en-tête du bloc SEO le LIT, il ne recalcule pas la moyenne (invariant « 56 vs 12 »).
+ */
+export interface SeoCompositeResult {
+  value: number | null;
+  band: "critical" | "medium" | "good" | null;
+  ready: boolean;
+  missing: string[];
+}
+
 export async function fetchGlobalScore(
   projectId: string,
-): Promise<GlobalScoreResult> {
+): Promise<GlobalScoreResult & { seo: SeoCompositeResult }> {
   const res = await apiFetch(`/projects/${projectId}/global-score`);
   if (!res.ok) throw new Error(`global-score ${res.status}`);
-  return (await res.json()) as GlobalScoreResult;
+  return (await res.json()) as GlobalScoreResult & { seo: SeoCompositeResult };
 }
 
 /** true tant qu'un score est en cours → le front repolle. */

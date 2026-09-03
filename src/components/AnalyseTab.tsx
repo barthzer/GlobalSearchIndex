@@ -8,13 +8,13 @@ import {
   citationsDisplay,
   aiCrawlerAccess,
   type ProjectScore,
-  type ScoreDisplay,
   type GlobalScoreResult,
+  type SeoCompositeResult,
 } from "@/lib/scores";
 import { fetchSemanticAdjustmentsRemaining } from "@/lib/api";
 import RealGlobalScoreCard from "./RealGlobalScoreCard";
-import RealScoreArc from "./RealScoreArc";
-import { scoreInfos, scoreIcons } from "@/app/dashboard/rapport/score-infos";
+import RealSeoScoreCard from "./RealSeoScoreCard";
+import { scoreInfos } from "@/app/dashboard/rapport/score-infos";
 import RealPageSpeed from "./RealPageSpeed";
 import RealRecommendations from "./RealRecommendations";
 import NotWiredNotice from "./NotWiredNotice";
@@ -22,23 +22,11 @@ import RealGeoScoreCard, { type PlatformBreakdown } from "./RealGeoScoreCard";
 import RealTrafficVisibility from "./RealTrafficVisibility";
 import RealNotorieteInsights from "./RealNotorieteInsights";
 
-// Les 4 scores de l'analyse, rendus depuis le display SERVEUR (M3). Les autres
-// blocs (PageSpeed, trafic, notoriété, recos) restent explicitement « non câblés »
-// jusqu'à leurs jalons — jamais de chiffre factice.
-// Le bloc GEO est désormais le PILIER IA (deux arcs : Lisibilité geo_citability +
-// Citations geo_citations). Il est rendu à part, PAS dans cette grille d'arcs
-// simples. Les autres scores restent inchangés.
-// Ordre + icônes + bulle info repris de la maquette Barthélemy (Technique,
-// Sémantique, Autorité). Le pilier GEO/Citations est rendu à part.
-const ARC_SCORES: {
-  type: ProjectScore["scoreType"];
-  label: string;
-  key: "technique" | "semantique" | "autorite";
-}[] = [
-  { type: "seo_technical", label: "SEO Technique", key: "technique" },
-  { type: "semantic", label: "SEO Sémantique", key: "semantique" },
-  { type: "authority", label: "Autorité", key: "autorite" },
-];
+// Refonte 3 piliers (2026-09-03) : l'analyse s'articule en 3 blocs consolidés —
+// SEO (Technique + Sémantique fusionnés dans RealSeoScoreCard, avec PageSpeed et
+// Trafic en slots), GEO/Citabilité IA (RealGeoScoreCard), Autorité (RealNotorieteInsights).
+// Fini la grille d'arcs simples : chaque pilier est un bloc à part entière. Les
+// scores sont rendus depuis le display SERVEUR (jamais de chiffre recalculé côté front).
 
 export default function AnalyseTab({
   projectId,
@@ -57,6 +45,9 @@ export default function AnalyseTab({
   // temps que les scores pour rester synchrone au polling (jamais un global périmé
   // face aux arcs).
   const [globalScore, setGlobalScore] = useState<GlobalScoreResult | null>(null);
+  // Score SEO composite (moyenne Technique + Sémantique) SERVEUR, exposé par
+  // /global-score (`.seo`). L'en-tête du bloc SEO le LIT, il ne recalcule pas.
+  const [seoComposite, setSeoComposite] = useState<SeoCompositeResult | null>(null);
   // Ajustements sémantiques restants (prospect, cap 2 ; null = commercial illimité).
   const [adjustmentsRemaining, setAdjustmentsRemaining] = useState<number | null>(null);
   const [error, setError] = useState(false);
@@ -84,6 +75,7 @@ export default function AnalyseTab({
         if (!active) return;
         setScores(s);
         setGlobalScore(g);
+        setSeoComposite(g?.seo ?? null);
         setAdjustmentsRemaining(adj);
         setError(false);
         setPollTick((t) => t + 1);
@@ -95,6 +87,7 @@ export default function AnalyseTab({
     }
     setScores(null);
     setGlobalScore(null);
+    setSeoComposite(null);
     setError(false);
     load();
     return () => {
@@ -115,23 +108,14 @@ export default function AnalyseTab({
   }
 
   // Loader : l'écran dit que ça travaille (le COMEX ne doit jamais voir un vide).
-  // 3 arcs simples + le pilier IA (2 arcs) → 5 cellules skeleton.
+  // 4 blocs skeleton : score global + les 3 piliers (SEO, GEO, Autorité).
   if (!scores) {
     return (
       <div className="flex flex-col gap-4">
         <div className="h-32 animate-pulse rounded-2xl border border-border-subtle bg-bg-card" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {ARC_SCORES.map((s) => (
-            <div
-              key={s.type}
-              className="h-56 animate-pulse rounded-2xl border border-border-subtle bg-bg-card"
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="h-56 animate-pulse rounded-2xl border border-border-subtle bg-bg-card" />
-          <div className="h-56 animate-pulse rounded-2xl border border-border-subtle bg-bg-card" />
-        </div>
+        <div className="h-72 animate-pulse rounded-2xl border border-border-subtle bg-bg-card" />
+        <div className="h-64 animate-pulse rounded-2xl border border-border-subtle bg-bg-card" />
+        <div className="h-64 animate-pulse rounded-2xl border border-border-subtle bg-bg-card" />
       </div>
     );
   }
@@ -160,11 +144,47 @@ export default function AnalyseTab({
         </div>
       )}
 
-      {/* Carte GEO (modèle composite, pattern autorité) — UNE carte, 3 layouts
-          décidés SERVEUR (display.geoContext.layout de geo_citations) : verrou /
-          composite / constat. La technique (geo_citability) n'a plus d'arc propre :
-          elle devient une sous-composante (composite) ou une sous-ligne (constat),
-          jamais seule ni en tête. */}
+      {/* BLOC SEO (pilier 1) — Technique + Sémantique consolidés, PageSpeed et Trafic
+          en SLOTS (chaque surface a ses sources : on ne les fond pas). En-tête = score
+          composite SERVEUR quand les 2 composantes portent un /100 ; sinon état honnête
+          (verrou → CTA dans la sous-carte Sémantique ; insuffisant → le constat). Le
+          Technique seul n'est JAMAIS présenté comme un score SEO. */}
+      <div className="mb-4">
+        <RealSeoScoreCard
+          seo={
+            seoComposite ?? { value: null, band: null, ready: false, missing: [] }
+          }
+          technique={byType("seo_technical")?.display ?? null}
+          semantic={byType("semantic")?.display ?? null}
+          semanticStatus={byType("semantic")?.status ?? null}
+          adjustmentsRemaining={adjustmentsRemaining}
+          projectId={projectId}
+          onUnlocked={handleUnlocked}
+          onExpertClick={onExpertClick}
+          infos={{ technique: scoreInfos.technique, semantique: scoreInfos.semantique }}
+          delay={200}
+          pageSpeedSlot={
+            <RealPageSpeed
+              raw={
+                (byType("page_speed")?.rawData ?? null) as Parameters<
+                  typeof RealPageSpeed
+                >[0]["raw"]
+              }
+              reason={byType("page_speed")?.display?.message ?? null}
+              status={byType("page_speed")?.status ?? null}
+            />
+          }
+          trafficSlot={
+            <RealTrafficVisibility
+              projectId={projectId}
+              score={byType("geo_citations") ?? null}
+            />
+          }
+        />
+      </div>
+
+      {/* BLOC GEO / Citabilité IA (pilier 2) — UNE carte, 3 layouts décidés SERVEUR
+          (display.geoContext.layout de geo_citations) : verrou / composite / constat. */}
       <div className="mb-4">
         <RealGeoScoreCard
           display={citationsDisplay(scores)}
@@ -183,90 +203,6 @@ export default function AnalyseTab({
             (byType("geo_citations")?.rawData as { geo_status?: string } | null)
               ?.geo_status === "unavailable"
           }
-        />
-      </div>
-
-      <section className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {ARC_SCORES.map(({ type, label, key }, i) => {
-          // UNIFICATION AUTORITÉ (décision B, Alexis/Kevin 2026-08-05) : le pilier
-          // « Autorité » affiche LE COMPOSITE média (score notoriete), plus le BAS
-          // relatif BABBAR. Un seul chiffre autorité partout (écran/report/PDF/benchmark).
-          // La carte, sa place et son bouton info restent : seule la SOURCE change.
-          const sourceType = type === "authority" ? "notoriete" : type;
-          const sc = byType(sourceType);
-          // Score absent → arc « non disponible » (jamais un arc qui disparaît).
-          const display: ScoreDisplay = sc
-            ? sc.display
-            : {
-                type: "seo",
-                scorable: false,
-                value: null,
-                absolute: false,
-                neutralArc: false,
-                tone: "muted",
-                band: null,
-                label: null,
-                message: "Score non disponible pour ce projet.",
-                caption: "Non disponible",
-              };
-          return (
-            <RealScoreArc
-              key={type}
-              label={label}
-              icon={scoreIcons[key]}
-              display={display}
-              info={scoreInfos[key]}
-              delay={420 + i * 120}
-              // Verrouillé → carte de déblocage (sémantique : status locked). Le
-              // composite autorité n'a PAS de verrou-concurrents (il se calcule des
-              // composantes notoriété) : son seul cas dégradé est 'insufficient'
-              // (carte « Données insuffisantes » honnête, gérée par le display).
-              unlockable={type === "semantic" && sc?.status === "locked"}
-              unlockCtaLabel="Calculer mon score sémantique"
-              // 'pending' compte comme 'processing' (retour Alexis/Kevin 08-20) : le
-              // composite autorité (notoriete) reste PENDING tant que ses composantes se
-              // calculent (benchmark concurrents…) → spinner « Analyse en cours », JAMAIS
-              // le verdict « composantes manquantes » prématuré. L'insuffisance n'est
-              // affichée qu'une fois notoriete 'completed'.
-              processing={sc?.status === "processing" || sc?.status === "pending"}
-              projectId={projectId}
-              onUnlocked={handleUnlocked}
-              // Sémantique COMPLETED mais insuffisant → bouton « Ajuster les mots-clés »
-              // (rouvre la modale pré-remplie). Compteur prospect (null = commercial illimité).
-              adjustable={
-                type === "semantic" &&
-                sc?.status === "completed" &&
-                sc.display?.scorable === false &&
-                sc.display?.value == null
-              }
-              adjustmentsRemaining={type === "semantic" ? adjustmentsRemaining : null}
-              onExpertClick={onExpertClick}
-            />
-          );
-        })}
-      </section>
-
-      {/* PageSpeed — toujours affiché : les vraies données, ou « non disponible »
-          explicite (crawl dégradé). Jamais un bloc qui disparaît en silence. */}
-      <div className="mb-6">
-        <RealPageSpeed
-          raw={
-            (byType("page_speed")?.rawData ?? null) as Parameters<
-              typeof RealPageSpeed
-            >[0]["raw"]
-          }
-          reason={byType("page_speed")?.display?.message ?? null}
-          status={byType("page_speed")?.status ?? null}
-        />
-      </div>
-
-      {/* Trafic / Indice de visibilité — DEUX sous-onglets (maquette Barth). Trafic
-          mensuel (org_traffic MONDE, attend Ahrefs) + Indice de visibilité (Haloscan,
-          réel, portable maintenant). Entre PageSpeed et Notoriété. */}
-      <div className="mb-6">
-        <RealTrafficVisibility
-          projectId={projectId}
-          score={byType("geo_citations") ?? null}
         />
       </div>
 
