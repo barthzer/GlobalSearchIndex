@@ -3,7 +3,11 @@
 // résolues par buildScoreDisplay(score, 'prospect') côté serveur (même source que
 // le PDF → écran = PDF = prospect par construction). Zéro recalcul, zéro logique
 // métier, aucun nom de fournisseur (lint check:vendor-leak couvre cette surface).
-import type { ScoreDisplay } from "@/lib/scores";
+import type {
+  ScoreDisplay,
+  GlobalScoreResult,
+  SeoCompositeResult,
+} from "@/lib/scores";
 
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_URL ?? "https://gsi.aw-i.com/api"
@@ -48,6 +52,11 @@ export interface ReportPayload {
   recommendations:
     | { recommendations?: ReportReco[]; cta?: string; [k: string]: unknown }
     | null;
+  // Refonte 3 piliers : agrégats SERVEUR (source unique computeAnalysisSummary,
+  // mêmes displays prospect). Le rapport LIT ces valeurs (bloc SEO + score global +
+  // « Score par pilier »), il ne recalcule NI la moyenne NI les seuils.
+  globalScore?: GlobalScoreResult;
+  seoComposite?: SeoCompositeResult;
 }
 
 export interface VisibilityPoint {

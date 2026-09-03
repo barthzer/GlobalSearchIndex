@@ -14,6 +14,7 @@ import {
 import { fetchSemanticAdjustmentsRemaining } from "@/lib/api";
 import RealGlobalScoreCard from "./RealGlobalScoreCard";
 import RealSeoScoreCard from "./RealSeoScoreCard";
+import PillarScoreBars, { type PillarBar } from "./PillarScoreBars";
 import { scoreInfos } from "@/app/dashboard/rapport/score-infos";
 import RealPageSpeed from "./RealPageSpeed";
 import RealRecommendations from "./RealRecommendations";
@@ -124,6 +125,32 @@ export default function AnalyseTab({
     scores.find((s) => s.scoreType === t);
   const processing = anyProcessing(scores);
 
+  // « Score par pilier » (raccourcis vers les 3 blocs) — valeurs/bandes SERVEUR,
+  // jamais recalculées. SEO = composite exposé par /global-score ; GEO et Autorité
+  // = display de leur score. Un pilier sans /100 → jauge verrouillée (jamais un 0).
+  const geoDisplay = byType("geo_citations")?.display ?? null;
+  const notoDisplay = byType("notoriete")?.display ?? null;
+  const pillarBars: PillarBar[] = [
+    {
+      label: "SEO",
+      value: seoComposite?.ready ? (seoComposite.value ?? null) : null,
+      band: seoComposite?.ready ? (seoComposite.band ?? null) : null,
+      anchor: "pilier-seo",
+    },
+    {
+      label: "GEO",
+      value: geoDisplay?.scorable ? (geoDisplay.value ?? null) : null,
+      band: geoDisplay?.scorable ? (geoDisplay.band ?? null) : null,
+      anchor: "pilier-geo",
+    },
+    {
+      label: "Autorité",
+      value: notoDisplay?.scorable ? (notoDisplay.value ?? null) : null,
+      band: notoDisplay?.scorable ? (notoDisplay.band ?? null) : null,
+      anchor: "pilier-autorite",
+    },
+  ];
+
   return (
     <>
       {/* Score global en TÊTE (agrégat serveur des 4 piliers) : chiffre si les 4 sont
@@ -135,6 +162,11 @@ export default function AnalyseTab({
           projectId={projectId}
           onUnlocked={handleUnlocked}
         />
+      </div>
+
+      {/* Score par pilier — 3 raccourcis (SEO / GEO / Autorité) vers les blocs. */}
+      <div className="mb-4">
+        <PillarScoreBars pillars={pillarBars} />
       </div>
 
       {processing && (

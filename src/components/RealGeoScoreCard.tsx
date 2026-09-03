@@ -8,6 +8,7 @@ import ScoreInfoModal from "./ScoreInfoModal";
 import InsightNote from "./InsightNote";
 import SemanticUnlockModal from "./SemanticUnlockModal";
 import { CompetitorBreakdownList } from "./PilierIA";
+import { PillarIcon } from "./pillar/PillarParts";
 import { scoreInfos } from "@/app/dashboard/rapport/score-infos";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -121,8 +122,8 @@ export default function RealGeoScoreCard({
   const circumference = Math.PI * radius;
 
   const Header = ({ withDate = false }: { withDate?: boolean }) => (
-    <div className="flex w-full items-center gap-2 px-5 pt-5 md:px-6 md:pt-6">
-      <span className="text-text-primary/80">{geoIcon}</span>
+    <div className="flex w-full items-center gap-2.5 px-5 pt-5 md:px-6 md:pt-6">
+      <PillarIcon>{geoIcon}</PillarIcon>
       <span className="text-[length:var(--text-body-lg)] font-medium text-text-heading">Visibilité GEO</span>
       {withDate && measuredAtLabel && (
         <span className="ml-auto text-[11px] font-light text-text-muted">Mesuré le {measuredAtLabel}</span>
@@ -183,7 +184,7 @@ export default function RealGeoScoreCard({
         />
       )}
 
-      <div className={cardClass} style={cardStyle}>
+      <div id="pilier-geo" className={`scroll-mt-24 ${cardClass}`} style={cardStyle}>
         <Header withDate={layout === "composite" || layout === "statement"} />
         <CrawlerBanner />
 
