@@ -92,6 +92,8 @@ export default function RealNotorieteInsights({
   const raw = (noto.rawData ?? null) as NotorieteRaw | null;
   // Autorité média composite /100 — résolu SERVEUR. null si insufficient.
   const composite = noto.display?.scorable ? (noto.display.value ?? null) : null;
+  // Bande serveur (couleur de la jauge) — le front LIT, ne recalcule pas (« 56 vs 12 »).
+  const band = noto.display?.scorable ? (noto.display.band ?? null) : null;
   // Benchmark EN COURS : déblocage validé (sémantique en processing → la cascade
   // benchmark tourne côté serveur) mais pas encore débloqué. On montre « en cours »
   // au lieu du verrou (Alexis : tout doit tourner à la validation, pas de reclic).
@@ -107,6 +109,7 @@ export default function RealNotorieteInsights({
     <NotorieteInsightsView
       raw={raw}
       composite={composite}
+      band={band}
       compositeMessage={noto.display?.message ?? null}
       clientName={clientName}
       benchmarkProcessing={benchmarkProcessing}

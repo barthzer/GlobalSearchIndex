@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import RealGlobalScoreCard from "@/components/RealGlobalScoreCard";
 import RealSeoScoreCard from "@/components/RealSeoScoreCard";
-import PillarScoreBars, { type PillarBar } from "@/components/PillarScoreBars";
 import RealGeoScoreCard, { type PlatformBreakdown } from "@/components/RealGeoScoreCard";
 import RealPageSpeed from "@/components/RealPageSpeed";
 import RealRecommendationCard from "@/components/RealRecommendationCard";
@@ -144,28 +143,6 @@ export default function ReportTokenPage() {
     ready: false,
     missing: [],
   };
-  const geoDisplay = byType("geo_citations")?.display ?? null;
-  const notoDisplay = byType("notoriete")?.display ?? null;
-  const pillarBars: PillarBar[] = [
-    {
-      label: "SEO",
-      value: seoComposite.ready ? (seoComposite.value ?? null) : null,
-      band: seoComposite.ready ? (seoComposite.band ?? null) : null,
-      anchor: "pilier-seo",
-    },
-    {
-      label: "GEO",
-      value: geoDisplay?.scorable ? (geoDisplay.value ?? null) : null,
-      band: geoDisplay?.scorable ? (geoDisplay.band ?? null) : null,
-      anchor: "pilier-geo",
-    },
-    {
-      label: "Autorité",
-      value: notoDisplay?.scorable ? (notoDisplay.value ?? null) : null,
-      band: notoDisplay?.scorable ? (notoDisplay.band ?? null) : null,
-      anchor: "pilier-autorite",
-    },
-  ];
   // PageSpeed + Trafic sont INJECTÉS dans le bloc SEO (parité dashboard : chaque
   // surface a ses sources). Trafic prospect = traffic_curve du geo-score + endpoint
   // visibilité (charts read-only, aucun fetch dans la carte).
@@ -203,18 +180,42 @@ export default function ReportTokenPage() {
           <p className="mt-2 text-[14px] font-light text-text-muted">{project.domain}</p>
         </section>
 
-        {/* Score global (strict-3 SERVEUR) — en TÊTE, comme le dashboard. Lecture
-            seule : pas de projectId → aucun CTA, la carte affiche l'état honnête. */}
+        {/* Ordre des piliers = maquette Barth (dashboard origin/main) : Global (avec
+            « Score par pilier » DANS la carte) → GEO → SEO → Autorité. */}
+
+        {/* Score global (strict-3 SERVEUR) + barres « Score par pilier » DANS la carte
+            — en TÊTE, comme le dashboard. Lecture seule : pas de projectId → aucun CTA. */}
         <div className="mb-4">
-          <RealGlobalScoreCard result={data.globalScore ?? null} scores={providedScores} />
+          <RealGlobalScoreCard
+            result={data.globalScore ?? null}
+            seo={seoComposite}
+            scores={providedScores}
+          />
         </div>
 
-        {/* Score par pilier — raccourcis vers les 3 blocs (SEO / GEO / Autorité). */}
+        {/* BLOC GEO / Citabilité IA (pilier 1) — MÊME carte que le dashboard
+            (écran=PDF=prospect) : modèle composite, 3 layouts décidés serveur.
+            Lecture seule : pas de projectId → le verrou reste informatif, sans bouton. */}
         <div className="mb-4">
-          <PillarScoreBars pillars={pillarBars} />
+          <RealGeoScoreCard
+            display={citationsDisplay(scores)}
+            status={byType("geo_citations")?.status ?? null}
+            crawlerAccess={aiCrawlerAccess(scores)}
+            platformBreakdown={
+              (
+                byType("geo_citations")?.rawData as
+                  | { details?: { platform_breakdown?: PlatformBreakdown } }
+                  | null
+              )?.details?.platform_breakdown ?? null
+            }
+            unavailable={
+              (byType("geo_citations")?.rawData as { geo_status?: string } | null)
+                ?.geo_status === "unavailable"
+            }
+          />
         </div>
 
-        {/* BLOC SEO (pilier 1) — Technique + Sémantique consolidés (composite SERVEUR),
+        {/* BLOC SEO (pilier 2) — Technique + Sémantique consolidés (composite SERVEUR),
             PageSpeed + Trafic injectés en SLOTS. Lecture seule : pas de projectId → la
             sous-carte Sémantique montre l'état sans CTA de déblocage. */}
         <div className="mb-4">
@@ -245,28 +246,6 @@ export default function ReportTokenPage() {
           />
         </div>
 
-        {/* BLOC GEO / Citabilité IA (pilier 2) — MÊME carte que le dashboard
-            (écran=PDF=prospect) : modèle composite, 3 layouts décidés serveur.
-            Lecture seule : pas de projectId → le verrou reste informatif, sans bouton. */}
-        <div className="mb-4">
-          <RealGeoScoreCard
-            display={citationsDisplay(scores)}
-            status={byType("geo_citations")?.status ?? null}
-            crawlerAccess={aiCrawlerAccess(scores)}
-            platformBreakdown={
-              (
-                byType("geo_citations")?.rawData as
-                  | { details?: { platform_breakdown?: PlatformBreakdown } }
-                  | null
-              )?.details?.platform_breakdown ?? null
-            }
-            unavailable={
-              (byType("geo_citations")?.rawData as { geo_status?: string } | null)
-                ?.geo_status === "unavailable"
-            }
-          />
-        </div>
-
         {/* BLOC Autorité (pilier 3) — MÊME source que le dashboard (parité
             écran=report=PDF), read-only strict : aucun bouton d'action. Le composant
             porte son propre en-tête pilier (#pilier-autorite). */}
@@ -274,11 +253,13 @@ export default function ReportTokenPage() {
           const noto = byType("notoriete");
           if (!noto) return null;
           const composite = noto.display?.scorable ? (noto.display.value ?? null) : null;
+          const band = noto.display?.scorable ? (noto.display.band ?? null) : null;
           return (
             <section className="mb-4">
               <NotorieteInsightsView
                 raw={(noto.rawData ?? null) as NotorieteRaw | null}
                 composite={composite}
+                band={band}
                 compositeMessage={noto.display?.message ?? null}
                 clientName={project.companyName || project.domain}
                 authorityProcessing={noto.status === "processing" || noto.status === "pending"}

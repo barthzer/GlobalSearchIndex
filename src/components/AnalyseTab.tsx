@@ -14,7 +14,6 @@ import {
 import { fetchSemanticAdjustmentsRemaining } from "@/lib/api";
 import RealGlobalScoreCard from "./RealGlobalScoreCard";
 import RealSeoScoreCard from "./RealSeoScoreCard";
-import PillarScoreBars, { type PillarBar } from "./PillarScoreBars";
 import { scoreInfos } from "@/app/dashboard/rapport/score-infos";
 import RealPageSpeed from "./RealPageSpeed";
 import RealRecommendations from "./RealRecommendations";
@@ -125,32 +124,6 @@ export default function AnalyseTab({
     scores.find((s) => s.scoreType === t);
   const processing = anyProcessing(scores);
 
-  // « Score par pilier » (raccourcis vers les 3 blocs) — valeurs/bandes SERVEUR,
-  // jamais recalculées. SEO = composite exposé par /global-score ; GEO et Autorité
-  // = display de leur score. Un pilier sans /100 → jauge verrouillée (jamais un 0).
-  const geoDisplay = byType("geo_citations")?.display ?? null;
-  const notoDisplay = byType("notoriete")?.display ?? null;
-  const pillarBars: PillarBar[] = [
-    {
-      label: "SEO",
-      value: seoComposite?.ready ? (seoComposite.value ?? null) : null,
-      band: seoComposite?.ready ? (seoComposite.band ?? null) : null,
-      anchor: "pilier-seo",
-    },
-    {
-      label: "GEO",
-      value: geoDisplay?.scorable ? (geoDisplay.value ?? null) : null,
-      band: geoDisplay?.scorable ? (geoDisplay.band ?? null) : null,
-      anchor: "pilier-geo",
-    },
-    {
-      label: "Autorité",
-      value: notoDisplay?.scorable ? (notoDisplay.value ?? null) : null,
-      band: notoDisplay?.scorable ? (notoDisplay.band ?? null) : null,
-      anchor: "pilier-autorite",
-    },
-  ];
-
   return (
     <>
       {/* Score global en TÊTE (agrégat serveur des 4 piliers) : chiffre si les 4 sont
@@ -158,15 +131,11 @@ export default function AnalyseTab({
       <div className="mb-4">
         <RealGlobalScoreCard
           result={globalScore}
+          seo={seoComposite}
           scores={scores}
           projectId={projectId}
           onUnlocked={handleUnlocked}
         />
-      </div>
-
-      {/* Score par pilier — 3 raccourcis (SEO / GEO / Autorité) vers les blocs. */}
-      <div className="mb-4">
-        <PillarScoreBars pillars={pillarBars} />
       </div>
 
       {processing && (
@@ -176,7 +145,33 @@ export default function AnalyseTab({
         </div>
       )}
 
-      {/* BLOC SEO (pilier 1) — Technique + Sémantique consolidés, PageSpeed et Trafic
+      {/* Ordre des piliers = maquette Barth (dashboard origin/main) : Global → GEO →
+          SEO → Autorité. */}
+
+      {/* BLOC GEO / Citabilité IA (pilier 1) — UNE carte, 3 layouts décidés SERVEUR
+          (display.geoContext.layout de geo_citations) : verrou / composite / constat. */}
+      <div className="mb-4">
+        <RealGeoScoreCard
+          display={citationsDisplay(scores)}
+          status={byType("geo_citations")?.status ?? null}
+          crawlerAccess={aiCrawlerAccess(scores)}
+          projectId={projectId}
+          onUnlocked={handleUnlocked}
+          platformBreakdown={
+            (
+              byType("geo_citations")?.rawData as
+                | { details?: { platform_breakdown?: PlatformBreakdown } }
+                | null
+            )?.details?.platform_breakdown ?? null
+          }
+          unavailable={
+            (byType("geo_citations")?.rawData as { geo_status?: string } | null)
+              ?.geo_status === "unavailable"
+          }
+        />
+      </div>
+
+      {/* BLOC SEO (pilier 2) — Technique + Sémantique consolidés, PageSpeed et Trafic
           en SLOTS (chaque surface a ses sources : on ne les fond pas). En-tête = score
           composite SERVEUR quand les 2 composantes portent un /100 ; sinon état honnête
           (verrou → CTA dans la sous-carte Sémantique ; insuffisant → le constat). Le
@@ -211,29 +206,6 @@ export default function AnalyseTab({
               projectId={projectId}
               score={byType("geo_citations") ?? null}
             />
-          }
-        />
-      </div>
-
-      {/* BLOC GEO / Citabilité IA (pilier 2) — UNE carte, 3 layouts décidés SERVEUR
-          (display.geoContext.layout de geo_citations) : verrou / composite / constat. */}
-      <div className="mb-4">
-        <RealGeoScoreCard
-          display={citationsDisplay(scores)}
-          status={byType("geo_citations")?.status ?? null}
-          crawlerAccess={aiCrawlerAccess(scores)}
-          projectId={projectId}
-          onUnlocked={handleUnlocked}
-          platformBreakdown={
-            (
-              byType("geo_citations")?.rawData as
-                | { details?: { platform_breakdown?: PlatformBreakdown } }
-                | null
-            )?.details?.platform_breakdown ?? null
-          }
-          unavailable={
-            (byType("geo_citations")?.rawData as { geo_status?: string } | null)
-              ?.geo_status === "unavailable"
           }
         />
       </div>

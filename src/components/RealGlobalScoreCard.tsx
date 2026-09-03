@@ -2,9 +2,10 @@
 
 import { useEffect, useId, useState } from "react";
 import type { ReactNode } from "react";
-import type { GlobalScoreResult, ProjectScore } from "@/lib/scores";
+import type { GlobalScoreResult, SeoCompositeResult, ProjectScore } from "@/lib/scores";
 import { bandLabel } from "@/lib/scoreLabel";
 import SemanticUnlockModal from "./SemanticUnlockModal";
+import PillarBars, { type PillarBar } from "./PillarBars";
 import Button from "./Button";
 
 // Score global = agrégat des 4 piliers, en TÊTE de l'Analyse. Le chiffre et la bande
@@ -67,13 +68,35 @@ function globalInterpretation(band: "critical" | "medium" | "good"): string {
   return "Plusieurs piliers demandent une action prioritaire pour redresser votre visibilité globale.";
 }
 
+// Icônes des 3 barres « Score par pilier » (GEO / SEO / Autorité) — tracés maquette Barth.
+const BAR_ICONS: Record<"geo" | "seo" | "autorite", React.ReactNode> = {
+  geo: (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+    </svg>
+  ),
+  seo: (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+    </svg>
+  ),
+  autorite: (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+      <path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+    </svg>
+  ),
+};
+
 export default function RealGlobalScoreCard({
   result,
+  seo = null,
   scores,
   projectId,
   onUnlocked,
 }: {
   result: GlobalScoreResult | null;
+  /** Score SEO composite SERVEUR (barre SEO du « Score par pilier »). */
+  seo?: SeoCompositeResult | null;
   scores: ProjectScore[] | null;
   projectId?: string;
   onUnlocked?: () => void;
@@ -229,6 +252,42 @@ export default function RealGlobalScoreCard({
     const weakest = audited.slice(-2).reverse();
     const weakList = weakest.map((s) => `${pillarPhrase(s.label)} (${s.score}/100)`).join(" et ");
 
+    // « Score par pilier » — 3 barres verticales DANS la carte (design Barth). Valeurs
+    // et bandes SERVEUR (le front LIT, ne recalcule pas). GEO / SEO composite / Autorité.
+    const geoDisp = scores.find((s) => s.scoreType === "geo_citations")?.display ?? null;
+    const notoDisp = scores.find((s) => s.scoreType === "notoriete")?.display ?? null;
+    const barValue = (d: typeof geoDisp) =>
+      d?.scorable && d.value != null ? d.value : null;
+    const pillarBars: PillarBar[] = [
+      {
+        short: "GEO",
+        name: "Visibilité dans les IA",
+        desc: "Votre présence dans les réponses des moteurs d'IA (ChatGPT, Perplexity, Gemini...).",
+        score: barValue(geoDisp),
+        band: barValue(geoDisp) != null ? (geoDisp!.band ?? null) : null,
+        anchor: "pilier-geo",
+        icon: BAR_ICONS.geo,
+      },
+      {
+        short: "SEO",
+        name: "SEO",
+        desc: "Votre visibilité dans les moteurs de recherche : santé technique du site et couverture des mots-clés.",
+        score: seo?.ready ? (seo.value ?? null) : null,
+        band: seo?.ready ? (seo.band ?? null) : null,
+        anchor: "pilier-seo",
+        icon: BAR_ICONS.seo,
+      },
+      {
+        short: "Autorité",
+        name: "Autorité",
+        desc: "La crédibilité de votre site : liens entrants et notoriété dans votre écosystème.",
+        score: barValue(notoDisp),
+        band: barValue(notoDisp) != null ? (notoDisp!.band ?? null) : null,
+        anchor: "pilier-autorite",
+        icon: BAR_ICONS.autorite,
+      },
+    ];
+
     return (
       <div
         className="card-ray rounded-2xl border border-border-subtle bg-bg-card backdrop-blur-[6px]"
@@ -238,9 +297,10 @@ export default function RealGlobalScoreCard({
           transition: "opacity 600ms var(--ease-expo), transform 600ms var(--ease-expo)",
         }}
       >
-        <div className="flex flex-col gap-6 p-5 md:flex-row md:items-center md:gap-10 md:p-6">
-          {/* Grand anneau + titre + bande */}
-          <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:gap-6 sm:text-left md:shrink-0">
+        {/* Deux colonnes (design Barth, Classement GSI omis) : grand anneau + barres. */}
+        <div className="flex flex-col items-center gap-8 p-5 pt-6 md:flex-row md:items-stretch md:gap-4 md:p-6">
+          {/* Grand anneau + titre + bande (colonne compacte) */}
+          <div className="flex shrink-0 flex-col items-center justify-center gap-3">
             <div className="relative h-[180px] w-[180px] shrink-0">
               <svg viewBox="0 0 180 180" className="h-full w-full">
                 <defs>
@@ -283,7 +343,7 @@ export default function RealGlobalScoreCard({
                 </span>
               </div>
             </div>
-            <div>
+            <div className="text-center">
               <h2 className="text-[length:var(--text-body-lg)] font-medium text-text-heading">Score global</h2>
               {band && (
                 <span className={`mt-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${bandLabel(band).chip}`}>
@@ -293,9 +353,15 @@ export default function RealGlobalScoreCard({
             </div>
           </div>
 
-          {/* Lecture du score : meilleur pilier + ce qui freine. Structure Barth, donnée réelle. */}
+          {/* Score par pilier : barres verticales avec tooltip (design Barth). */}
+          <PillarBars pillars={pillarBars} animate={arcVisible} />
+        </div>
+
+        {/* Lecture du score : meilleur pilier + ce qui freine. Structure Barth, donnée
+            réelle (pleine largeur, sous les deux colonnes). */}
+        <div className="px-5 pb-5 md:px-6 md:pb-6">
           {band && best && audited.length >= 3 ? (
-            <p className="flex-1 text-[14px] font-light leading-relaxed text-text-secondary md:max-w-[520px]">
+            <p className="text-[14px] font-light leading-relaxed text-text-secondary">
               Votre visibilité est <strong className="font-medium text-text-primary">{BAND_OPENING[band]}</strong>.{" "}
               {pillarSubject(best.label)} est le pilier le plus solide ({best.score}/100) et constitue un socle sain
               pour progresser. À l&apos;inverse, {weakList}{" "}
@@ -304,7 +370,7 @@ export default function RealGlobalScoreCard({
             </p>
           ) : (
             band && (
-              <p className="flex-1 text-[14px] font-light leading-relaxed text-text-secondary md:max-w-[520px]">
+              <p className="text-[14px] font-light leading-relaxed text-text-secondary">
                 {globalInterpretation(band)}
               </p>
             )
