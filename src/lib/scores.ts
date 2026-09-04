@@ -42,7 +42,8 @@ export interface GeoContext {
   // optionnel côté type pour tolérer les maquettes mockées (repli 'lock').
   //  'lock' → verrou pré-déblocage · 'composite' → score consolidé (chiffre +
   //  2 sous-composantes) · 'statement' → constat qualitatif, technique en sous-ligne.
-  layout?: "lock" | "composite" | "statement";
+  //  'loading' → mesure en cours (Q1 : error retryable) → la carte rend le spinner.
+  layout?: "lock" | "composite" | "statement" | "loading";
   // Chiffre composite en tête (= round(0.4·technique + 0.6·citations)). Non-null
   // UNIQUEMENT en layout 'composite'. null ≠ 0.
   composite?: number | null;
@@ -113,7 +114,17 @@ export interface GlobalScoreResult {
   value: number | null;
   band: "critical" | "medium" | "good" | null;
   ready: boolean;
+  /** Piliers ENCORE en jeu (error retryable / en cours) → global « en cours ». */
   missing: string[];
+  /**
+   * Piliers TERMINAUX non mesurables (site protégé, domaine trop récent, panel non
+   * mesurable) EXCLUS du calcul (C2). Non vide ⇒ `partial` → label « sur N piliers ».
+   */
+  excluded: { pilier: string; reason: string }[];
+  /** true → global calculé sur < 3 piliers (au moins un exclu). */
+  partial: boolean;
+  /** Nombre de piliers mesurables moyennés (base du chiffre). */
+  basis: number;
 }
 
 /**

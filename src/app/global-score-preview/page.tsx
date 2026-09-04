@@ -33,9 +33,9 @@ const readyScores: ProjectScore[] = [
 
 // ① PRÊT — 3 bandes.
 const READY: { key: string; result: GlobalScoreResult }[] = [
-  { key: "critical (rouge→orange)", result: { value: 32, band: "critical", ready: true, missing: [] } },
-  { key: "medium (orange→jaune)", result: { value: 64, band: "medium", ready: true, missing: [] } },
-  { key: "good (vert)", result: { value: 82, band: "good", ready: true, missing: [] } },
+  { key: "critical (rouge→orange)", result: { value: 32, band: "critical", ready: true, missing: [], excluded: [], partial: false, basis: 3 } },
+  { key: "medium (orange→jaune)", result: { value: 64, band: "medium", ready: true, missing: [], excluded: [], partial: false, basis: 3 } },
+  { key: "good (vert)", result: { value: 82, band: "good", ready: true, missing: [], excluded: [], partial: false, basis: 3 } },
 ];
 
 // ② VERROUILLÉ — sémantique + GEO verrouillés, projectId présent → CTA déblocage.
