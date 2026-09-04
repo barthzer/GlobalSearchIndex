@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import type { GlobalScoreResult } from "@/lib/scores";
 
 // Dashboard SANTÉ des analyses (COMEX 2026-08-20). Lit GET /admin/analyses-health,
 // rend la matrice projets × scores avec l'état de chacun + un bouton « Relancer »
@@ -25,6 +26,9 @@ interface ProjectRow {
   companyName: string | null;
   createdAt: string;
   hasProblem: boolean;
+  /** Score global (même computeGlobalScore que dashboard/PDF/prospect) : valeur, partiel
+   *  (sur N piliers, exclusions labellisées), ou en attente. Le commercial voit le réel. */
+  global: GlobalScoreResult;
   scores: ScoreCell[];
 }
 interface HealthResponse {
@@ -158,6 +162,7 @@ export default function AnalysesHealth() {
           <thead>
             <tr className="border-b border-border-subtle text-left text-text-muted">
               <th className="p-2 font-medium">Projet</th>
+              <th className="p-2 text-center font-medium">Global</th>
               {Object.keys(SCORE_LABELS).map((t) => (
                 <th key={t} className="p-2 text-center font-medium">{SCORE_LABELS[t]}</th>
               ))}
@@ -169,6 +174,36 @@ export default function AnalysesHealth() {
                 <td className="p-2">
                   <div className="font-medium text-text-primary">{p.domain}</div>
                   {p.companyName && <div className="text-text-muted">{p.companyName}</div>}
+                </td>
+                {/* Score global (C2+C3) : chiffre, partiel (sur N piliers), ou état. */}
+                <td className="p-1.5 text-center">
+                  {p.global.value != null ? (
+                    <div
+                      className="inline-flex flex-col items-center gap-0.5 rounded-md bg-white/[0.04] px-2 py-1"
+                      title={
+                        p.global.partial
+                          ? `Sur ${p.global.basis}/3 piliers — ${p.global.excluded.map((e) => e.pilier).join(", ")} non mesurable`
+                          : "3 piliers"
+                      }
+                    >
+                      <span className="font-semibold text-text-primary">
+                        {p.global.value}
+                        {p.global.partial && <span className="text-amber-400">*</span>}
+                      </span>
+                      {p.global.partial && (
+                        <span className="text-[10px] text-amber-400">sur {p.global.basis}/3</span>
+                      )}
+                    </div>
+                  ) : p.global.excluded.length > 0 ? (
+                    <span
+                      className="inline-flex rounded-md bg-slate-500/15 px-2 py-1 text-slate-300"
+                      title={`${p.global.excluded.map((e) => e.pilier).join(", ")} non mesurable`}
+                    >
+                      N/M
+                    </span>
+                  ) : (
+                    <span className="text-text-muted">…</span>
+                  )}
                 </td>
                 {p.scores.map((c) => {
                   const st = HEALTH_STYLE[c.health];

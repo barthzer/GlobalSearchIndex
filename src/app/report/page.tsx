@@ -262,7 +262,7 @@ export default function ReportTokenPage() {
                 band={band}
                 compositeMessage={noto.display?.message ?? null}
                 clientName={project.companyName || project.domain}
-                authorityProcessing={noto.status === "processing" || noto.status === "pending"}
+                authorityProcessing={noto.status === "processing" || noto.status === "pending" || noto.display?.pending === true}
                 benchmarkProcessing={scores.some(
                   (s) => s.scoreType === "semantic" && (s.status === "processing" || s.status === "pending"),
                 )}

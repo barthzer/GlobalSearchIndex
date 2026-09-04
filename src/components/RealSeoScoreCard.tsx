@@ -113,7 +113,11 @@ export default function RealSeoScoreCard({
   // État du sémantique → pilote l'en-tête ET la sous-carte.
   const semScorable = !!semantic && semantic.scorable && semantic.value != null;
   const isLocked = semanticStatus === "locked" && !!projectId;
-  const isProcessing = semanticStatus === "processing" || semanticStatus === "pending";
+  // Q1 : « en cours » = processing/pending OU error retryable (display.pending serveur).
+  const isProcessing =
+    semanticStatus === "processing" ||
+    semanticStatus === "pending" ||
+    semantic?.pending === true;
   // Terminal-insuffisant : completed mais aucune valeur exploitable (le constat, pas un verrou).
   const isInsufficient = semanticStatus === "completed" && !semScorable;
   // Ajustable = insuffisant ET on peut rouvrir la modale (commercial/prospect avec projectId).
@@ -170,7 +174,15 @@ export default function RealSeoScoreCard({
             </>
           ) : (
             <SeoWaitingHeader
-              state={isProcessing ? "processing" : isLocked ? "locked" : isInsufficient ? "insufficient" : "incomplete"}
+              state={
+                isProcessing || technique?.pending
+                  ? "processing"
+                  : isLocked
+                    ? "locked"
+                    : isInsufficient
+                      ? "insufficient"
+                      : "incomplete"
+              }
               message={semantic?.message ?? null}
             />
           )}
@@ -183,6 +195,8 @@ export default function RealSeoScoreCard({
             <div className="flex items-center justify-center py-1">
               {techScorable && technique!.band ? (
                 <ScoreGauge score={technique!.value!} band={technique!.band} visible={visible} size="sm" delay={delay + 150} gradientId="seo-sub-technique" />
+              ) : technique?.pending ? (
+                <SubPending />
               ) : (
                 <SubUnavailable message={technique?.message ?? "Score technique non disponible."} />
               )}
@@ -310,5 +324,15 @@ function SeoWaitingHeader({
 function SubUnavailable({ message }: { message: string }) {
   return (
     <p className="max-w-[15rem] py-3 text-center text-[12px] leading-relaxed text-text-muted">{message}</p>
+  );
+}
+
+/** Spinner « en cours » d'une sous-carte (Q1 : error retryable/en cours). */
+function SubPending() {
+  return (
+    <div className="flex flex-col items-center gap-2 py-2 text-center">
+      <span className="h-8 w-8 animate-spin rounded-full border-[3px] border-accent-pink/20 border-t-accent-pink" />
+      <span className="text-[12px] text-text-muted">Analyse en cours…</span>
+    </div>
   );
 }

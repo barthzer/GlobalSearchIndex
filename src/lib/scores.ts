@@ -17,6 +17,8 @@ export interface ScoreDisplay {
   label: string | null;
   message: string | null;
   caption: string;
+  /** Q1 : true → mesure EN COURS (error retryable/en cours) → la carte rend un spinner. */
+  pending?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

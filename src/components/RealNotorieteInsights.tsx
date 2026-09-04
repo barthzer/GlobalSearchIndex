@@ -100,10 +100,13 @@ export default function RealNotorieteInsights({
   const benchmarkProcessing = (scores ?? []).some(
     (s) => s.scoreType === "semantic" && s.status === "processing",
   );
-  // Autorité média en cours : la notoriété calcule encore (processing/pending) →
-  // spinner au lieu du message « indisponible » (retour Kevin).
+  // Autorité média en cours : la notoriété calcule encore (processing/pending) OU
+  // error retryable dans sa fenêtre de grâce (display.pending serveur, Q1) → spinner
+  // au lieu du message « indisponible » (retour Kevin + COMEX 2026-09-04).
   const authorityProcessing =
-    noto.status === "processing" || noto.status === "pending";
+    noto.status === "processing" ||
+    noto.status === "pending" ||
+    noto.display?.pending === true;
 
   return (
     <NotorieteInsightsView
