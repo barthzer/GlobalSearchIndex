@@ -247,7 +247,11 @@ export default function RealTrafficVisibility({
     if (status === "processing" || status === "pending")
       return <Loading>Collecte de la courbe de trafic en cours…</Loading>;
     if (status === "error") return <Msg>La courbe de trafic (monde) n&apos;a pas pu être collectée.</Msg>;
-    const curve = (raw?.traffic_curve ?? null) as TrafficPoint[] | null;
+    // Garde ROBUSTE : traffic_curve peut être null OU un scalaire (ex. false renvoyé
+    // par SEO Engine hors traffic_curve=true) → JAMAIS supposer un tableau (sinon
+    // curve.map crashe et fait tomber tout le bloc SEO parent). Array.isArray tranche.
+    const rawCurve = raw?.traffic_curve;
+    const curve = Array.isArray(rawCurve) ? (rawCurve as TrafficPoint[]) : null;
     if (curve == null) return <Msg>La courbe de trafic (monde) n&apos;a pas pu être mesurée pour ce domaine.</Msg>;
     if (curve.length < 2) return <Msg>Historique de trafic (monde) insuffisant pour tracer une courbe.</Msg>;
     return (
