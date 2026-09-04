@@ -360,15 +360,15 @@ export default function RealGlobalScoreCard({
         {/* Label PARTIEL (C2 COMEX) : le global est une VRAIE moyenne des piliers
             mesurables, mais calculée sur < 3 → on le DIT (jamais un chiffre présenté
             comme complet). Le(s) pilier(s) exclu(s) = terminaux non mesurables sur ce site. */}
-        {result.partial && result.excluded.length > 0 && (
+        {result.partial && (result.excluded ?? []).length > 0 && (
           <div className="mx-5 mb-3 flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-4 py-2.5 md:mx-6">
             <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25h1.5v5.25M12 7.5h.008v.008H12V7.5Zm9.75 4.5a9.75 9.75 0 1 1-19.5 0 9.75 9.75 0 0 1 19.5 0Z" />
             </svg>
             <p className="text-[12px] font-light leading-relaxed text-text-secondary">
               Score calculé sur <strong className="font-medium text-text-primary">{result.basis} piliers sur 3</strong> :{" "}
-              {result.excluded.map((e) => e.pilier).join(", ")} non mesurable
-              {result.excluded.length > 1 ? "s" : ""} sur ce site.
+              {(result.excluded ?? []).map((e) => e.pilier).join(", ")} non mesurable
+              {(result.excluded ?? []).length > 1 ? "s" : ""} sur ce site.
             </p>
           </div>
         )}
@@ -501,9 +501,9 @@ export default function RealGlobalScoreCard({
   // non mesurables (result.excluded, serveur) et il reste < 2 piliers mesurables → pas de
   // global. CONSTAT NEUTRE (jamais « en attente » : ces piliers ne se résoudront pas seuls).
   // Source unique = result.excluded (pas la détection locale) → écran = PDF = prospect.
-  if (!result.ready && result.excluded.length > 0 && result.missing.length === 0) {
-    const names = result.excluded.map((e) => e.pilier).join(", ");
-    const plural = result.excluded.length > 1;
+  if (!result.ready && (result.excluded ?? []).length > 0 && result.missing.length === 0) {
+    const names = (result.excluded ?? []).map((e) => e.pilier).join(", ");
+    const plural = (result.excluded ?? []).length > 1;
     return (
       <div className="flex flex-col items-start gap-3 rounded-2xl border border-border-subtle bg-bg-card p-5 md:p-6">
         {header}
