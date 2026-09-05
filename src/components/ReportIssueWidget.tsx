@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Button from "./Button";
 import { useAccount } from "./AccountProvider";
 import { sendReportIssue } from "@/lib/api";
+import { redactSensitiveUrl } from "@/lib/redact-url";
 
 const CONTACT_EMAIL = "contact@l-agenceweb.com";
 
@@ -56,7 +57,9 @@ export default function ReportIssueWidget() {
     // Envoi RÉEL awaité : { message, page courante, email du compte si connecté }.
     const ok = await sendReportIssue({
       message: message.trim(),
-      page: window.location.href,
+      // Rédaction du token (fix L7) : jamais laisser fuiter le token /report ou
+      // #magic dans l'email de signalement / les logs serveur.
+      page: redactSensitiveUrl(window.location.href),
       email: account?.email,
     });
     setSending(false);
