@@ -231,6 +231,15 @@ interface PublicAnalysis {
     ready: boolean;
     missing: string[];
   };
+  /** SEO composite SERVEUR (barre SEO du « Score par pilier »). Le commercial le reçoit via
+   *  /global-score (`.seo`) ; le prospect via ce champ SÉPARÉ. Doit être FUSIONNÉ dans la
+   *  réponse de /global-score sinon la barre SEO du dashboard prospect reste vide. */
+  seoComposite?: {
+    value: number | null;
+    band: "critical" | "medium" | "good" | null;
+    ready: boolean;
+    missing: string[];
+  };
   /** Ajustements sémantiques restants pour ce prospect (cap 2). Absent = ancien backend. */
   semanticAdjustmentsRemaining?: number;
 }
@@ -376,13 +385,19 @@ async function prospectInterception(
   }
 
   // Score global du prospect → champ `globalScore` de /public/analysis (même
-  // computeGlobalScore serveur que le commercial). Repli VERROUILLÉ si absent (backend
-  // antérieur) : jamais un faux chiffre, la carte reste en attente honnête.
+  // computeGlobalScore serveur que le commercial). L'endpoint commercial /global-score
+  // renvoie `GlobalScoreResult & { seo }` ; le prospect DOIT recevoir la même forme —
+  // sinon `g.seo` est undefined → la barre SEO du « Score par pilier » reste vide côté
+  // dashboard prospect alors que le /report l'affiche (bug Alexis 2026-09-07). On FUSIONNE
+  // donc seoComposite (champ séparé du payload) dans `.seo`. Repli VERROUILLÉ si absent
+  // (backend antérieur) : jamais un faux chiffre, la carte reste en attente honnête.
   if (/^\/projects\/[^/]+\/global-score$/.test(pathname)) {
-    const { globalScore } = await fetchPublicAnalysis(session.token);
-    return jsonResponse(
-      globalScore ?? { value: null, band: null, ready: false, missing: [] },
-    );
+    const { globalScore, seoComposite } = await fetchPublicAnalysis(session.token);
+    const safe = { value: null, band: null, ready: false, missing: [] };
+    return jsonResponse({
+      ...(globalScore ?? safe),
+      seo: seoComposite ?? safe,
+    });
   }
 
   // Ajustements sémantiques restants du prospect → champ de /public/analysis (cap 2).
