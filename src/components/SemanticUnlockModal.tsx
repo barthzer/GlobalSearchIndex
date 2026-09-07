@@ -222,9 +222,11 @@ export default function SemanticUnlockModal({ onClose, onSubmit, projectId, comp
     setLoadingRows((prev) => prev.map(() => true));
     const clearLoading = () => setLoadingRows((prev) => prev.map(() => false));
     try {
+      // Cible la génération (Alexis 07/09) : « comp » → concurrents seuls, réponse
+      // quasi-instantanée côté serveur (pas d'appel LLM) ; « kw » → génération complète.
       const res = await apiFetch(`/projects/${projectId}/semantic/generate`, {
         method: "POST",
-        body: "{}",
+        body: JSON.stringify({ target: key === "comp" ? "competitors" : "keywords" }),
       });
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as {
