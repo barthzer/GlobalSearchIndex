@@ -134,14 +134,14 @@ export default function ShareModal({ projectId, onClose }: Props) {
                 </div>
                 <h2 className="mb-1 text-[20px] font-medium tracking-[-0.4px] text-text-primary">Partager le rapport</h2>
                 <p className="text-[14px] font-extralight leading-relaxed text-text-secondary">
-                  Saisissez l&apos;email du prospect : il recevra un lien d&apos;accès sécurisé, sans compte à créer.
+                  Saisissez l&apos;email de la personne de votre choix pour partager le rapport. Elle recevra un lien d&apos;accès sécurisé, sans compte à créer.
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div>
                   <label htmlFor="share-email" className="mb-1.5 flex items-center gap-2 text-[13px] font-medium text-text-secondary">
-                    Email du prospect
+                    Email
                   </label>
                   <input
                     id="share-email"
@@ -151,7 +151,7 @@ export default function ShareModal({ projectId, onClose }: Props) {
                       setEmail(e.target.value);
                       setError("");
                     }}
-                    placeholder="prospect@entreprise.com"
+                    placeholder="email@entreprise.com"
                     className={`w-full rounded-xl border bg-input-bg px-4 py-3 text-[14px] text-text-primary placeholder:text-text-muted outline-none transition-all duration-300 ${
                       error
                         ? "border-red-400/50"
